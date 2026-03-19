@@ -23,6 +23,8 @@ if command -v conda >/dev/null 2>&1; then
   CONDA_BASE="$(conda info --base)"
   # shellcheck disable=SC1090
   source "$CONDA_BASE/etc/profile.d/conda.sh"
+  conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main >/dev/null 2>&1 || true
+  conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r >/dev/null 2>&1 || true
   if ! conda env list | awk '{print $1}' | grep -qx "$CONDA_ENV_NAME"; then
     conda create -n "$CONDA_ENV_NAME" "python=$PYTHON_VERSION" -y
   fi

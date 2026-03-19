@@ -24,7 +24,14 @@ import sys
 import urllib.request
 
 source_page = "https://data.mendeley.com/datasets/zr7vgbcyr2/1"
-html = urllib.request.urlopen(source_page, timeout=60).read().decode("utf-8", errors="ignore")
+request = urllib.request.Request(
+    source_page,
+    headers={
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    },
+)
+html = urllib.request.urlopen(request, timeout=60).read().decode("utf-8", errors="ignore")
 patterns = [
     r'https://data\.mendeley\.com/public-files/datasets/[^"\']+/file_downloaded',
     r'https://prod-dcd-datasets-public-files-eu-west-1\.s3\.eu-west-1\.amazonaws\.com/[^"\']+',
@@ -50,7 +57,10 @@ fi
 
 echo "[info] downloading dataset zip"
 echo "[info] source: $DIRECT_URL"
-curl -L "$DIRECT_URL" -o "$ZIP_PATH"
+curl -L \
+  -A "Mozilla/5.0" \
+  -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" \
+  "$DIRECT_URL" -o "$ZIP_PATH"
 
 if [[ ! -s "$ZIP_PATH" ]]; then
   echo "[error] downloaded zip is empty: $ZIP_PATH"
