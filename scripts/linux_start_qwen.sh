@@ -21,8 +21,25 @@ else
   exit 1
 fi
 
-if pgrep -f "vllm serve $MODEL_NAME" >/dev/null 2>&1; then
-  echo "[info] vLLM service appears to be running already."
+SERVICE_URL="http://$HOST:$PORT/v1/models"
+
+if curl -s "$SERVICE_URL" -H "Authorization: Bearer $API_KEY" >/tmp/qwen_models.json 2>/dev/null; then
+  echo "[ok] Qwen service is already ready."
+  cat /tmp/qwen_models.json
+  exit 0
+fi
+
+EXISTING_PIDS="$(pgrep -f "vllm serve .*${PORT}" || true)"
+if [[ -n "$EXISTING_PIDS" ]]; then
+  echo "[warn] found stale vLLM process(es): $EXISTING_PIDS"
+  pkill -f "vllm serve .*${PORT}" || true
+  sleep 3
+fi
+
+if pgrep -f "vllm serve .*${PORT}" >/dev/null 2>&1; then
+  echo "[error] stale vLLM process is still alive after kill attempt."
+  echo "[error] inspect with: ps -fp $(pgrep -f 'vllm serve .*${PORT}' | tr '\n' ' ')"
+  exit 1
 else
   nohup vllm serve "$MODEL_NAME" \
     --host "$HOST" \
@@ -34,9 +51,9 @@ else
     > "$LOG_FILE" 2>&1 &
 fi
 
-echo "[info] waiting for Qwen service on http://$HOST:$PORT/v1/models"
+echo "[info] waiting for Qwen service on $SERVICE_URL"
 for i in $(seq 1 60); do
-  if curl -s "http://$HOST:$PORT/v1/models" -H "Authorization: Bearer $API_KEY" >/tmp/qwen_models.json 2>/dev/null; then
+  if curl -s "$SERVICE_URL" -H "Authorization: Bearer $API_KEY" >/tmp/qwen_models.json 2>/dev/null; then
     echo "[ok] Qwen service is ready."
     cat /tmp/qwen_models.json
     exit 0
