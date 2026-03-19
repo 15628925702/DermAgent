@@ -35,16 +35,21 @@ fi
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 
-if [[ ! -f "data/pad_ufes_20/metadata.csv" ]]; then
-  echo "[error] dataset missing: $TARGET_DIR/data/pad_ufes_20/metadata.csv"
-  echo "[error] push the unpacked data folder to the repo before using this script."
-  exit 1
+if [[ -f "data/pad_ufes_20/metadata.csv" ]]; then
+  echo "[ok] dataset already present"
+else
+  echo "[info] dataset not found yet"
+  echo "[info] next step: bash scripts/linux_download_data.sh $TARGET_DIR"
 fi
 
-python scripts/build_split.py \
-  --dataset-root data/pad_ufes_20 \
-  --output outputs/splits/pad_ufes20.json
+if [[ -f "data/pad_ufes_20/metadata.csv" ]]; then
+  python scripts/build_split.py \
+    --dataset-root data/pad_ufes_20 \
+    --output outputs/splits/pad_ufes20.json
+fi
 
 echo "[ok] repo and environment are ready at $TARGET_DIR"
 echo "[ok] conda env: $CONDA_ENV_NAME"
-echo "[ok] split file: outputs/splits/pad_ufes20.json"
+if [[ -f "outputs/splits/pad_ufes20.json" ]]; then
+  echo "[ok] split file: outputs/splits/pad_ufes20.json"
+fi
