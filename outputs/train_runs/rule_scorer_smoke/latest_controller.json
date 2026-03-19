@@ -1,0 +1,436 @@
+{
+  "format_version": 3,
+  "metadata": {
+    "epoch": 2,
+    "stage": "latest",
+    "train_summary": {
+      "num_cases": 8,
+      "metrics": {
+        "accuracy_top1": 0.125,
+        "accuracy_top3": 0.875,
+        "malignant_recall": 0.0,
+        "confusion_accuracy": 0.0
+      },
+      "counts": {
+        "correct_top1": 1,
+        "correct_top3": 7,
+        "malignant_total": 3,
+        "malignant_hit": 0,
+        "ack_scc_total": 3,
+        "ack_scc_correct": 0,
+        "errors": 0
+      },
+      "bank_stats": {
+        "total": 23,
+        "raw_case": 8,
+        "prototype": 1,
+        "confusion": 3,
+        "rule": 3,
+        "hard_case": 8,
+        "unknown": 0
+      },
+      "update_online": true,
+      "use_reflection": true
+    }
+  },
+  "skill_index": {
+    "ack_scc_specialist_skill": {
+      "skill_id": "ack_scc_specialist_skill",
+      "description": "Resolve ACK vs SCC confusion with specialist priors.",
+      "when_to_use": "When ACK/SCC pair is present or confusion memory points to this pair.",
+      "constraints": [
+        "Useful only when SCC is plausible or metadata resembles sun-exposed keratinizing lesions."
+      ],
+      "category": "specialist",
+      "threshold": 0.56,
+      "priority": -0.6979,
+      "routable": true,
+      "embedding": [
+        0.7,
+        0.6,
+        0.4
+      ],
+      "feature_weights": {
+        "bias": -0.6979,
+        "confusion_support": -0.2054,
+        "has_ack_scc_pair": 1.6529,
+        "has_confusion_support": 0.3252,
+        "has_malignant_candidate": -0.2479,
+        "has_mel_nev_pair": 0.0,
+        "malignant_candidate_ratio": -0.161,
+        "metadata_present": -0.2479,
+        "num_malignant_cues": 0.15,
+        "num_suspicious_cues": 0.0,
+        "num_visual_cues": 0.0,
+        "prototype_support": -0.0749,
+        "raw_case_support": -0.2025,
+        "retrieval_high": -0.2248,
+        "retrieval_low": -0.0231,
+        "retrieval_medium": 0.0,
+        "retrieval_recommends_ack_scc": 0.6034,
+        "retrieval_recommends_mel_nev": 0.0,
+        "strong_invasive_history": -0.2352,
+        "sun_exposed_site": 0.3177,
+        "supports_top1": -0.0925,
+        "top_candidate_count": -0.2094,
+        "top_gap": -0.0306,
+        "top_gap_small": -0.2602,
+        "uncertainty_high": -0.2479,
+        "uncertainty_low": 0.0,
+        "uncertainty_medium": 0.0
+      },
+      "stats": {
+        "helpful": 7.0,
+        "updates": 16.0,
+        "uses": 14.0
+      },
+      "success_rate": 0.5
+    },
+    "compare_skill": {
+      "skill_id": "compare_skill",
+      "description": "Directly compare the top ambiguous candidates.",
+      "when_to_use": "When top candidates are close, uncertainty is high, or confusion memory exists.",
+      "constraints": [
+        "Best when at least two plausible candidates are available."
+      ],
+      "category": "comparison",
+      "threshold": 0.55,
+      "priority": -0.1144,
+      "routable": true,
+      "embedding": [
+        0.2,
+        0.9,
+        0.2
+      ],
+      "feature_weights": {
+        "bias": -0.1144,
+        "confusion_support": 0.032,
+        "has_ack_scc_pair": 0.0185,
+        "has_confusion_support": 0.7326,
+        "has_malignant_candidate": 0.0356,
+        "has_mel_nev_pair": 0.0,
+        "malignant_candidate_ratio": 0.0155,
+        "metadata_present": 0.0356,
+        "num_malignant_cues": 0.0,
+        "num_suspicious_cues": 0.0,
+        "num_visual_cues": 0.0,
+        "prototype_support": 0.0109,
+        "raw_case_support": 0.0305,
+        "retrieval_high": 0.0326,
+        "retrieval_low": 0.353,
+        "retrieval_medium": 0.0,
+        "retrieval_recommends_ack_scc": 0.0276,
+        "retrieval_recommends_mel_nev": 0.0,
+        "strong_invasive_history": 0.0108,
+        "sun_exposed_site": 0.0293,
+        "supports_top1": 0.0033,
+        "top_candidate_count": 0.2335,
+        "top_gap": 0.0056,
+        "top_gap_small": 1.1106,
+        "uncertainty_high": 1.2356,
+        "uncertainty_low": 0.0,
+        "uncertainty_medium": 0.6
+      },
+      "stats": {
+        "helpful": 16.0,
+        "updates": 16.0,
+        "uses": 16.0
+      },
+      "success_rate": 1.0
+    },
+    "malignancy_risk_skill": {
+      "skill_id": "malignancy_risk_skill",
+      "description": "Estimate malignant tendency and produce a safety-oriented label preference.",
+      "when_to_use": "When malignant labels or malignant cues are present.",
+      "constraints": [
+        "Should primarily act as a safety constraint."
+      ],
+      "category": "risk",
+      "threshold": 0.5,
+      "priority": -0.1261,
+      "routable": true,
+      "embedding": [
+        0.8,
+        0.8,
+        0.1
+      ],
+      "feature_weights": {
+        "bias": -0.1261,
+        "confusion_support": 0.0605,
+        "has_ack_scc_pair": 0.0318,
+        "has_confusion_support": 0.0622,
+        "has_malignant_candidate": 1.2239,
+        "has_mel_nev_pair": 0.0,
+        "malignant_candidate_ratio": 0.8297,
+        "metadata_present": 0.0739,
+        "num_malignant_cues": 0.9,
+        "num_suspicious_cues": 0.4,
+        "num_visual_cues": 0.0,
+        "prototype_support": 0.0207,
+        "raw_case_support": 0.0575,
+        "retrieval_high": 0.0622,
+        "retrieval_low": 0.0117,
+        "retrieval_medium": 0.0,
+        "retrieval_recommends_ack_scc": 0.0516,
+        "retrieval_recommends_mel_nev": 0.0,
+        "strong_invasive_history": 0.5652,
+        "sun_exposed_site": 0.0471,
+        "supports_top1": 0.0151,
+        "top_candidate_count": 0.0649,
+        "top_gap": 0.0104,
+        "top_gap_small": 0.0368,
+        "uncertainty_high": 0.0739,
+        "uncertainty_low": 0.0,
+        "uncertainty_medium": 0.0
+      },
+      "stats": {
+        "helpful": 16.0,
+        "updates": 16.0,
+        "uses": 16.0
+      },
+      "success_rate": 1.0
+    },
+    "mel_nev_specialist_skill": {
+      "skill_id": "mel_nev_specialist_skill",
+      "description": "Resolve melanoma vs nevus confusion with targeted criteria.",
+      "when_to_use": "When MEL and NEV are both plausible or confusion memory highlights this pair.",
+      "constraints": [
+        "Useful only when melanocytic ambiguity exists."
+      ],
+      "category": "specialist",
+      "threshold": 0.56,
+      "priority": -0.5811,
+      "routable": true,
+      "embedding": [
+        0.7,
+        0.4,
+        0.7
+      ],
+      "feature_weights": {
+        "bias": -0.5811,
+        "confusion_support": -0.1469,
+        "has_ack_scc_pair": -0.0814,
+        "has_confusion_support": 0.2769,
+        "has_malignant_candidate": -0.1311,
+        "has_mel_nev_pair": 1.65,
+        "malignant_candidate_ratio": -0.0851,
+        "metadata_present": -0.1311,
+        "num_malignant_cues": 0.0,
+        "num_suspicious_cues": 0.0,
+        "num_visual_cues": 0.0,
+        "prototype_support": -0.0577,
+        "raw_case_support": -0.1274,
+        "retrieval_high": -0.1731,
+        "retrieval_low": 0.042,
+        "retrieval_medium": 0.0,
+        "retrieval_recommends_ack_scc": -0.0883,
+        "retrieval_recommends_mel_nev": 0.8,
+        "strong_invasive_history": -0.1241,
+        "sun_exposed_site": -0.2055,
+        "supports_top1": 0.0324,
+        "top_candidate_count": -0.1559,
+        "top_gap": -0.025,
+        "top_gap_small": 0.4316,
+        "uncertainty_high": 0.2189,
+        "uncertainty_low": 0.0,
+        "uncertainty_medium": 0.0
+      },
+      "stats": {
+        "helpful": 0.0,
+        "updates": 16.0,
+        "uses": 0.0
+      },
+      "success_rate": 0.5
+    },
+    "metadata_consistency_skill": {
+      "skill_id": "metadata_consistency_skill",
+      "description": "Use age, site, and history priors to validate or penalize labels.",
+      "when_to_use": "When metadata is available and visual or retrieval evidence is unstable.",
+      "constraints": [
+        "Only useful when metadata exists."
+      ],
+      "category": "consistency",
+      "threshold": 0.52,
+      "priority": -0.2864,
+      "routable": true,
+      "embedding": [
+        0.3,
+        0.3,
+        0.9
+      ],
+      "feature_weights": {
+        "bias": -0.2864,
+        "confusion_support": 0.0028,
+        "has_ack_scc_pair": 0.0328,
+        "has_confusion_support": 0.0067,
+        "has_malignant_candidate": 0.0136,
+        "has_mel_nev_pair": 0.0,
+        "malignant_candidate_ratio": 0.0148,
+        "metadata_present": 1.0136,
+        "num_malignant_cues": 0.0,
+        "num_suspicious_cues": 0.0,
+        "num_visual_cues": 0.0,
+        "prototype_support": 0.0022,
+        "raw_case_support": -0.0012,
+        "retrieval_high": 0.0067,
+        "retrieval_low": 0.757,
+        "retrieval_medium": 0.0,
+        "retrieval_recommends_ack_scc": -0.0092,
+        "retrieval_recommends_mel_nev": 0.0,
+        "strong_invasive_history": 0.1806,
+        "sun_exposed_site": 0.0634,
+        "supports_top1": -0.5068,
+        "top_candidate_count": 0.0302,
+        "top_gap": 0.0053,
+        "top_gap_small": -0.0296,
+        "uncertainty_high": 0.4636,
+        "uncertainty_low": 0.0,
+        "uncertainty_medium": 0.25
+      },
+      "stats": {
+        "helpful": 15.0,
+        "updates": 16.0,
+        "uses": 15.0
+      },
+      "success_rate": 1.0
+    },
+    "uncertainty_assessment_skill": {
+      "skill_id": "uncertainty_assessment_skill",
+      "description": "Estimate uncertainty and keep a controller-side calibration anchor.",
+      "when_to_use": "Nearly always useful as a lightweight calibration skill.",
+      "constraints": [
+        "Should not override diagnosis directly."
+      ],
+      "category": "calibration",
+      "threshold": 0.45,
+      "priority": 0.9273,
+      "routable": true,
+      "embedding": [
+        0.9,
+        0.2,
+        0.1
+      ],
+      "feature_weights": {
+        "bias": 0.9273,
+        "confusion_support": 0.0239,
+        "has_ack_scc_pair": 0.0099,
+        "has_confusion_support": 0.0248,
+        "has_malignant_candidate": 0.0273,
+        "has_mel_nev_pair": 0.0,
+        "malignant_candidate_ratio": 0.0125,
+        "metadata_present": 0.0273,
+        "num_malignant_cues": 0.0,
+        "num_suspicious_cues": 0.0,
+        "num_visual_cues": 0.0,
+        "prototype_support": 0.0083,
+        "raw_case_support": 0.0229,
+        "retrieval_high": 0.0248,
+        "retrieval_low": 0.2025,
+        "retrieval_medium": 0.0,
+        "retrieval_recommends_ack_scc": 0.0211,
+        "retrieval_recommends_mel_nev": 0.0,
+        "strong_invasive_history": 0.0101,
+        "sun_exposed_site": 0.02,
+        "supports_top1": 0.0049,
+        "top_candidate_count": 0.0249,
+        "top_gap": 0.004,
+        "top_gap_small": 0.014,
+        "uncertainty_high": 0.7273,
+        "uncertainty_low": 0.0,
+        "uncertainty_medium": 0.4
+      },
+      "stats": {
+        "helpful": 16.0,
+        "updates": 16.0,
+        "uses": 16.0
+      },
+      "success_rate": 1.0
+    }
+  },
+  "controller": {
+    "learning_rate": 0.08,
+    "max_skills": 4,
+    "stop_weights": {
+      "bias": 0.086419,
+      "confusion_support": -0.120241,
+      "has_ack_scc_pair": -0.0876,
+      "has_confusion_support": -0.832711,
+      "has_malignant_candidate": -0.063581,
+      "has_mel_nev_pair": 0.0,
+      "malignant_candidate_ratio": -0.047343,
+      "metadata_present": -0.063581,
+      "num_malignant_cues": 0.0,
+      "num_suspicious_cues": 0.0,
+      "num_visual_cues": 0.0,
+      "prototype_support": -0.044237,
+      "raw_case_support": -0.105669,
+      "retrieval_high": 0.617289,
+      "retrieval_low": -0.53087,
+      "retrieval_medium": 0.2,
+      "retrieval_recommends_ack_scc": -0.076526,
+      "retrieval_recommends_mel_nev": 0.0,
+      "strong_invasive_history": -0.07844,
+      "sun_exposed_site": -0.16604,
+      "supports_top1": 0.883329,
+      "top_candidate_count": -0.097734,
+      "top_gap": -0.016998,
+      "top_gap_small": -0.591733,
+      "uncertainty_high": -0.813581,
+      "uncertainty_low": 0.9,
+      "uncertainty_medium": 0.15
+    }
+  },
+  "final_scorer": {
+    "version": 2,
+    "enabled": true,
+    "learning_rate": 0.01,
+    "margin_target": 0.45,
+    "weights": {
+      "base_total": 0.636173,
+      "bias": 0.0,
+      "compare_score": 0.08617,
+      "confusion_score": -0.168057,
+      "in_support_labels": -0.176902,
+      "is_perception_top1": 0.176902,
+      "malignancy_score": 0.04211,
+      "malignant_candidate": 0.084219,
+      "matches_memory_consensus": -0.176902,
+      "memory_consensus_score": -0.141521,
+      "metadata_score": 0.075698,
+      "perception_score": 0.044636,
+      "prototype_score": -0.204318,
+      "retrieval_confidence_high": 0.0,
+      "retrieval_confidence_low": 0.0,
+      "retrieval_confidence_medium": 0.0,
+      "retrieval_score": -0.168057,
+      "specialist_score": 0.069512
+    }
+  },
+  "rule_scorer": {
+    "version": 1,
+    "learning_rate": 0.03,
+    "threshold": 0.52,
+    "weights": {
+      "bias": -0.382483,
+      "compression_high": 0.147564,
+      "compression_medium": 0.019953,
+      "has_confusion_support": -0.142483,
+      "priority": 0.29421,
+      "requires_all_match": 0.393008,
+      "requires_any_overlap": 0.174509,
+      "retrieval_high": -0.332483,
+      "retrieval_low": 0.18,
+      "retrieval_medium": 0.06,
+      "source_count": 0.114925,
+      "specialist_hint": 0.069099,
+      "supports_top1": -0.218333,
+      "uncertainty_high": -0.032483,
+      "uncertainty_medium": 0.1
+    },
+    "rule_biases": {
+      "rule_label_nev_hardcase": -0.175491,
+      "rule_pair_ack_scc": -0.050901,
+      "rule_pair_bcc_scc": -0.056091
+    }
+  }
+}

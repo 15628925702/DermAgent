@@ -28,25 +28,8 @@ class ExperienceWriter:
         bank: ExperienceBank,
         auto: bool = True,
     ) -> Dict[str, Any]:
-        if auto and self._should_skip_writeback(state):
-            summary = {
-                "case_id": state.get_case_id(),
-                "raw_case_written": False,
-                "prototype_written": False,
-                "confusion_written": False,
-                "hard_case_written": False,
-                "skipped": True,
-                "reason": "fallback_perception_not_written",
-            }
-            state.trace(
-                "experience_writeback",
-                "skipped",
-                "Experience writeback skipped for fallback perception case",
-                payload=summary,
-            )
-            return summary
-
         reflection = state.reflection or {}
+        fallback_case = self._is_fallback_case(state)
 
         summary: Dict[str, Any] = {
             "case_id": state.get_case_id(),
@@ -54,6 +37,8 @@ class ExperienceWriter:
             "prototype_written": False,
             "confusion_written": False,
             "hard_case_written": False,
+            "fallback_case": fallback_case,
+            "skipped_reason": None,
         }
 
         # =========================
@@ -76,6 +61,12 @@ class ExperienceWriter:
             write_prototype = hints.get("should_write_prototype", False)
             write_confusion = hints.get("should_write_confusion", False)
             write_hard_case = signals.get("hard_case", False)
+
+        if fallback_case:
+            write_prototype = False
+            write_confusion = False
+            write_hard_case = True
+            summary["skipped_reason"] = "fallback_perception_only_raw_and_hard_case"
 
         # =========================
         # 3. prototype
@@ -232,5 +223,5 @@ class ExperienceWriter:
 
         return modes
 
-    def _should_skip_writeback(self, state: CaseState) -> bool:
+    def _is_fallback_case(self, state: CaseState) -> bool:
         return bool((state.perception or {}).get("fallback_reason"))

@@ -136,6 +136,57 @@ class OpenAICompatClient:
 
         return response.choices[0].message.content or "{}"
 
+    def infer_derm_direct_diagnosis(
+        self,
+        image_path: str,
+        metadata: Optional[Dict[str, Any]] = None,
+        model: Optional[str] = None,
+        temperature: float = 0.2,
+        max_tokens: int = 1000,
+    ) -> str:
+        if self.client is None:
+            raise RuntimeError("openai package is not installed")
+        metadata = metadata or {}
+        image_data_url = self._to_data_url(image_path)
+
+        system_prompt = (
+            "You are a dermatology diagnosis assistant. "
+            "Given one lesion image and metadata, return a direct diagnosis judgment. "
+            "Return STRICT JSON only."
+        )
+
+        user_prompt = self._build_direct_diagnosis_prompt(metadata)
+
+        response = self.client.chat.completions.create(
+            model=model or self.model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            response_format={"type": "json_object"},
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": user_prompt,
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": image_data_url,
+                            },
+                        },
+                    ],
+                },
+            ],
+        )
+
+        return response.choices[0].message.content or "{}"
+
     def _build_perception_prompt(self, metadata: Dict[str, Any]) -> str:
         age = metadata.get("age")
         sex = metadata.get("sex")
@@ -231,6 +282,28 @@ Retrieval summary:
 
 Metadata:
 {json.dumps(metadata, ensure_ascii=False)}
+""".strip()
+
+    def _build_direct_diagnosis_prompt(self, metadata: Dict[str, Any]) -> str:
+        return f"""
+Directly diagnose this skin lesion from the image and metadata.
+
+Return STRICT JSON with exactly this schema:
+{{
+  "diagnosis": "SCC",
+  "top_k": ["SCC", "ACK", "BCC"],
+  "confidence": "medium",
+  "reasoning": "Short evidence-based explanation."
+}}
+
+Rules:
+1. Use ONLY these labels: MEL, NEV, SCC, BCC, ACK, SEK.
+2. confidence must be one of: low, medium, high.
+3. top_k should contain 1 to 3 labels.
+4. Do not include markdown or any extra text outside JSON.
+
+Metadata:
+{json.dumps(metadata, ensure_ascii=False, indent=2)}
 """.strip()
 
     def _to_data_url(self, image_path: str) -> str:

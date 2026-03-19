@@ -44,6 +44,7 @@ class CaseState:
     # =========================
     perception: Dict[str, Any] = field(default_factory=dict)
     retrieval: Dict[str, Any] = field(default_factory=dict)
+    controller: Dict[str, Any] = field(default_factory=dict)
     planner: Dict[str, Any] = field(default_factory=dict)
 
     # planner 最终选中的 skills
@@ -140,6 +141,7 @@ class CaseState:
             "case_info": self.case_info,
             "perception": self.perception,
             "retrieval": self.retrieval,
+            "controller": self.controller,
             "planner": self.planner,
             "selected_skills": self.selected_skills,
             "skill_outputs": self.skill_outputs,

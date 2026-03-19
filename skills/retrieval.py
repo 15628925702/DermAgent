@@ -1,22 +1,3 @@
-"""
-检索 skill 薄封装。
-
-为什么保留这个文件：
-- 论文里仍然可以把 retrieval 视为一个独立 skill
-- 真正的检索逻辑放在 `memory/retriever.py`
-- 这里负责把 retriever 接入 agent 主流程
-
-职责：
-- 调用 ExperienceRetriever
-- 将结果写入 state.retrieval
-- 记录 trace
-- 提供轻量配置入口
-
-相关文件：
-- memory/retriever.py
-- memory/experience_bank.py
-"""
-
 from __future__ import annotations
 
 from typing import Any, Dict
@@ -48,6 +29,7 @@ class RetrievalSkill(BaseSkill):
                     "retrieval_confidence": retrieval_summary.get("retrieval_confidence", "low"),
                     "support_labels": retrieval_summary.get("support_labels", []),
                     "has_confusion_support": retrieval_summary.get("has_confusion_support", False),
+                    "memory_consensus_label": retrieval_summary.get("memory_consensus_label", ""),
                 },
             )
             return result
@@ -60,6 +42,9 @@ class RetrievalSkill(BaseSkill):
                 "rule_hits": [],
                 "retrieval_summary": {
                     "support_labels": [],
+                    "prototype_votes": {},
+                    "confusion_votes": {},
+                    "memory_consensus_label": "",
                     "retrieval_confidence": "low",
                     "has_confusion_support": False,
                     "confusion_pairs": [],

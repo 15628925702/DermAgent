@@ -22,7 +22,9 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 from memory.experience_bank import ExperienceBank
+from memory.experience_reranker import UtilityAwareExperienceReranker
 from memory.retriever import ExperienceRetriever
+from memory.skill_index import SkillIndex
 
 # skills
 from skills.compare import CompareSkill
@@ -33,11 +35,15 @@ from skills.reporter import ReportSkill
 from skills.retrieval import RetrievalSkill
 from skills.uncertainty import UncertaintyAssessmentSkill
 from skills.specialists.ack_scc_specialist import AckSccSpecialistSkill
+from skills.specialists.bcc_scc_specialist import BccSccSpecialistSkill
+from skills.specialists.bcc_sek_specialist import BccSekSpecialistSkill
 from skills.specialists.mel_nev_specialist import MelNevSpecialistSkill
 
 
 def build_skill_registry(
     bank: Optional[ExperienceBank] = None,
+    skill_index: Optional[SkillIndex] = None,
+    reranker: Optional[UtilityAwareExperienceReranker] = None,
     config: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
@@ -62,7 +68,7 @@ def build_skill_registry(
     # =========================
     # 依赖构建
     # =========================
-    retriever = ExperienceRetriever(bank)
+    retriever = ExperienceRetriever(bank, reranker=reranker)
 
     # =========================
     # Skill 实例化
@@ -75,6 +81,8 @@ def build_skill_registry(
         "malignancy_risk_skill": MalignancyRiskSkill(),
         "metadata_consistency_skill": MetadataConsistencySkill(),
         "ack_scc_specialist_skill": AckSccSpecialistSkill(),
+        "bcc_scc_specialist_skill": BccSccSpecialistSkill(),
+        "bcc_sek_specialist_skill": BccSekSpecialistSkill(),
         "mel_nev_specialist_skill": MelNevSpecialistSkill(),
         "report_skill": ReportSkill(),
     }
@@ -95,6 +103,8 @@ def build_skill_registry(
             "num_skills": len(registry),
             "skills": list(registry.keys()),
             "disabled_skills": list(disable_skills),
+            "skill_index_enabled": skill_index is not None,
+            "reranker_enabled": reranker is not None,
         }
 
     return registry

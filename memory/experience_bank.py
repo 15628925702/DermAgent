@@ -1,27 +1,7 @@
-"""
-经验库容器。
-
-基础版使用内存列表，但接口尽量设计稳定，方便后续替换成：
-- JSON 文件
-- sqlite
-- embedding index
-- faiss / vector db
-
-基础版目标：
-- 支持经验写入 / 批量写入
-- 支持按类型过滤
-- 支持简单查询
-- 支持去重与统计
-- 给 retriever / writer / reflection 提供稳定接口
-
-相关文件：
-- memory/schema.py
-- memory/retriever.py
-- memory/writer.py
-"""
-
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
@@ -31,66 +11,55 @@ class ExperienceBank:
         if initial_items:
             self.extend(initial_items)
 
-    # =========================
-    # 基础写入
-    # =========================
-
     def add(self, item: Dict[str, Any]) -> None:
-        """
-        添加单条经验。
-
-        基础版做轻量校验：
-        - 必须是 dict
-        - 必须包含 experience_type
-        """
         self._validate_item(item)
         self.items.append(dict(item))
 
     def extend(self, items: List[Dict[str, Any]]) -> None:
-        """
-        批量添加经验。
-        """
         for item in items:
             self.add(item)
 
     def add_if_not_exists(self, item: Dict[str, Any]) -> bool:
-        """
-        若经验不存在则添加，返回是否成功添加。
-
-        基础版去重规则：
-        - raw_case: case_id 相同视为重复
-        - prototype: disease 相同视为重复
-        - confusion: pair 相同视为重复
-        - rule: rule_name 相同视为重复
-        - 其他：完全相同 key 不保证去重
-        """
         self._validate_item(item)
-
         if self.exists(item):
             return False
-
         self.items.append(dict(item))
         return True
 
-    # =========================
-    # 基础读取
-    # =========================
+    def replace_type(self, experience_type: str, items: List[Dict[str, Any]]) -> Dict[str, int]:
+        experience_type = str(experience_type).strip()
+        validated: List[Dict[str, Any]] = []
+        for item in items:
+            self._validate_item(item)
+            if str(item.get("experience_type", "")).strip() != experience_type:
+                raise ValueError(
+                    f"replace_type expected '{experience_type}' items, got '{item.get('experience_type')}'."
+                )
+            validated.append(dict(item))
+
+        removed = sum(
+            1 for item in self.items if str(item.get("experience_type", "")).strip() == experience_type
+        )
+        kept = [
+            dict(item)
+            for item in self.items
+            if str(item.get("experience_type", "")).strip() != experience_type
+        ]
+        self.items = kept + validated
+        return {
+            "removed": removed,
+            "added": len(validated),
+        }
 
     def list_all(self) -> List[Dict[str, Any]]:
-        """
-        返回全部经验的浅拷贝列表。
-        """
-        return [dict(x) for x in self.items]
+        return [dict(item) for item in self.items]
 
     def list_by_type(self, experience_type: str) -> List[Dict[str, Any]]:
-        """
-        按经验类型列出。
-        """
         experience_type = str(experience_type).strip()
         return [
-            dict(x)
-            for x in self.items
-            if str(x.get("experience_type", "")).strip() == experience_type
+            dict(item)
+            for item in self.items
+            if str(item.get("experience_type", "")).strip() == experience_type
         ]
 
     def get_raw_cases(self) -> List[Dict[str, Any]]:
@@ -108,15 +77,10 @@ class ExperienceBank:
     def get_hard_cases(self) -> List[Dict[str, Any]]:
         return self.list_by_type("hard_case")
 
-    # =========================
-    # 简单查询
-    # =========================
-
     def find_raw_case_by_case_id(self, case_id: str) -> Optional[Dict[str, Any]]:
         case_id = str(case_id).strip()
         if not case_id:
             return None
-
         for item in self.items:
             if item.get("experience_type") != "raw_case":
                 continue
@@ -128,7 +92,6 @@ class ExperienceBank:
         disease = str(disease).strip().upper()
         if not disease:
             return None
-
         for item in self.items:
             if item.get("experience_type") != "prototype":
                 continue
@@ -143,7 +106,6 @@ class ExperienceBank:
         ])
         if not pair[0] or not pair[1]:
             return None
-
         for item in self.items:
             if item.get("experience_type") != "confusion":
                 continue
@@ -156,7 +118,6 @@ class ExperienceBank:
         rule_name = str(rule_name).strip()
         if not rule_name:
             return None
-
         for item in self.items:
             if item.get("experience_type") != "rule":
                 continue
@@ -164,39 +125,24 @@ class ExperienceBank:
                 return dict(item)
         return None
 
-    # =========================
-    # 去重判断
-    # =========================
-
     def exists(self, item: Dict[str, Any]) -> bool:
-        """
-        判断某条经验是否已存在。
-        """
         exp_type = str(item.get("experience_type", "")).strip()
 
         if exp_type == "raw_case":
             case_id = str(item.get("case_id", "")).strip()
-            if not case_id:
-                return False
-            return self.find_raw_case_by_case_id(case_id) is not None
+            return bool(case_id) and self.find_raw_case_by_case_id(case_id) is not None
 
         if exp_type == "prototype":
             disease = str(item.get("disease", "")).strip().upper()
-            if not disease:
-                return False
-            return self.find_prototype_by_disease(disease) is not None
+            return bool(disease) and self.find_prototype_by_disease(disease) is not None
 
         if exp_type == "confusion":
             pair = [str(x).strip().upper() for x in item.get("pair", [])]
-            if len(pair) != 2 or not pair[0] or not pair[1]:
-                return False
-            return self.find_confusion_by_pair(pair[0], pair[1]) is not None
+            return len(pair) == 2 and bool(pair[0]) and bool(pair[1]) and self.find_confusion_by_pair(pair[0], pair[1]) is not None
 
         if exp_type == "rule":
             rule_name = str(item.get("rule_name", "")).strip()
-            if not rule_name:
-                return False
-            return self.find_rule_by_name(rule_name) is not None
+            return bool(rule_name) and self.find_rule_by_name(rule_name) is not None
 
         if exp_type == "hard_case":
             case_id = str(item.get("case_id", "")).strip()
@@ -211,17 +157,10 @@ class ExperienceBank:
 
         return False
 
-    # =========================
-    # 统计与调试
-    # =========================
-
     def size(self) -> int:
         return len(self.items)
 
     def stats(self) -> Dict[str, Any]:
-        """
-        返回经验库统计信息。
-        """
         raw_case_count = 0
         prototype_count = 0
         confusion_count = 0
@@ -255,19 +194,36 @@ class ExperienceBank:
         }
 
     def clear(self) -> None:
-        """
-        清空经验库。
-        """
         self.items = []
 
-    # =========================
-    # 内部工具
-    # =========================
+    def save_json(self, path: str | Path) -> Path:
+        output_path = Path(path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "format_version": 1,
+            "items": self.list_all(),
+            "stats": self.stats(),
+        }
+        output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return output_path
+
+    def load_json(self, path: str | Path) -> None:
+        input_path = Path(path)
+        payload = json.loads(input_path.read_text(encoding="utf-8"))
+        items = payload.get("items", []) or []
+        self.items = []
+        for item in items:
+            self.add(item)
+
+    @classmethod
+    def from_json(cls, path: str | Path) -> "ExperienceBank":
+        bank = cls()
+        bank.load_json(path)
+        return bank
 
     def _validate_item(self, item: Dict[str, Any]) -> None:
         if not isinstance(item, dict):
             raise TypeError("Experience item must be a dict.")
-
         exp_type = str(item.get("experience_type", "")).strip()
         if not exp_type:
             raise ValueError("Experience item must contain 'experience_type'.")

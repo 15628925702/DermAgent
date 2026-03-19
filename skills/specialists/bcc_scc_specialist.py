@@ -1,0 +1,246 @@
+from __future__ import annotations
+
+from typing import Any, Dict, List
+
+from agent.state import CaseState
+from skills.base import BaseSkill
+
+
+class BccSccSpecialistSkill(BaseSkill):
+    name = "bcc_scc_specialist_skill"
+
+    def run(self, state: CaseState) -> Dict[str, Any]:
+        ddx = state.perception.get("ddx_candidates", []) or []
+        top_names = [
+            self._norm_label(item.get("name"))
+            for item in ddx[:5]
+            if self._norm_label(item.get("name")) != "UNKNOWN"
+        ]
+
+        if not {"BCC", "SCC"}.issubset(set(top_names)):
+            result = {
+                "target_group": ["BCC", "SCC"],
+                "recommendation": None,
+                "group_scores": {"BCC": 0.0, "SCC": 0.0},
+                "confidence": 0.0,
+                "reason": "bcc_scc_not_present",
+                "rationale": ["BCC/SCC specialist not triggered by current candidates."],
+            }
+            state.skill_outputs[self.name] = result
+            state.trace(self.name, "warning", "BCC/SCC specialist skipped: pair not present")
+            return result
+
+        scores = {"BCC": 0.0, "SCC": 0.0}
+        rationale: List[str] = []
+
+        bcc_item = self._find_candidate(ddx, "BCC")
+        scc_item = self._find_candidate(ddx, "SCC")
+        bcc_score = self._extract_candidate_score(bcc_item, default=0.8)
+        scc_score = self._extract_candidate_score(scc_item, default=0.8)
+        scores["BCC"] += bcc_score
+        scores["SCC"] += scc_score
+        rationale.append(f"perception_score_support: BCC={bcc_score:.3f}, SCC={scc_score:.3f}")
+
+        visual_cues = self._normalize_text_list(state.perception.get("visual_cues", []))
+        bcc_keywords = [
+            "pearly",
+            "rolled border",
+            "telangiectasia",
+            "translucent",
+            "shiny",
+            "nodular",
+            "arborizing",
+        ]
+        scc_keywords = [
+            "hyperkeratotic",
+            "scaly",
+            "crusted",
+            "ulcer",
+            "ulcerated",
+            "indurated",
+            "tender",
+            "pain",
+            "plaque",
+        ]
+        bcc_hits = self._count_keyword_hits(visual_cues, bcc_keywords)
+        scc_hits = self._count_keyword_hits(visual_cues, scc_keywords)
+        if bcc_hits:
+            bonus = min(0.8, 0.16 * bcc_hits)
+            scores["BCC"] += bonus
+            rationale.append(f"visual_cues_support_bcc: hits={bcc_hits}, bonus={bonus:.2f}")
+        if scc_hits:
+            bonus = min(0.9, 0.17 * scc_hits)
+            scores["SCC"] += bonus
+            rationale.append(f"visual_cues_support_scc: hits={scc_hits}, bonus={bonus:.2f}")
+
+        metadata = state.get_metadata()
+        age = self._safe_int(metadata.get("age"))
+        site = self._norm_text(metadata.get("location") or metadata.get("site") or metadata.get("anatomical_site"))
+        history = self._norm_text(metadata.get("history") or metadata.get("clinical_history") or metadata.get("past_history"))
+        if age is not None and age >= 60:
+            scores["BCC"] += 0.08
+            scores["SCC"] += 0.1
+            rationale.append("older_age_keeps_bcc_and_scc_plausible")
+        if self._site_matches(site, ["nose", "cheek", "temple", "face"]):
+            scores["BCC"] += 0.16
+            rationale.append("classic_bcc_site_supports_bcc")
+        if self._site_matches(site, ["lip", "ear", "hand", "forearm"]):
+            scores["SCC"] += 0.18
+            rationale.append("high_risk_scc_site_supports_scc")
+        if any(token in history for token in ["bleed", "bleeding", "elevation"]):
+            scores["BCC"] += 0.1
+            rationale.append("bleeding_or_elevation_history_supports_bcc")
+        if any(token in history for token in ["pain", "hurt", "rapid growth", "ulcer"]):
+            scores["SCC"] += 0.14
+            rationale.append("invasive_history_supports_scc")
+
+        risk_output = state.skill_outputs.get("malignancy_risk_skill", {}) or {}
+        preferred_label = self._norm_label(
+            risk_output.get("preferred_label")
+            or risk_output.get("recommendation")
+            or risk_output.get("winner")
+        )
+        risk_level = self._norm_text(risk_output.get("risk_level") or risk_output.get("malignancy_risk"))
+        if preferred_label == "BCC":
+            scores["BCC"] += 0.12
+            rationale.append("malignancy_skill_supports_bcc")
+        elif preferred_label == "SCC":
+            scores["SCC"] += 0.12
+            rationale.append("malignancy_skill_supports_scc")
+        if risk_level == "high" and scc_hits > 0:
+            scores["SCC"] += 0.08
+            rationale.append("high_risk_plus_scc_morphology_supports_scc")
+
+        retrieval_summary = state.retrieval.get("retrieval_summary", {}) or {}
+        support_labels = [self._norm_label(x) for x in retrieval_summary.get("support_labels", [])]
+        retrieval_confidence = self._norm_text(retrieval_summary.get("retrieval_confidence", "low"))
+        retrieval_bonus = {"high": 0.4, "medium": 0.24, "low": 0.1}.get(retrieval_confidence, 0.1)
+        if "BCC" in support_labels:
+            scores["BCC"] += retrieval_bonus
+            rationale.append(f"retrieval_supports_bcc: bonus={retrieval_bonus:.2f}")
+        if "SCC" in support_labels:
+            scores["SCC"] += retrieval_bonus
+            rationale.append(f"retrieval_supports_scc: bonus={retrieval_bonus:.2f}")
+
+        compare_output = state.skill_outputs.get("compare_skill", {}) or {}
+        compare_winner = self._norm_label(compare_output.get("winner") or compare_output.get("recommendation"))
+        compare_confidence = self._safe_float(compare_output.get("confidence"), default=0.0)
+        if compare_winner == "BCC":
+            scores["BCC"] += 0.1 + min(0.15, compare_confidence * 0.15)
+            rationale.append("compare_skill_supports_bcc")
+        elif compare_winner == "SCC":
+            scores["SCC"] += 0.1 + min(0.15, compare_confidence * 0.15)
+            rationale.append("compare_skill_supports_scc")
+
+        meta_output = state.skill_outputs.get("metadata_consistency_skill", {}) or {}
+        supported = [
+            self._norm_label(x)
+            for x in (meta_output.get("supported_diagnoses", []) or meta_output.get("supported_labels", []) or [])
+        ]
+        penalized = [
+            self._norm_label(x)
+            for x in (meta_output.get("penalized_diagnoses", []) or meta_output.get("penalized_labels", []) or [])
+        ]
+        if "BCC" in supported:
+            scores["BCC"] += 0.14
+            rationale.append("metadata_consistency_supports_bcc")
+        if "SCC" in supported:
+            scores["SCC"] += 0.14
+            rationale.append("metadata_consistency_supports_scc")
+        if "BCC" in penalized:
+            scores["BCC"] -= 0.1
+            rationale.append("metadata_consistency_penalizes_bcc")
+        if "SCC" in penalized:
+            scores["SCC"] -= 0.1
+            rationale.append("metadata_consistency_penalizes_scc")
+
+        recommendation = "BCC" if scores["BCC"] >= scores["SCC"] else "SCC"
+        loser = "SCC" if recommendation == "BCC" else "BCC"
+        gap = abs(scores["BCC"] - scores["SCC"])
+        confidence = 0.9 if gap >= 0.9 else 0.75 if gap >= 0.35 else 0.58
+        reason = "strong_specialist_preference" if gap >= 0.9 else "moderate_specialist_preference" if gap >= 0.35 else "weak_specialist_preference"
+
+        result = {
+            "target_group": ["BCC", "SCC"],
+            "recommendation": recommendation,
+            "loser": loser,
+            "group_scores": {name: round(value, 4) for name, value in scores.items()},
+            "confidence": round(confidence, 4),
+            "gap": round(gap, 4),
+            "reason": reason,
+            "rationale": rationale[:24],
+        }
+        state.skill_outputs[self.name] = result
+        state.trace(self.name, "success", f"BCC/SCC specialist completed: recommendation={recommendation}")
+        return result
+
+    def _find_candidate(self, ddx: List[Dict[str, Any]], target: str) -> Dict[str, Any]:
+        target = self._norm_label(target)
+        for item in ddx:
+            if self._norm_label(item.get("name")) == target:
+                return item
+        return {}
+
+    def _extract_candidate_score(self, item: Dict[str, Any], default: float) -> float:
+        for key in ["score", "probability", "confidence"]:
+            value = item.get(key)
+            try:
+                if value is not None:
+                    return float(value)
+            except (TypeError, ValueError):
+                continue
+        return default
+
+    def _count_keyword_hits(self, cues: List[str], keywords: List[str]) -> int:
+        hits = 0
+        for cue in cues:
+            cue_lower = cue.lower()
+            for keyword in keywords:
+                if keyword in cue_lower:
+                    hits += 1
+                    break
+        return hits
+
+    def _normalize_text_list(self, items: Any) -> List[str]:
+        if not isinstance(items, list):
+            return []
+        values: List[str] = []
+        for item in items:
+            text = str(item).strip()
+            if text and text not in values:
+                values.append(text)
+        return values
+
+    def _safe_int(self, value: Any) -> int | None:
+        try:
+            if value is None or value == "":
+                return None
+            return int(float(value))
+        except (TypeError, ValueError):
+            return None
+
+    def _safe_float(self, value: Any, default: float) -> float:
+        try:
+            if value is None or value == "":
+                return default
+            return float(value)
+        except (TypeError, ValueError):
+            return default
+
+    def _norm_label(self, value: Any) -> str:
+        if value is None:
+            return "UNKNOWN"
+        text = str(value).strip().upper()
+        return text if text else "UNKNOWN"
+
+    def _norm_text(self, value: Any) -> str:
+        if value is None:
+            return ""
+        return str(value).strip().lower()
+
+    def _site_matches(self, site: str, keywords: List[str]) -> bool:
+        if not site:
+            return False
+        normalized = site.replace("-", " ").replace("/", " ").strip().lower()
+        tokens = [token for token in normalized.split() if token]
+        return any(keyword in tokens for keyword in keywords)
