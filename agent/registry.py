@@ -3,7 +3,13 @@ Skill 注册表。
 
 职责：
 - 集中创建所有 skills
-- router 只通过注册表拿 skill
+- 注入依赖（如 experience retriever）
+- 支持后续扩展（ablation / debug / config）
+
+设计原则：
+- registry 是唯一 skill 构造入口
+- router 只依赖 registry，不关心 skill 如何创建
+- 为进阶版 skill embedding / controller 预留接口
 
 相关文件：
 - agent/router.py
@@ -13,10 +19,12 @@ Skill 注册表。
 
 from __future__ import annotations
 
-from typing import Dict
+from typing import Any, Dict, Optional
 
 from memory.experience_bank import ExperienceBank
 from memory.retriever import ExperienceRetriever
+
+# skills
 from skills.compare import CompareSkill
 from skills.malignancy import MalignancyRiskSkill
 from skills.metadata_consistency import MetadataConsistencySkill
@@ -28,10 +36,38 @@ from skills.specialists.ack_scc_specialist import AckSccSpecialistSkill
 from skills.specialists.mel_nev_specialist import MelNevSpecialistSkill
 
 
-def build_skill_registry(bank: ExperienceBank | None = None) -> Dict[str, object]:
+def build_skill_registry(
+    bank: Optional[ExperienceBank] = None,
+    config: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """
+    构建 skill registry。
+
+    参数：
+    - bank: 经验库
+    - config: 可选配置（用于 ablation / debug / future controller）
+
+    config 示例：
+    {
+        "disable_skills": ["compare_skill"],
+        "debug": True
+    }
+    """
     bank = bank or ExperienceBank()
+    config = config or {}
+
+    disable_skills = set(config.get("disable_skills", []))
+    debug = bool(config.get("debug", False))
+
+    # =========================
+    # 依赖构建
+    # =========================
     retriever = ExperienceRetriever(bank)
-    return {
+
+    # =========================
+    # Skill 实例化
+    # =========================
+    registry: Dict[str, Any] = {
         "perception_skill": PerceptionSkill(),
         "retrieval_skill": RetrievalSkill(retriever),
         "uncertainty_assessment_skill": UncertaintyAssessmentSkill(),
@@ -42,3 +78,23 @@ def build_skill_registry(bank: ExperienceBank | None = None) -> Dict[str, object
         "mel_nev_specialist_skill": MelNevSpecialistSkill(),
         "report_skill": ReportSkill(),
     }
+
+    # =========================
+    # Ablation 支持（关闭某些 skill）
+    # =========================
+    if disable_skills:
+        for name in list(registry.keys()):
+            if name in disable_skills:
+                registry.pop(name)
+
+    # =========================
+    # Debug 信息（可选）
+    # =========================
+    if debug:
+        registry["_debug_info"] = {
+            "num_skills": len(registry),
+            "skills": list(registry.keys()),
+            "disabled_skills": list(disable_skills),
+        }
+
+    return registry

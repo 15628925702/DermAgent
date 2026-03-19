@@ -1,6 +1,15 @@
-"""
-评测脚本入口。
+from __future__ import annotations
 
-建议迁移你当前 `run_eval.py` 的主要流程到这里。
-不要再保留多个重复评测入口。
-"""
+import sys
+from pathlib import Path
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from evaluation.run_eval import main
+
+
+if __name__ == "__main__":
+    main()
