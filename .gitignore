@@ -1,4 +1,7 @@
 data/
+!data/pad_ufes_20/
+!data/pad_ufes_20/**
+data/*.zip
 
 __pycache__/
 *.py[cod]

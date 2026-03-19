@@ -11,10 +11,10 @@ try:
 except ImportError:  # pragma: no cover - environment-dependent fallback
     OpenAI = None
 
-
-API_KEY = "sk-fh2OL0ZLDNzNXxV6IzznQLFfUn811UeixqCOupN0VHeSax6f"
-BASE_URL = "https://ai.nengyongai.cn/v1"
-DEFAULT_MODEL = "gpt-4o"
+DEFAULT_API_KEY = "EMPTY"
+DEFAULT_BASE_URL = "http://127.0.0.1:8000/v1"
+DEFAULT_MODEL = "Qwen/Qwen2.5-VL-7B-Instruct"
+DEFAULT_USE_RESPONSE_FORMAT = False
 
 
 class OpenAICompatClient:
@@ -24,13 +24,15 @@ class OpenAICompatClient:
 
     def __init__(
         self,
-        api_key: str = API_KEY,
-        base_url: str = BASE_URL,
+        api_key: str = DEFAULT_API_KEY,
+        base_url: str = DEFAULT_BASE_URL,
         model: str = DEFAULT_MODEL,
+        use_response_format: bool = DEFAULT_USE_RESPONSE_FORMAT,
     ) -> None:
         self.api_key = api_key
         self.base_url = base_url
         self.model = model
+        self.use_response_format = use_response_format
         self.client = (
             OpenAI(
                 api_key=self.api_key,
@@ -62,11 +64,10 @@ class OpenAICompatClient:
 
         user_prompt = self._build_perception_prompt(metadata)
 
-        response = self.client.chat.completions.create(
+        response = self._create_chat_completion(
             model=model or self.model,
             temperature=temperature,
             max_tokens=max_tokens,
-            response_format={"type": "json_object"},
             messages=[
                 {
                     "role": "system",
@@ -117,11 +118,10 @@ class OpenAICompatClient:
             metadata=metadata or {},
         )
 
-        response = self.client.chat.completions.create(
+        response = self._create_chat_completion(
             model=model or self.model,
             temperature=temperature,
             max_tokens=max_tokens,
-            response_format={"type": "json_object"},
             messages=[
                 {
                     "role": "system",
@@ -157,11 +157,10 @@ class OpenAICompatClient:
 
         user_prompt = self._build_direct_diagnosis_prompt(metadata)
 
-        response = self.client.chat.completions.create(
+        response = self._create_chat_completion(
             model=model or self.model,
             temperature=temperature,
             max_tokens=max_tokens,
-            response_format={"type": "json_object"},
             messages=[
                 {
                     "role": "system",
@@ -318,3 +317,32 @@ Metadata:
         image_bytes = path.read_bytes()
         encoded = base64.b64encode(image_bytes).decode("utf-8")
         return f"data:{mime_type};base64,{encoded}"
+
+    def _create_chat_completion(
+        self,
+        *,
+        model: str,
+        temperature: float,
+        max_tokens: int,
+        messages: list[dict[str, Any]],
+    ) -> Any:
+        if self.client is None:
+            raise RuntimeError("openai package is not installed")
+
+        kwargs: Dict[str, Any] = {
+            "model": model,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "messages": messages,
+        }
+        if self.use_response_format:
+            kwargs["response_format"] = {"type": "json_object"}
+
+        try:
+            return self.client.chat.completions.create(**kwargs)
+        except Exception:
+            if not self.use_response_format:
+                raise
+            fallback_kwargs = dict(kwargs)
+            fallback_kwargs.pop("response_format", None)
+            return self.client.chat.completions.create(**fallback_kwargs)
