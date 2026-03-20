@@ -4,6 +4,7 @@ set -euo pipefail
 PROJECT_DIR="${1:-$HOME/derm_agent}"
 CONDA_ENV_NAME="${CONDA_ENV_NAME:-derm-qwen}"
 TRAIN_HOURS="${TRAIN_HOURS:-8}"
+EPOCHS="${EPOCHS:-}"
 SAVE_DIR="${SAVE_DIR:-outputs/train_runs/server_v2_8h}"
 SPLIT_JSON="${SPLIT_JSON:-outputs/splits/pad_ufes20_full.json}"
 CONTROLLER_IN="${CONTROLLER_IN:-outputs/controller_v2.json}"
@@ -42,23 +43,38 @@ if [[ ! -f "$SPLIT_JSON" ]]; then
     --output "$SPLIT_JSON"
 fi
 
-set +e
-timeout "${TRAIN_HOURS}h" python scripts/train_server.py \
-  --dataset-root data/pad_ufes_20 \
-  --epochs 999999 \
-  --eval-every 1 \
-  --split-json "$SPLIT_JSON" \
-  --save-dir "$SAVE_DIR" \
-  --controller-state-in "$CONTROLLER_IN" \
-  --bank-state-in "$BANK_IN" \
-  --skill-evolution-start-epoch "$SKILL_EVOLUTION_START_EPOCH" \
-  --skill-evolution-every "$SKILL_EVOLUTION_EVERY"
+if [[ -n "$EPOCHS" ]]; then
+  echo "[info] training mode: epoch_based epochs=$EPOCHS"
+  python scripts/train_server.py \
+    --dataset-root data/pad_ufes_20 \
+    --epochs "$EPOCHS" \
+    --eval-every 1 \
+    --split-json "$SPLIT_JSON" \
+    --save-dir "$SAVE_DIR" \
+    --controller-state-in "$CONTROLLER_IN" \
+    --bank-state-in "$BANK_IN" \
+    --skill-evolution-start-epoch "$SKILL_EVOLUTION_START_EPOCH" \
+    --skill-evolution-every "$SKILL_EVOLUTION_EVERY"
+else
+  echo "[info] training mode: time_based train_hours=$TRAIN_HOURS"
+  set +e
+  timeout "${TRAIN_HOURS}h" python scripts/train_server.py \
+    --dataset-root data/pad_ufes_20 \
+    --epochs 999999 \
+    --eval-every 1 \
+    --split-json "$SPLIT_JSON" \
+    --save-dir "$SAVE_DIR" \
+    --controller-state-in "$CONTROLLER_IN" \
+    --bank-state-in "$BANK_IN" \
+    --skill-evolution-start-epoch "$SKILL_EVOLUTION_START_EPOCH" \
+    --skill-evolution-every "$SKILL_EVOLUTION_EVERY"
 
-TRAIN_EXIT_CODE=$?
-set -e
-if [[ "$TRAIN_EXIT_CODE" -ne 0 && "$TRAIN_EXIT_CODE" -ne 124 ]]; then
-  echo "[error] training exited with code $TRAIN_EXIT_CODE"
-  exit "$TRAIN_EXIT_CODE"
+  TRAIN_EXIT_CODE=$?
+  set -e
+  if [[ "$TRAIN_EXIT_CODE" -ne 0 && "$TRAIN_EXIT_CODE" -ne 124 ]]; then
+    echo "[error] training exited with code $TRAIN_EXIT_CODE"
+    exit "$TRAIN_EXIT_CODE"
+  fi
 fi
 
 echo "[ok] training window finished"

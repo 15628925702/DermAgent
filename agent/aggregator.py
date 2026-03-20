@@ -49,11 +49,15 @@ class DecisionAggregator:
 
         final_label = ranked_candidates[0][0] if ranked_candidates else "UNKNOWN"
         confidence = self._estimate_final_confidence(ranked_candidates=ranked_candidates, state=state)
+        conservative_top_k = self._build_conservative_top_k(
+            state=state,
+            ranked_candidates=ranked_candidates,
+        )
 
         result: Dict[str, Any] = {
             "diagnosis": final_label,
             "final_label": final_label,
-            "top_k": [{"name": name, "score": round(score, 4)} for name, score in ranked_candidates[:5]],
+            "top_k": conservative_top_k,
             "confidence": confidence,
             "risk_summary": risk_summary,
             "evidence_summary": self._build_evidence_summary(
@@ -71,6 +75,7 @@ class DecisionAggregator:
                 "memory_consensus_label": (state.retrieval.get("retrieval_summary", {}) or {}).get("memory_consensus_label", ""),
                 "uses_learnable_final_scorer": self.final_scorer is not None,
                 "safety_override": safety_override,
+                "conservative_top_k": conservative_top_k,
             },
         }
 
@@ -437,6 +442,7 @@ class DecisionAggregator:
             risk_output.get("preferred_label") or risk_output.get("recommended_label")
         )
         specialist_label = self._get_malignant_specialist_label(state)
+        perception_top = state.get_top_ddx_names(top_k=3)
 
         debug["risk_level"] = risk_level
         debug["preferred_label"] = preferred_label
@@ -470,9 +476,11 @@ class DecisionAggregator:
         malignant_candidates.sort(key=lambda item: (item[2], item[1]), reverse=True)
         best_label, best_score, best_support = malignant_candidates[0]
         gap_to_top = float(top_score) - float(best_score)
+        perception_malignant = next((label for label in perception_top if label in self.MALIGNANT_LABELS), "")
         debug["selected_malignant_label"] = best_label
         debug["best_support_score"] = round(best_support, 4)
         debug["gap_to_top"] = round(gap_to_top, 4)
+        debug["perception_malignant_label"] = perception_malignant
 
         should_override = False
         reason = ""
@@ -486,6 +494,10 @@ class DecisionAggregator:
             elif best_support >= 1.1 and gap_to_top <= 0.45:
                 should_override = True
                 reason = "high_risk_supported_malignant_candidate"
+            elif perception_malignant and gap_to_top <= 0.75:
+                best_label = perception_malignant
+                should_override = True
+                reason = "high_risk_perception_malignant_fallback"
         elif risk_level == "medium" and suspicious:
             if specialist_label == best_label and best_support >= 0.95 and gap_to_top <= 0.35:
                 should_override = True
@@ -493,6 +505,10 @@ class DecisionAggregator:
             elif preferred_label == best_label and best_support >= 1.15 and gap_to_top <= 0.22:
                 should_override = True
                 reason = "medium_risk_preferred_label_override"
+            elif perception_malignant and perception_malignant == preferred_label and gap_to_top <= 0.3:
+                best_label = perception_malignant
+                should_override = True
+                reason = "medium_risk_perception_preferred_alignment"
 
         if not should_override:
             debug["reason"] = "conditions_not_met"
@@ -511,6 +527,40 @@ class DecisionAggregator:
         debug["reason"] = reason
         debug["top_label_after"] = adjusted[0][0] if adjusted else ""
         return adjusted, debug
+
+    def _build_conservative_top_k(
+        self,
+        state: CaseState,
+        ranked_candidates: List[Tuple[str, float]],
+    ) -> List[Dict[str, float]]:
+        ordered: List[Tuple[str, float]] = []
+        seen: set[str] = set()
+
+        def add(label: str, score: float) -> None:
+            label = self._norm_label(label)
+            if not label or label in seen:
+                return
+            seen.add(label)
+            ordered.append((label, float(score)))
+
+        ranked_map = {self._norm_label(label): float(score) for label, score in ranked_candidates}
+        for label, score in ranked_candidates[:5]:
+            add(label, score)
+
+        # Keep the original perception shortlist alive in top-k so reranking does not
+        # destroy candidate coverage when the controller/scorer is still undertrained.
+        for rank, label in enumerate(state.get_top_ddx_names(top_k=3)):
+            fallback_score = ranked_map.get(label, max(0.01, 0.18 - 0.03 * rank))
+            add(label, fallback_score)
+
+        risk_output = state.skill_outputs.get("malignancy_risk_skill", {}) or {}
+        preferred_label = self._norm_label(
+            risk_output.get("preferred_label") or risk_output.get("recommended_label")
+        )
+        if preferred_label in self.MALIGNANT_LABELS:
+            add(preferred_label, ranked_map.get(preferred_label, 0.12))
+
+        return [{"name": name, "score": round(score, 4)} for name, score in ordered[:5]]
 
     def _estimate_malignant_support_score(
         self,

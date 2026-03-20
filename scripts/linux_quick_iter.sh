@@ -3,6 +3,7 @@ set -euo pipefail
 
 PROJECT_DIR="${1:-$HOME/derm_agent}"
 TRAIN_HOURS="${TRAIN_HOURS:-0.2}"
+EPOCHS="${EPOCHS:-1}"
 SAVE_DIR="${SAVE_DIR:-outputs/train_runs/quick_iter}"
 BASE_RUN_DIR="${BASE_RUN_DIR:-outputs/train_runs/final_v3_8h}"
 COMPARE_OUTPUT="${COMPARE_OUTPUT:-outputs/quick_compare/quick_iter.json}"
@@ -19,6 +20,7 @@ bash scripts/linux_start_qwen.sh "$PROJECT_DIR"
 
 echo "[step] quick training"
 TRAIN_HOURS="$TRAIN_HOURS" \
+EPOCHS="$EPOCHS" \
 SAVE_DIR="$SAVE_DIR" \
 BASE_RUN_DIR="$BASE_RUN_DIR" \
 SPLIT_JSON="$SPLIT_JSON" \
