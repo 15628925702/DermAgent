@@ -56,12 +56,16 @@ def main() -> None:
     parser.add_argument("--enable-controller", action="store_true")
     parser.add_argument("--enable-final-scorer", action="store_true")
     parser.add_argument("--disable-compare", action="store_true")
+    parser.add_argument("--enable-malignancy", action="store_true")
     parser.add_argument("--disable-malignancy", action="store_true")
     parser.add_argument("--disable-metadata-consistency", action="store_true")
     args = parser.parse_args()
 
     save_dir = Path(args.save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
+    malignancy_enabled = bool(args.enable_malignancy)
+    if args.disable_malignancy:
+        malignancy_enabled = False
 
     all_cases = load_pad_ufes20_cases(dataset_root=args.dataset_root, limit=args.limit)
     split_path = Path(args.split_json) if args.split_json else save_dir / "resolved_split.json"
@@ -152,7 +156,7 @@ def main() -> None:
             use_reflection=True,
             use_controller=args.enable_controller,
             use_compare=not args.disable_compare,
-            use_malignancy=not args.disable_malignancy,
+            use_malignancy=malignancy_enabled,
             use_metadata_consistency=not args.disable_metadata_consistency,
             use_final_scorer=args.enable_final_scorer and args.enable_controller,
             use_rule_memory=schedule["use_rule_memory"],
@@ -223,7 +227,7 @@ def main() -> None:
                 use_reflection=False,
                 use_controller=args.enable_controller,
                 use_compare=not args.disable_compare,
-                use_malignancy=not args.disable_malignancy,
+                use_malignancy=malignancy_enabled,
                 use_metadata_consistency=not args.disable_metadata_consistency,
                 use_final_scorer=args.enable_final_scorer and args.enable_controller,
                 use_rule_memory=True,
@@ -277,7 +281,7 @@ def main() -> None:
         use_reflection=False,
         use_controller=args.enable_controller,
         use_compare=not args.disable_compare,
-        use_malignancy=not args.disable_malignancy,
+        use_malignancy=malignancy_enabled,
         use_metadata_consistency=not args.disable_metadata_consistency,
         use_final_scorer=args.enable_final_scorer and args.enable_controller,
         use_rule_memory=True,
@@ -312,7 +316,7 @@ def main() -> None:
             use_reflection=False,
             use_controller=args.enable_controller,
             use_compare=not args.disable_compare,
-            use_malignancy=not args.disable_malignancy,
+            use_malignancy=malignancy_enabled,
             use_metadata_consistency=not args.disable_metadata_consistency,
             use_final_scorer=args.enable_final_scorer and args.enable_controller,
             use_rule_memory=True,

@@ -34,7 +34,7 @@ def run_compare(
     split_name: str | None = None,
     use_controller: bool = False,
     use_compare: bool = True,
-    use_malignancy: bool = True,
+    use_malignancy: bool = False,
     use_metadata_consistency: bool = True,
     use_final_scorer: bool = False,
 ) -> Dict[str, Any]:
@@ -92,7 +92,7 @@ def _run_agent_variant(
     bank_state_in: str | Path | None = None,
     use_controller: bool = False,
     use_compare: bool = True,
-    use_malignancy: bool = True,
+    use_malignancy: bool = False,
     use_metadata_consistency: bool = True,
     use_final_scorer: bool = False,
 ) -> Dict[str, Any]:
@@ -197,6 +197,7 @@ def main() -> None:
     parser.add_argument("--enable-controller", action="store_true")
     parser.add_argument("--enable-final-scorer", action="store_true")
     parser.add_argument("--disable-compare", action="store_true")
+    parser.add_argument("--enable-malignancy", action="store_true")
     parser.add_argument("--disable-malignancy", action="store_true")
     parser.add_argument("--disable-metadata-consistency", action="store_true")
     parser.add_argument("--controller-state-in", default=None)
@@ -214,7 +215,7 @@ def main() -> None:
         split_name=args.split_name,
         use_controller=args.enable_controller,
         use_compare=not args.disable_compare,
-        use_malignancy=not args.disable_malignancy,
+        use_malignancy=bool(args.enable_malignancy) and not args.disable_malignancy,
         use_metadata_consistency=not args.disable_metadata_consistency,
         use_final_scorer=args.enable_final_scorer and args.enable_controller,
     )

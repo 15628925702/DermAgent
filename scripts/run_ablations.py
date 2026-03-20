@@ -14,15 +14,15 @@ from scripts.run_eval import run_evaluation
 
 
 ABLATIONS: Dict[str, Dict[str, Any]] = {
-    "mainline": {"use_controller": False},
-    "with_controller": {"use_controller": True},
-    "with_controller_and_final_scorer": {"use_controller": True, "use_final_scorer": True},
-    "no_retrieval": {"use_retrieval": False, "use_controller": False},
-    "no_specialist": {"use_specialist": False, "use_controller": False},
-    "no_compare": {"use_compare": False, "use_controller": False},
-    "no_malignancy": {"use_malignancy": False, "use_controller": False},
-    "no_metadata": {"use_metadata_consistency": False, "use_controller": False},
-    "no_rule_memory": {"use_rule_memory": False, "use_controller": False},
+    "mainline": {"use_controller": False, "use_malignancy": False},
+    "with_malignancy": {"use_controller": False, "use_malignancy": True},
+    "with_controller": {"use_controller": True, "use_malignancy": False},
+    "with_controller_and_final_scorer": {"use_controller": True, "use_final_scorer": True, "use_malignancy": False},
+    "no_retrieval": {"use_retrieval": False, "use_controller": False, "use_malignancy": False},
+    "no_specialist": {"use_specialist": False, "use_controller": False, "use_malignancy": False},
+    "no_compare": {"use_compare": False, "use_controller": False, "use_malignancy": False},
+    "no_metadata": {"use_metadata_consistency": False, "use_controller": False, "use_malignancy": False},
+    "no_rule_memory": {"use_rule_memory": False, "use_controller": False, "use_malignancy": False},
 }
 
 
@@ -34,9 +34,12 @@ def run_ablations(
     split_name: str | None,
     controller_state_in: str | None,
     bank_state_in: str | None,
+    only: list[str] | None = None,
 ) -> Dict[str, Any]:
     results: Dict[str, Any] = {}
-    for name, overrides in ABLATIONS.items():
+    selected = only or list(ABLATIONS.keys())
+    for name in selected:
+        overrides = ABLATIONS[name]
         result = run_evaluation(
             dataset_root=dataset_root,
             limit=limit,
@@ -47,7 +50,7 @@ def run_ablations(
             use_reflection=False,
             use_controller=overrides.get("use_controller", False),
             use_compare=overrides.get("use_compare", True),
-            use_malignancy=overrides.get("use_malignancy", True),
+            use_malignancy=overrides.get("use_malignancy", False),
             use_metadata_consistency=overrides.get("use_metadata_consistency", True),
             use_final_scorer=overrides.get("use_final_scorer", False),
             controller_state_in=controller_state_in,
@@ -71,6 +74,7 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--split-json", default=None)
     parser.add_argument("--split-name", default=None, choices=["train", "val", "test"])
+    parser.add_argument("--only", nargs="+", choices=sorted(ABLATIONS.keys()), default=None)
     parser.add_argument("--controller-state-in", default=None)
     parser.add_argument("--bank-state-in", default=None)
     parser.add_argument("--output", default=None)
@@ -83,6 +87,7 @@ def main() -> None:
         split_name=args.split_name,
         controller_state_in=args.controller_state_in,
         bank_state_in=args.bank_state_in,
+        only=args.only,
     )
     text = json.dumps(results, ensure_ascii=False, indent=2)
     print(text)

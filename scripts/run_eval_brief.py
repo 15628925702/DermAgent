@@ -23,6 +23,7 @@ def main() -> None:
     parser.add_argument("--enable-controller", action="store_true")
     parser.add_argument("--disable-controller", action="store_true")
     parser.add_argument("--disable-compare", action="store_true")
+    parser.add_argument("--enable-malignancy", action="store_true")
     parser.add_argument("--disable-malignancy", action="store_true")
     parser.add_argument("--disable-metadata-consistency", action="store_true")
     parser.add_argument("--enable-final-scorer", action="store_true")
@@ -44,6 +45,9 @@ def main() -> None:
         final_scorer_enabled = False
     if not controller_enabled:
         final_scorer_enabled = False
+    malignancy_enabled = bool(args.enable_malignancy)
+    if args.disable_malignancy:
+        malignancy_enabled = False
 
     result = run_evaluation(
         dataset_root=args.dataset_root,
@@ -55,7 +59,7 @@ def main() -> None:
         use_reflection=not args.disable_reflection,
         use_controller=controller_enabled,
         use_compare=not args.disable_compare,
-        use_malignancy=not args.disable_malignancy,
+        use_malignancy=malignancy_enabled,
         use_metadata_consistency=not args.disable_metadata_consistency,
         use_final_scorer=final_scorer_enabled,
         controller_state_in=args.controller_state_in,
