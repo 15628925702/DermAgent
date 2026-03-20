@@ -26,6 +26,7 @@ from evaluation.run_eval import load_pad_ufes20_cases
 from memory.controller_store import load_controller_checkpoint, save_controller_checkpoint
 from memory.experience_bank import ExperienceBank
 from memory.experience_reranker import UtilityAwareExperienceReranker
+from memory.skill_designer import SkillEvolutionDesigner
 from memory.skill_index import build_default_skill_index
 
 MALIGNANT_LABELS = {"MEL", "BCC", "SCC"}
@@ -50,6 +51,8 @@ def main() -> None:
     parser.add_argument("--rule-compression-start-epoch", type=int, default=4)
     parser.add_argument("--rule-memory-start-epoch", type=int, default=8)
     parser.add_argument("--rule-learning-start-epoch", type=int, default=10)
+    parser.add_argument("--skill-evolution-start-epoch", type=int, default=12)
+    parser.add_argument("--skill-evolution-every", type=int, default=3)
     args = parser.parse_args()
 
     save_dir = Path(args.save_dir)
@@ -100,8 +103,14 @@ def main() -> None:
     if rule_scorer_payload:
         rule_scorer.load_state(rule_scorer_payload)
     reranker = UtilityAwareExperienceReranker()
+    designer = SkillEvolutionDesigner()
+
+    latest_designer_path = save_dir / "latest_skill_designer.json"
+    if latest_designer_path.exists():
+        designer.load_state(json.loads(latest_designer_path.read_text(encoding="utf-8")))
 
     train_log_path = save_dir / "train_log.jsonl"
+    evolution_log_path = save_dir / "skill_evolution.jsonl"
     best_metric = float("-inf")
     best_epoch = 0
 
@@ -142,6 +151,15 @@ def main() -> None:
         )
         train_summary["schedule"] = schedule
 
+        evolution_summary: Dict[str, Any] | None = None
+        if should_run_skill_evolution(
+            epoch,
+            start_epoch=args.skill_evolution_start_epoch,
+            every=args.skill_evolution_every,
+        ):
+            evolution_summary = designer.evolve(bank=bank, skill_index=skill_index)
+            train_summary["skill_evolution"] = evolution_summary
+
         latest_controller_path = save_dir / "latest_controller.json"
         latest_bank_path = save_dir / "latest_bank.json"
         save_controller_checkpoint(
@@ -155,9 +173,11 @@ def main() -> None:
                 "stage": "latest",
                 "train_summary": train_summary,
                 "split_summary": split_summary,
+                "designer_state_path": str(latest_designer_path),
             },
         )
         bank.save_json(latest_bank_path)
+        latest_designer_path.write_text(json.dumps(designer.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
 
         record: Dict[str, Any] = {
             "timestamp": datetime.now().isoformat(timespec="seconds"),
@@ -166,7 +186,18 @@ def main() -> None:
             "train": train_summary,
             "latest_controller": str(latest_controller_path),
             "latest_bank": str(latest_bank_path),
+            "latest_skill_designer": str(latest_designer_path),
         }
+        if evolution_summary is not None:
+            record["skill_evolution"] = evolution_summary
+            append_jsonl(
+                evolution_log_path,
+                {
+                    "timestamp": datetime.now().isoformat(timespec="seconds"),
+                    "epoch": epoch,
+                    "skill_evolution": evolution_summary,
+                },
+            )
 
         val_summary: Dict[str, Any] | None = None
         if val_cases and epoch % max(1, args.eval_every) == 0:
@@ -202,14 +233,18 @@ def main() -> None:
                         "stage": "best",
                         "val_summary": val_summary,
                         "split_summary": split_summary,
+                        "designer_state_path": str(latest_designer_path),
                     },
                 )
                 bank.save_json(best_bank_path)
+                best_designer_path = save_dir / "best_skill_designer.json"
+                best_designer_path.write_text(json.dumps(designer.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
                 record["best"] = {
                     "epoch": best_epoch,
                     "metric": round(best_metric, 4),
                     "controller": str(best_controller_path),
                     "bank": str(best_bank_path),
+                    "skill_designer": str(best_designer_path),
                 }
 
         append_jsonl(train_log_path, record)
@@ -272,12 +307,17 @@ def main() -> None:
             "rule_compression_start_epoch": args.rule_compression_start_epoch,
             "rule_memory_start_epoch": args.rule_memory_start_epoch,
             "rule_learning_start_epoch": args.rule_learning_start_epoch,
+            "skill_evolution_start_epoch": args.skill_evolution_start_epoch,
+            "skill_evolution_every": args.skill_evolution_every,
         },
         "latest_controller": str(save_dir / "latest_controller.json"),
         "latest_bank": str(save_dir / "latest_bank.json"),
+        "latest_skill_designer": str(latest_designer_path),
         "best_controller": str(best_controller_path),
         "best_bank": str(best_bank_path),
+        "best_skill_designer": str(save_dir / "best_skill_designer.json"),
         "train_log": str(train_log_path),
+        "skill_evolution_log": str(evolution_log_path),
         "latest_test": latest_test_summary,
         "best_test": best_test_summary,
     }
@@ -319,6 +359,12 @@ def _phase_name(
     if epoch < rule_learning_start_epoch:
         return "rule_inference_warmup"
     return "full_training"
+
+
+def should_run_skill_evolution(epoch: int, *, start_epoch: int, every: int) -> bool:
+    if epoch < start_epoch:
+        return False
+    return (epoch - start_epoch) % max(1, every) == 0
 
 
 def run_pass(

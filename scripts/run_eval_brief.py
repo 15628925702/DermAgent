@@ -14,7 +14,7 @@ from evaluation.run_eval import run_evaluation
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run compact DermAgent evaluation summary.")
     parser.add_argument("--dataset-root", default="data/pad_ufes_20")
-    parser.add_argument("--limit", type=int, default=20)
+    parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--split-json", default=None)
     parser.add_argument("--split-name", default=None, choices=["train", "val", "test"])
     parser.add_argument("--disable-retrieval", action="store_true")

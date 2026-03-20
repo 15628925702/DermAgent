@@ -5,9 +5,11 @@ PROJECT_DIR="${1:-$HOME/derm_agent}"
 CONDA_ENV_NAME="${CONDA_ENV_NAME:-derm-qwen}"
 TRAIN_HOURS="${TRAIN_HOURS:-8}"
 SAVE_DIR="${SAVE_DIR:-outputs/train_runs/server_v2_8h}"
-SPLIT_JSON="${SPLIT_JSON:-outputs/splits/pad_ufes20.json}"
+SPLIT_JSON="${SPLIT_JSON:-outputs/splits/pad_ufes20_full.json}"
 CONTROLLER_IN="${CONTROLLER_IN:-outputs/controller_v2.json}"
 BANK_IN="${BANK_IN:-outputs/experience_bank.json}"
+SKILL_EVOLUTION_START_EPOCH="${SKILL_EVOLUTION_START_EPOCH:-12}"
+SKILL_EVOLUTION_EVERY="${SKILL_EVOLUTION_EVERY:-3}"
 
 cd "$PROJECT_DIR"
 
@@ -29,6 +31,18 @@ fi
 
 mkdir -p "$SAVE_DIR"
 
+if [[ ! -f "$SPLIT_JSON" ]]; then
+  echo "[info] split file not found, building full split at $SPLIT_JSON"
+  python scripts/build_split.py \
+    --dataset-root data/pad_ufes_20 \
+    --seed 42 \
+    --train-ratio 0.7 \
+    --val-ratio 0.15 \
+    --test-ratio 0.15 \
+    --output "$SPLIT_JSON"
+fi
+
+set +e
 timeout "${TRAIN_HOURS}h" python scripts/train_server.py \
   --dataset-root data/pad_ufes_20 \
   --epochs 999999 \
@@ -36,9 +50,12 @@ timeout "${TRAIN_HOURS}h" python scripts/train_server.py \
   --split-json "$SPLIT_JSON" \
   --save-dir "$SAVE_DIR" \
   --controller-state-in "$CONTROLLER_IN" \
-  --bank-state-in "$BANK_IN"
+  --bank-state-in "$BANK_IN" \
+  --skill-evolution-start-epoch "$SKILL_EVOLUTION_START_EPOCH" \
+  --skill-evolution-every "$SKILL_EVOLUTION_EVERY"
 
 TRAIN_EXIT_CODE=$?
+set -e
 if [[ "$TRAIN_EXIT_CODE" -ne 0 && "$TRAIN_EXIT_CODE" -ne 124 ]]; then
   echo "[error] training exited with code $TRAIN_EXIT_CODE"
   exit "$TRAIN_EXIT_CODE"
@@ -47,6 +64,7 @@ fi
 echo "[ok] training window finished"
 python scripts/run_eval_brief.py \
   --dataset-root data/pad_ufes_20 \
+  --limit 999999 \
   --split-json "$SPLIT_JSON" \
   --split-name test \
   --controller-state-in "$SAVE_DIR/best_controller.json" \
