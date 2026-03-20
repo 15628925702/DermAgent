@@ -3,7 +3,16 @@ set -euo pipefail
 
 PROJECT_DIR="${1:-$HOME/derm_agent}"
 CONDA_ENV_NAME="${CONDA_ENV_NAME:-derm-qwen}"
-MODEL_NAME="${MODEL_NAME:-Qwen/Qwen2.5-VL-7B-Instruct}"
+DEFAULT_LOCAL_MODEL="$HOME/models/Qwen2.5-VL-7B-Instruct"
+if [[ -z "${MODEL_NAME:-}" ]]; then
+  if [[ -d "$DEFAULT_LOCAL_MODEL" ]]; then
+    MODEL_NAME="$DEFAULT_LOCAL_MODEL"
+  else
+    MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
+  fi
+else
+  MODEL_NAME="${MODEL_NAME}"
+fi
 HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8000}"
 API_KEY="${API_KEY:-EMPTY}"
@@ -52,6 +61,7 @@ else
 fi
 
 echo "[info] waiting for Qwen service on $SERVICE_URL"
+echo "[info] model source: $MODEL_NAME"
 for i in $(seq 1 60); do
   if curl -s "$SERVICE_URL" -H "Authorization: Bearer $API_KEY" >/tmp/qwen_models.json 2>/dev/null; then
     echo "[ok] Qwen service is ready."
