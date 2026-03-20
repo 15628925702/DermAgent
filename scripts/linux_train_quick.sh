@@ -34,6 +34,15 @@ fi
 echo "[info] quick warm start controller: $CONTROLLER_IN"
 echo "[info] quick warm start bank: $BANK_IN"
 
+mkdir -p "$SAVE_DIR"
+if [[ -f "$CONTROLLER_IN" ]]; then
+  cp "$CONTROLLER_IN" "$SAVE_DIR/best_controller.json"
+fi
+if [[ -f "$BANK_IN" ]]; then
+  cp "$BANK_IN" "$SAVE_DIR/best_bank.json"
+fi
+echo "[info] quick seed checkpoint copied into $SAVE_DIR"
+
 SAVE_DIR="$SAVE_DIR" \
 SPLIT_JSON="$SPLIT_JSON" \
 CONTROLLER_IN="$CONTROLLER_IN" \
