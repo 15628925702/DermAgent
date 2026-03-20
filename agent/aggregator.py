@@ -544,8 +544,9 @@ class DecisionAggregator:
             ordered.append((label, float(score)))
 
         ranked_map = {self._norm_label(label): float(score) for label, score in ranked_candidates}
-        for label, score in ranked_candidates[:5]:
-            add(label, score)
+        final_label = ranked_candidates[0][0] if ranked_candidates else ""
+        if final_label:
+            add(final_label, ranked_map.get(final_label, 1.0))
 
         # Keep the original perception shortlist alive in top-k so reranking does not
         # destroy candidate coverage when the controller/scorer is still undertrained.
@@ -559,6 +560,9 @@ class DecisionAggregator:
         )
         if preferred_label in self.MALIGNANT_LABELS:
             add(preferred_label, ranked_map.get(preferred_label, 0.12))
+
+        for label, score in ranked_candidates[:5]:
+            add(label, score)
 
         return [{"name": name, "score": round(score, 4)} for name, score in ordered[:5]]
 
