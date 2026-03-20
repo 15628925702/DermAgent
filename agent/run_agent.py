@@ -21,7 +21,11 @@ from memory.writer import ExperienceWriter
 USE_RETRIEVAL = True
 USE_SPECIALIST = True
 USE_REFLECTION = True
-USE_CONTROLLER = True
+USE_CONTROLLER = False
+USE_COMPARE = True
+USE_MALIGNANCY = True
+USE_METADATA_CONSISTENCY = True
+USE_FINAL_SCORER = False
 
 
 def run_agent(
@@ -37,6 +41,10 @@ def run_agent(
     use_specialist: bool = USE_SPECIALIST,
     use_reflection: bool = USE_REFLECTION,
     use_controller: bool = USE_CONTROLLER,
+    use_compare: bool = USE_COMPARE,
+    use_malignancy: bool = USE_MALIGNANCY,
+    use_metadata_consistency: bool = USE_METADATA_CONSISTENCY,
+    use_final_scorer: bool = USE_FINAL_SCORER,
     update_online: bool = True,
     use_rule_memory: bool = True,
     enable_rule_compression: bool = True,
@@ -48,7 +56,7 @@ def run_agent(
         skill_index = build_default_skill_index()
     if use_controller and controller is None:
         controller = LearnableSkillController(skill_index)
-    if use_controller and final_scorer is None:
+    if use_controller and use_final_scorer and final_scorer is None:
         final_scorer = LearnableFinalScorer()
     if use_controller and rule_scorer is None:
         rule_scorer = LearnableRuleScorer()
@@ -59,6 +67,10 @@ def run_agent(
         "use_specialist": use_specialist,
         "use_reflection": use_reflection,
         "use_controller": use_controller,
+        "use_compare": use_compare,
+        "use_malignancy": use_malignancy,
+        "use_metadata_consistency": use_metadata_consistency,
+        "use_final_scorer": use_final_scorer,
         "update_online": update_online,
         "use_rule_memory": use_rule_memory,
         "enable_rule_compression": enable_rule_compression,
@@ -67,6 +79,12 @@ def run_agent(
 
     try:
         disable_skills = []
+        if not use_compare:
+            disable_skills.append("compare_skill")
+        if not use_malignancy:
+            disable_skills.append("malignancy_risk_skill")
+        if not use_metadata_consistency:
+            disable_skills.append("metadata_consistency_skill")
         if not use_specialist:
             disable_skills.extend(
                 [
@@ -107,6 +125,7 @@ def run_agent(
             controller=controller if use_controller else None,
             rule_scorer=rule_scorer if use_controller else None,
             planning_mode="learnable_hybrid" if use_controller else "rules_only",
+            enabled_skills=set(registry.keys()),
         )
         planner.plan(state)
     except Exception as e:
@@ -121,7 +140,7 @@ def run_agent(
         return _export_state(state, error=f"Router execution failed: {e}", runtime_flags=runtime_flags)
 
     try:
-        aggregator = DecisionAggregator(final_scorer=final_scorer if use_controller else None)
+        aggregator = DecisionAggregator(final_scorer=final_scorer if use_controller and use_final_scorer else None)
         aggregator.aggregate(state)
     except Exception as e:
         state.trace("aggregator", "failed", f"Aggregator failed: {e}")
@@ -189,7 +208,7 @@ def run_agent(
     elif use_controller:
         state.trace("controller", "skipped", "Controller update skipped because online updates are disabled")
 
-    if use_controller and final_scorer is not None and update_online:
+    if use_controller and use_final_scorer and final_scorer is not None and update_online:
         try:
             scorer_feedback = final_scorer.update_from_case(state)
             state.controller["final_scorer_feedback"] = scorer_feedback
@@ -206,7 +225,7 @@ def run_agent(
             )
         except Exception as e:
             state.trace("final_scorer", "failed", f"Final scorer update failed: {e}")
-    elif use_controller:
+    elif use_controller and use_final_scorer:
         state.trace("final_scorer", "skipped", "Final scorer update skipped because online updates are disabled")
 
     effective_rule_update = update_online if update_rule_scorer is None else bool(update_rule_scorer)

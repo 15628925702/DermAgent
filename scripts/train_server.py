@@ -53,6 +53,11 @@ def main() -> None:
     parser.add_argument("--rule-learning-start-epoch", type=int, default=10)
     parser.add_argument("--skill-evolution-start-epoch", type=int, default=12)
     parser.add_argument("--skill-evolution-every", type=int, default=3)
+    parser.add_argument("--enable-controller", action="store_true")
+    parser.add_argument("--enable-final-scorer", action="store_true")
+    parser.add_argument("--disable-compare", action="store_true")
+    parser.add_argument("--disable-malignancy", action="store_true")
+    parser.add_argument("--disable-metadata-consistency", action="store_true")
     args = parser.parse_args()
 
     save_dir = Path(args.save_dir)
@@ -145,6 +150,11 @@ def main() -> None:
             rule_scorer=rule_scorer,
             update_online=True,
             use_reflection=True,
+            use_controller=args.enable_controller,
+            use_compare=not args.disable_compare,
+            use_malignancy=not args.disable_malignancy,
+            use_metadata_consistency=not args.disable_metadata_consistency,
+            use_final_scorer=args.enable_final_scorer and args.enable_controller,
             use_rule_memory=schedule["use_rule_memory"],
             enable_rule_compression=schedule["enable_rule_compression"],
             update_rule_scorer=schedule["update_rule_scorer"],
@@ -211,6 +221,11 @@ def main() -> None:
                 rule_scorer=rule_scorer,
                 update_online=False,
                 use_reflection=False,
+                use_controller=args.enable_controller,
+                use_compare=not args.disable_compare,
+                use_malignancy=not args.disable_malignancy,
+                use_metadata_consistency=not args.disable_metadata_consistency,
+                use_final_scorer=args.enable_final_scorer and args.enable_controller,
                 use_rule_memory=True,
                 enable_rule_compression=False,
                 update_rule_scorer=False,
@@ -260,6 +275,11 @@ def main() -> None:
         rule_scorer=rule_scorer,
         update_online=False,
         use_reflection=False,
+        use_controller=args.enable_controller,
+        use_compare=not args.disable_compare,
+        use_malignancy=not args.disable_malignancy,
+        use_metadata_consistency=not args.disable_metadata_consistency,
+        use_final_scorer=args.enable_final_scorer and args.enable_controller,
         use_rule_memory=True,
         enable_rule_compression=False,
         update_rule_scorer=False,
@@ -290,6 +310,11 @@ def main() -> None:
             rule_scorer=best_rule_scorer,
             update_online=False,
             use_reflection=False,
+            use_controller=args.enable_controller,
+            use_compare=not args.disable_compare,
+            use_malignancy=not args.disable_malignancy,
+            use_metadata_consistency=not args.disable_metadata_consistency,
+            use_final_scorer=args.enable_final_scorer and args.enable_controller,
             use_rule_memory=True,
             enable_rule_compression=False,
             update_rule_scorer=False,
@@ -378,6 +403,11 @@ def run_pass(
     rule_scorer: LearnableRuleScorer,
     update_online: bool,
     use_reflection: bool,
+    use_controller: bool,
+    use_compare: bool,
+    use_malignancy: bool,
+    use_metadata_consistency: bool,
+    use_final_scorer: bool,
     use_rule_memory: bool,
     enable_rule_compression: bool,
     update_rule_scorer: bool,
@@ -395,7 +425,11 @@ def run_pass(
             use_retrieval=True,
             use_specialist=True,
             use_reflection=use_reflection,
-            use_controller=True,
+            use_controller=use_controller,
+            use_compare=use_compare,
+            use_malignancy=use_malignancy,
+            use_metadata_consistency=use_metadata_consistency,
+            use_final_scorer=use_final_scorer,
             update_online=update_online,
             use_rule_memory=use_rule_memory,
             enable_rule_compression=enable_rule_compression,
@@ -444,6 +478,11 @@ def run_pass(
         "bank_stats": bank.stats(),
         "update_online": update_online,
         "use_reflection": use_reflection,
+        "use_controller": use_controller,
+        "use_compare": use_compare,
+        "use_malignancy": use_malignancy,
+        "use_metadata_consistency": use_metadata_consistency,
+        "use_final_scorer": use_final_scorer,
         "use_rule_memory": use_rule_memory,
         "enable_rule_compression": enable_rule_compression,
         "update_rule_scorer": update_rule_scorer,

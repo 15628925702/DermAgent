@@ -1,0 +1,61 @@
+{
+  "format_version": 1,
+  "seed": 42,
+  "ratios": {
+    "train": 0.7,
+    "val": 0.15,
+    "test": 0.15
+  },
+  "num_cases": 20,
+  "splits": {
+    "train": [
+      "PAT_1545_1867_547.png",
+      "PAT_1989_4061_934.png",
+      "PAT_705_4015_413.png",
+      "PAT_821_1547_77.png",
+      "PAT_778_1471_835.png",
+      "PAT_759_1538_566.png",
+      "PAT_684_1302_588.png",
+      "PAT_117_179_983.png",
+      "PAT_38_54_234.png",
+      "PAT_967_1827_247.png",
+      "PAT_2088_4524_465.png",
+      "PAT_380_1540_959.png",
+      "PAT_1783_3414_120.png"
+    ],
+    "val": [
+      "PAT_2140_4726_141.png",
+      "PAT_741_1401_619.png",
+      "PAT_46_881_939.png"
+    ],
+    "test": [
+      "PAT_1995_4080_695.png",
+      "PAT_636_1204_521.png",
+      "PAT_1516_1765_530.png",
+      "PAT_1549_1882_230.png"
+    ]
+  },
+  "label_counts": {
+    "train": {
+      "ACK": 3,
+      "BCC": 7,
+      "NEV": 1,
+      "SCC": 1,
+      "SEK": 1
+    },
+    "val": {
+      "ACK": 1,
+      "BCC": 2,
+      "NEV": 0,
+      "SCC": 0,
+      "SEK": 0
+    },
+    "test": {
+      "ACK": 1,
+      "BCC": 1,
+      "NEV": 1,
+      "SCC": 0,
+      "SEK": 1
+    }
+  }
+}

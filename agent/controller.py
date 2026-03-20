@@ -45,10 +45,12 @@ class LearnableSkillController:
         *,
         rule_priors: List[str] | None = None,
         planner_context: Dict[str, Any] | None = None,
+        allowed_skills: set[str] | None = None,
     ) -> Dict[str, Any]:
         features = self.extract_features(state)
         rule_priors = list(rule_priors or [])
         planner_context = planner_context or {}
+        allowed_skills = set(allowed_skills or [])
         recommended_skills = {
             str(x).strip()
             for x in planner_context.get("recommended_skills", [])
@@ -57,6 +59,8 @@ class LearnableSkillController:
 
         scored: List[Tuple[float, str, Dict[str, Any]]] = []
         for spec in self.skill_index.routable_specs():
+            if allowed_skills and spec.skill_id not in allowed_skills:
+                continue
             extra_bias = 0.0
             reasons: List[str] = []
 

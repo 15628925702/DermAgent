@@ -37,15 +37,23 @@ class ExperienceSkillPlanner:
         controller: LearnableSkillController | None = None,
         rule_scorer: LearnableRuleScorer | None = None,
         planning_mode: str = "learnable_hybrid",
+        enabled_skills: set[str] | None = None,
     ) -> None:
         self.use_specialist = use_specialist
         self.controller = controller
         self.rule_scorer = rule_scorer
         self.planning_mode = planning_mode
+        self.enabled_skills = enabled_skills or set()
+
+    def _is_enabled(self, skill_name: str) -> bool:
+        return not self.enabled_skills or skill_name in self.enabled_skills
 
     def plan(self, state: CaseState) -> Dict[str, object]:
-        selected: List[str] = ["uncertainty_assessment_skill"]
+        selected: List[str] = []
         routing_reasons: List[Dict[str, Any]] = []
+
+        if self._is_enabled("uncertainty_assessment_skill"):
+            selected.append("uncertainty_assessment_skill")
 
         ddx = state.perception.get("ddx_candidates", []) or []
         top_names = [
@@ -89,7 +97,7 @@ class ExperienceSkillPlanner:
         if not recommended_skills:
             recommended_skills = retrieval_recommended_skills
 
-        if uncertainty in {"medium", "high"}:
+        if self._is_enabled("compare_skill") and uncertainty in {"medium", "high"}:
             selected.append("compare_skill")
             routing_reasons.append({
                 "skill": "compare_skill",
@@ -97,7 +105,7 @@ class ExperienceSkillPlanner:
                 "detail": {"uncertainty": uncertainty},
             })
 
-        if "compare_skill" in recommended_skills and "compare_skill" not in selected:
+        if self._is_enabled("compare_skill") and "compare_skill" in recommended_skills and "compare_skill" not in selected:
             selected.append("compare_skill")
             routing_reasons.append({
                 "skill": "compare_skill",
@@ -108,7 +116,7 @@ class ExperienceSkillPlanner:
                 },
             })
 
-        if {"MEL", "BCC", "SCC"}.intersection(top_names):
+        if self._is_enabled("malignancy_risk_skill") and {"MEL", "BCC", "SCC"}.intersection(top_names):
             selected.append("malignancy_risk_skill")
             routing_reasons.append({
                 "skill": "malignancy_risk_skill",
@@ -116,7 +124,7 @@ class ExperienceSkillPlanner:
                 "detail": {"top_names": top_names},
             })
 
-        if self._should_add_metadata_skill(
+        if self._is_enabled("metadata_consistency_skill") and self._should_add_metadata_skill(
             state=state,
             uncertainty=uncertainty,
             retrieval_confidence=retrieval_confidence,
@@ -137,6 +145,8 @@ class ExperienceSkillPlanner:
             for config in self.SPECIALIST_CONFIGS:
                 target_pair = tuple(config["pair"])
                 skill_name = str(config["skill"])
+                if not self._is_enabled(skill_name):
+                    continue
                 if not self._should_add_pair_specialist(
                     target_pair=target_pair,
                     top_names=top_names,
@@ -181,6 +191,7 @@ class ExperienceSkillPlanner:
                     "recommended_skills": recommended_skills,
                     "flags": planner_flags,
                 },
+                allowed_skills=self.enabled_skills,
             )
             final_selected = list(controller_payload.get("selected_skills", []) or [])
             if not final_selected:
@@ -188,7 +199,7 @@ class ExperienceSkillPlanner:
             if self.planning_mode == "learnable_hybrid":
                 mandatory_rule_skills = [
                     skill_name for skill_name in rule_selected
-                    if skill_name == "malignancy_risk_skill" or skill_name.endswith("_specialist_skill")
+                    if self._is_enabled(skill_name) and (skill_name == "malignancy_risk_skill" or skill_name.endswith("_specialist_skill"))
                 ]
                 final_selected = list(dict.fromkeys(final_selected + mandatory_rule_skills))
 
@@ -261,7 +272,7 @@ class ExperienceSkillPlanner:
             return True
         if retrieval_confidence == "low" or not supports_top1:
             return True
-        return True
+        return False
 
     def _should_add_ack_scc_specialist_from_metadata(self, state: CaseState, top_names: List[str]) -> bool:
         if "SCC" not in top_names:

@@ -10,9 +10,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from evaluation.run_compare import run_compare
-from evaluation.run_eval import run_evaluation
+from scripts.run_compare import run_compare
 from scripts.run_ablations import run_ablations
+from scripts.run_eval import run_evaluation
 
 
 def main() -> None:
@@ -24,6 +24,8 @@ def main() -> None:
     parser.add_argument("--controller-state-in", default=None)
     parser.add_argument("--bank-state-in", default=None)
     parser.add_argument("--compare-limit", type=int, default=10)
+    parser.add_argument("--enable-controller", action="store_true")
+    parser.add_argument("--enable-final-scorer", action="store_true")
     parser.add_argument("--skip-compare", action="store_true")
     parser.add_argument("--output", default=None)
     args = parser.parse_args()
@@ -36,7 +38,8 @@ def main() -> None:
         use_retrieval=True,
         use_specialist=True,
         use_reflection=False,
-        use_controller=True,
+        use_controller=args.enable_controller,
+        use_final_scorer=args.enable_final_scorer and args.enable_controller,
         controller_state_in=args.controller_state_in,
         bank_state_in=args.bank_state_in,
         update_online=False,
@@ -71,6 +74,8 @@ def main() -> None:
             bank_state_in=args.bank_state_in,
             split_json=args.split_json,
             split_name=args.split_name,
+            use_controller=args.enable_controller,
+            use_final_scorer=args.enable_final_scorer and args.enable_controller,
         )
         result["compare"] = {
             "baseline_direct_gpt": compare_result.get("baseline_direct_gpt", {}),

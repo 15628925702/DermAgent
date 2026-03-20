@@ -11,7 +11,7 @@ class CompareSkill(BaseSkill):
 
     def run(self, state: CaseState) -> Dict[str, Any]:
         ddx = state.perception.get("ddx_candidates", []) or []
-        candidates = ddx[:2]
+        candidates = ddx[:3]
 
         if len(candidates) == 0:
             result = {
@@ -29,6 +29,7 @@ class CompareSkill(BaseSkill):
             only_name = self._norm_label(candidates[0].get("name"))
             result = {
                 "pair": [only_name],
+                "candidates": [only_name],
                 "winner": only_name,
                 "pair_scores": {only_name: 1.0},
                 "reason": "single_candidate_only",
@@ -39,17 +40,23 @@ class CompareSkill(BaseSkill):
             state.trace(self.name, "success", "Single candidate fallback compare")
             return result
 
-        c1 = self._norm_label(candidates[0].get("name"))
-        c2 = self._norm_label(candidates[1].get("name"))
-
-        scores: Dict[str, float] = {c1: 0.0, c2: 0.0}
+        candidate_names: List[str] = []
+        scores: Dict[str, float] = {}
         rationale: List[str] = []
 
-        p1 = self._extract_candidate_score(candidates[0], default=1.0)
-        p2 = self._extract_candidate_score(candidates[1], default=0.85)
-        scores[c1] += p1
-        scores[c2] += p2
-        rationale.append(f"perception_support: {c1}={p1:.3f}, {c2}={p2:.3f}")
+        for idx, item in enumerate(candidates):
+            name = self._norm_label(item.get("name"))
+            if name == "UNKNOWN" or name in scores:
+                continue
+            default_score = max(0.55, 1.0 - 0.15 * idx)
+            score = self._extract_candidate_score(item, default=default_score)
+            candidate_names.append(name)
+            scores[name] = score
+
+        rationale.append(
+            "perception_support: "
+            + ", ".join(f"{name}={scores[name]:.3f}" for name in candidate_names)
+        )
 
         retrieval_summary = state.retrieval.get("retrieval_summary", {}) or {}
         support_labels = [
@@ -62,44 +69,45 @@ class CompareSkill(BaseSkill):
         retrieval_bonus_map = {"high": 0.6, "medium": 0.35, "low": 0.15}
         retrieval_bonus = retrieval_bonus_map.get(retrieval_confidence, 0.15)
 
-        if c1 in support_labels:
-            scores[c1] += retrieval_bonus
-            rationale.append(
-                f"retrieval_support: {c1} matched support_labels with bonus {retrieval_bonus:.2f}"
-            )
-        if c2 in support_labels:
-            scores[c2] += retrieval_bonus
-            rationale.append(
-                f"retrieval_support: {c2} matched support_labels with bonus {retrieval_bonus:.2f}"
-            )
+        for name in candidate_names:
+            if name in support_labels:
+                scores[name] += retrieval_bonus
+                rationale.append(
+                    f"retrieval_support: {name} matched support_labels with bonus {retrieval_bonus:.2f}"
+                )
 
         confusion_hits = state.retrieval.get("confusion_hits", []) or []
         for item in confusion_hits:
             pair = [self._norm_label(x) for x in item.get("pair", [])]
-            if set(pair) == {c1, c2}:
+            pair_set = set(pair)
+            overlap = pair_set.intersection(set(candidate_names))
+            if len(overlap) >= 2:
                 useful_skills = item.get("useful_skills", []) or []
                 distinguishing_clues = item.get("distinguishing_clues", []) or []
                 rationale.append(
                     f"confusion_memory_found: pair={pair}, useful_skills={useful_skills}, clues={distinguishing_clues[:3]}"
                 )
-                scores[c1] += 0.15
-                scores[c2] += 0.15
+                for name in overlap:
+                    scores[name] += 0.15
 
-        meta_scores = self._metadata_compare_bonus(state, c1, c2)
-        scores[c1] += meta_scores[c1]
-        scores[c2] += meta_scores[c2]
-        if meta_scores[c1] != 0 or meta_scores[c2] != 0:
-            rationale.append(
-                f"metadata_adjustment: {c1}={meta_scores[c1]:+.2f}, {c2}={meta_scores[c2]:+.2f}"
-            )
+        for idx, left in enumerate(candidate_names):
+            for right in candidate_names[idx + 1:]:
+                meta_scores = self._metadata_compare_bonus(state, left, right)
+                scores[left] += meta_scores[left]
+                scores[right] += meta_scores[right]
+                if meta_scores[left] != 0 or meta_scores[right] != 0:
+                    rationale.append(
+                        f"metadata_adjustment: {left}={meta_scores[left]:+.2f}, {right}={meta_scores[right]:+.2f}"
+                    )
 
         planner_flags = state.planner.get("flags", {}) or {}
         if planner_flags.get("has_confusion_support", False):
             rationale.append("planner_flag: has_confusion_support=True")
 
-        winner = c1 if scores[c1] >= scores[c2] else c2
-        loser = c2 if winner == c1 else c1
-        gap = abs(scores[c1] - scores[c2])
+        ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+        winner = ranked[0][0]
+        loser = ranked[1][0] if len(ranked) > 1 else ""
+        gap = abs(ranked[0][1] - ranked[1][1]) if len(ranked) > 1 else ranked[0][1]
 
         if gap >= 0.75:
             confidence = 0.9
@@ -112,12 +120,13 @@ class CompareSkill(BaseSkill):
             reason = "weak_preference"
 
         result = {
-            "pair": [c1, c2],
+            "pair": candidate_names[:2],
+            "candidates": candidate_names,
             "winner": winner,
             "loser": loser,
             "pair_scores": {
-                c1: round(scores[c1], 4),
-                c2: round(scores[c2], 4),
+                name: round(scores[name], 4)
+                for name in candidate_names
             },
             "gap": round(gap, 4),
             "reason": reason,
@@ -131,7 +140,8 @@ class CompareSkill(BaseSkill):
             "success",
             f"Compare completed: winner={winner}",
             payload={
-                "pair": [c1, c2],
+                "pair": candidate_names[:2],
+                "candidates": candidate_names,
                 "winner": winner,
                 "gap": round(gap, 4),
                 "reason": reason,

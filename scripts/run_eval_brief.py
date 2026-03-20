@@ -8,7 +8,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from evaluation.run_eval import run_evaluation
+from scripts.run_eval import run_evaluation
 
 
 def main() -> None:
@@ -20,7 +20,13 @@ def main() -> None:
     parser.add_argument("--disable-retrieval", action="store_true")
     parser.add_argument("--disable-specialist", action="store_true")
     parser.add_argument("--disable-reflection", action="store_true")
+    parser.add_argument("--enable-controller", action="store_true")
     parser.add_argument("--disable-controller", action="store_true")
+    parser.add_argument("--disable-compare", action="store_true")
+    parser.add_argument("--disable-malignancy", action="store_true")
+    parser.add_argument("--disable-metadata-consistency", action="store_true")
+    parser.add_argument("--enable-final-scorer", action="store_true")
+    parser.add_argument("--disable-final-scorer", action="store_true")
     parser.add_argument("--disable-rule-memory", action="store_true")
     parser.add_argument("--disable-rule-compression", action="store_true")
     parser.add_argument("--controller-state-in", default=None)
@@ -30,6 +36,15 @@ def main() -> None:
     parser.add_argument("--freeze-learning", action="store_true")
     args = parser.parse_args()
 
+    controller_enabled = bool(args.enable_controller)
+    if args.disable_controller:
+        controller_enabled = False
+    final_scorer_enabled = bool(args.enable_final_scorer)
+    if args.disable_final_scorer:
+        final_scorer_enabled = False
+    if not controller_enabled:
+        final_scorer_enabled = False
+
     result = run_evaluation(
         dataset_root=args.dataset_root,
         limit=args.limit,
@@ -38,7 +53,11 @@ def main() -> None:
         use_retrieval=not args.disable_retrieval,
         use_specialist=not args.disable_specialist,
         use_reflection=not args.disable_reflection,
-        use_controller=not args.disable_controller,
+        use_controller=controller_enabled,
+        use_compare=not args.disable_compare,
+        use_malignancy=not args.disable_malignancy,
+        use_metadata_consistency=not args.disable_metadata_consistency,
+        use_final_scorer=final_scorer_enabled,
         controller_state_in=args.controller_state_in,
         controller_state_out=args.controller_state_out,
         bank_state_in=args.bank_state_in,
@@ -74,6 +93,10 @@ def main() -> None:
         f"specialist:{runtime.get('use_specialist')} "
         f"reflection:{runtime.get('use_reflection')} "
         f"controller:{runtime.get('use_controller')} "
+        f"compare:{runtime.get('use_compare')} "
+        f"malignancy:{runtime.get('use_malignancy')} "
+        f"metadata:{runtime.get('use_metadata_consistency')} "
+        f"final_scorer:{runtime.get('use_final_scorer')} "
         f"rule_memory:{runtime.get('use_rule_memory')} "
         f"update_online:{runtime.get('update_online')}"
     )
