@@ -113,6 +113,15 @@ class MalignancyRiskSkill(BaseSkill):
 
         if invasive_signal_count > 0:
             rationale.append(f"invasive_signal_count={invasive_signal_count}")
+            if invasive_signal_count >= 3:
+                score += 0.8
+                rationale.append("multiple_invasive_signals_raise_risk")
+            elif invasive_signal_count == 2:
+                score += 0.45
+                rationale.append("paired_invasive_signals_raise_risk")
+            else:
+                score += 0.2
+                rationale.append("single_invasive_signal_slightly_raises_risk")
 
         malignant_in_top = [x for x in top_names if x in self.MALIGNANT_CANDIDATES]
         high_risk_in_top = [x for x in top_names if x in self.HIGH_RISK_CANDIDATES]
@@ -180,6 +189,7 @@ class MalignancyRiskSkill(BaseSkill):
             visual_cues=visual_cues,
             site=site,
             history_text=history_text,
+            risk_score=score,
         )
 
         ack_scc_ambiguous = (
@@ -233,9 +243,16 @@ class MalignancyRiskSkill(BaseSkill):
         visual_cues: List[str],
         site: str,
         history_text: str,
+        risk_score: float,
     ) -> str | None:
-        if "ACK" in top_names and "SCC" in top_names and invasive_signal_count < 2:
+        if "ACK" in top_names and "SCC" in top_names and invasive_signal_count < 2 and "SCC" not in malignant_supports:
             return None
+
+        if invasive_signal_count >= 2:
+            if "SCC" in top_names:
+                return "SCC"
+            if "SCC" in malignant_supports:
+                return "SCC"
 
         bcc_clues = ["pearly", "rolled", "translucent", "shiny", "telangiect"]
         bcc_site = self._site_matches(site, ["nose", "face", "ear", "temple", "cheek"])
@@ -250,9 +267,18 @@ class MalignancyRiskSkill(BaseSkill):
         if "BCC" in top_names and (bcc_signal_count >= 2 or (bcc_site and invasive_signal_count <= 2)):
             return "BCC"
 
+        for label in self.MALIGNANCY_PRIORITY:
+            if label in malignant_supports and label in top_names:
+                return label
+
         for x in top_names:
             if x in self.MALIGNANT_CANDIDATES:
                 return x
+
+        if risk_score >= 3.2:
+            for label in self.MALIGNANCY_PRIORITY:
+                if label in malignant_supports:
+                    return label
 
         for label in self.MALIGNANCY_PRIORITY:
             if label in malignant_supports:

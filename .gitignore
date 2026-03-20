@@ -3,6 +3,13 @@ data/
 !data/pad_ufes_20/**
 data/*.zip
 
+# Local training artifacts and service logs
+outputs/checkpoints_backup/
+outputs/quick_compare/
+outputs/train_runs/
+qwen_vllm.log
+train_8h.log
+
 __pycache__/
 *.py[cod]
 

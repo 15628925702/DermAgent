@@ -18,6 +18,7 @@ HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8000}"
 API_KEY="${API_KEY:-EMPTY}"
 LOG_FILE="${LOG_FILE:-$PROJECT_DIR/qwen_vllm.log}"
+MAX_MODEL_LEN="${MAX_MODEL_LEN:-8192}"
 
 cd "$PROJECT_DIR"
 
@@ -57,7 +58,7 @@ else
     --api-key "$API_KEY" \
     --served-model-name "$SERVED_MODEL_NAME" \
     --trust-remote-code \
-    --max-model-len 4096 \
+    --max-model-len "$MAX_MODEL_LEN" \
     --limit-mm-per-prompt.image 1 \
     > "$LOG_FILE" 2>&1 &
 fi
@@ -65,6 +66,7 @@ fi
 echo "[info] waiting for Qwen service on $SERVICE_URL"
 echo "[info] model source: $MODEL_NAME"
 echo "[info] served model name: $SERVED_MODEL_NAME"
+echo "[info] max model len: $MAX_MODEL_LEN"
 for i in $(seq 1 60); do
   if curl -s "$SERVICE_URL" -H "Authorization: Bearer $API_KEY" >/tmp/qwen_models.json 2>/dev/null; then
     echo "[ok] Qwen service is ready."

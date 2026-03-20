@@ -7,6 +7,8 @@ from agent.state import CaseState
 
 
 class DecisionAggregator:
+    MALIGNANT_LABELS = {"MEL", "BCC", "SCC"}
+
     def __init__(self, final_scorer: LearnableFinalScorer | None = None) -> None:
         self.final_scorer = final_scorer
 
@@ -39,6 +41,12 @@ class DecisionAggregator:
                 for label, features in candidate_features.items()
             }
 
+        ranked_candidates, safety_override = self._apply_malignancy_safety_override(
+            state=state,
+            ranked_candidates=ranked_candidates,
+            candidate_features=candidate_features,
+        )
+
         final_label = ranked_candidates[0][0] if ranked_candidates else "UNKNOWN"
         confidence = self._estimate_final_confidence(ranked_candidates=ranked_candidates, state=state)
 
@@ -62,6 +70,7 @@ class DecisionAggregator:
                 "num_evidence_items": len(evidence_log),
                 "memory_consensus_label": (state.retrieval.get("retrieval_summary", {}) or {}).get("memory_consensus_label", ""),
                 "uses_learnable_final_scorer": self.final_scorer is not None,
+                "safety_override": safety_override,
             },
         }
 
@@ -335,7 +344,7 @@ class DecisionAggregator:
             features["is_perception_top1"] = 1.0 if label == perception_top1 else 0.0
             features["in_support_labels"] = 1.0 if label in support_labels else 0.0
             features["matches_memory_consensus"] = 1.0 if memory_consensus_label and label == memory_consensus_label else 0.0
-            features["malignant_candidate"] = 1.0 if label in {"MEL", "BCC", "SCC"} else 0.0
+            features["malignant_candidate"] = 1.0 if label in self.MALIGNANT_LABELS else 0.0
             features["retrieval_confidence_high"] = 1.0 if retrieval_confidence == "high" else 0.0
             features["retrieval_confidence_medium"] = 1.0 if retrieval_confidence == "medium" else 0.0
             features["retrieval_confidence_low"] = 1.0 if retrieval_confidence == "low" else 0.0
@@ -401,6 +410,154 @@ class DecisionAggregator:
         if gap >= 0.35 or retrieval_confidence in {"medium", "high"} or has_memory_consensus:
             return "medium"
         return "low"
+
+    def _apply_malignancy_safety_override(
+        self,
+        state: CaseState,
+        ranked_candidates: List[Tuple[str, float]],
+        candidate_features: Dict[str, Dict[str, float]],
+    ) -> Tuple[List[Tuple[str, float]], Dict[str, Any]]:
+        debug: Dict[str, Any] = {
+            "applied": False,
+            "risk_level": "unknown",
+            "reason": "",
+            "top_label_before": ranked_candidates[0][0] if ranked_candidates else "",
+            "top_label_after": ranked_candidates[0][0] if ranked_candidates else "",
+            "selected_malignant_label": "",
+            "preferred_label": "",
+            "specialist_label": "",
+        }
+        if not ranked_candidates:
+            return ranked_candidates, debug
+
+        risk_output = state.skill_outputs.get("malignancy_risk_skill", {}) or {}
+        risk_level = str(risk_output.get("risk_level", "unknown")).lower()
+        suspicious = bool(risk_output.get("suspicious_malignancy", False))
+        preferred_label = self._norm_label(
+            risk_output.get("preferred_label") or risk_output.get("recommended_label")
+        )
+        specialist_label = self._get_malignant_specialist_label(state)
+
+        debug["risk_level"] = risk_level
+        debug["preferred_label"] = preferred_label
+        debug["specialist_label"] = specialist_label
+
+        if risk_level not in {"high", "medium"} and not suspicious:
+            debug["reason"] = "low_risk_no_override"
+            return ranked_candidates, debug
+
+        top_label, top_score = ranked_candidates[0]
+        if top_label in self.MALIGNANT_LABELS:
+            debug["reason"] = "top_label_already_malignant"
+            return ranked_candidates, debug
+
+        malignant_candidates: List[Tuple[str, float, float]] = []
+        for label, score in ranked_candidates:
+            if label not in self.MALIGNANT_LABELS:
+                continue
+            support_score = self._estimate_malignant_support_score(
+                label=label,
+                candidate_features=candidate_features,
+                preferred_label=preferred_label,
+                specialist_label=specialist_label,
+            )
+            malignant_candidates.append((label, float(score), support_score))
+
+        if not malignant_candidates:
+            debug["reason"] = "no_malignant_candidates_available"
+            return ranked_candidates, debug
+
+        malignant_candidates.sort(key=lambda item: (item[2], item[1]), reverse=True)
+        best_label, best_score, best_support = malignant_candidates[0]
+        gap_to_top = float(top_score) - float(best_score)
+        debug["selected_malignant_label"] = best_label
+        debug["best_support_score"] = round(best_support, 4)
+        debug["gap_to_top"] = round(gap_to_top, 4)
+
+        should_override = False
+        reason = ""
+        if risk_level == "high":
+            if specialist_label == best_label:
+                should_override = True
+                reason = "high_risk_specialist_override"
+            elif preferred_label == best_label and best_support >= 0.85:
+                should_override = True
+                reason = "high_risk_preferred_label_override"
+            elif best_support >= 1.1 and gap_to_top <= 0.45:
+                should_override = True
+                reason = "high_risk_supported_malignant_candidate"
+        elif risk_level == "medium" and suspicious:
+            if specialist_label == best_label and best_support >= 0.95 and gap_to_top <= 0.35:
+                should_override = True
+                reason = "medium_risk_specialist_override"
+            elif preferred_label == best_label and best_support >= 1.15 and gap_to_top <= 0.22:
+                should_override = True
+                reason = "medium_risk_preferred_label_override"
+
+        if not should_override:
+            debug["reason"] = "conditions_not_met"
+            return ranked_candidates, debug
+
+        adjusted: List[Tuple[str, float]] = []
+        promoted_score = max(float(top_score) + 0.02, float(best_score) + 0.4)
+        for label, score in ranked_candidates:
+            if label == best_label:
+                adjusted.append((label, promoted_score))
+            else:
+                adjusted.append((label, float(score)))
+        adjusted.sort(key=lambda item: item[1], reverse=True)
+
+        debug["applied"] = True
+        debug["reason"] = reason
+        debug["top_label_after"] = adjusted[0][0] if adjusted else ""
+        return adjusted, debug
+
+    def _estimate_malignant_support_score(
+        self,
+        label: str,
+        candidate_features: Dict[str, Dict[str, float]],
+        preferred_label: str,
+        specialist_label: str,
+    ) -> float:
+        features = candidate_features.get(label, {}) or {}
+        support = 0.0
+        support += max(0.0, self._safe_float(features.get("specialist_score"))) * 1.0
+        support += max(0.0, self._safe_float(features.get("malignancy_score"))) * 1.1
+        support += max(0.0, self._safe_float(features.get("retrieval_score"))) * 0.75
+        support += max(0.0, self._safe_float(features.get("memory_consensus_score"))) * 0.85
+        support += max(0.0, self._safe_float(features.get("compare_score"))) * 0.45
+        support += max(0.0, self._safe_float(features.get("metadata_score"))) * 0.2
+        if self._safe_float(features.get("in_support_labels")) > 0:
+            support += 0.18
+        if self._safe_float(features.get("matches_memory_consensus")) > 0:
+            support += 0.16
+        if preferred_label and label == preferred_label:
+            support += 0.25
+        if specialist_label and label == specialist_label:
+            support += 0.35
+        return support
+
+    def _get_malignant_specialist_label(self, state: CaseState) -> str:
+        candidate_outputs = [
+            state.skill_outputs.get("ack_scc_specialist_skill", {}) or {},
+            state.skill_outputs.get("bcc_scc_specialist_skill", {}) or {},
+            state.skill_outputs.get("mel_nev_specialist_skill", {}) or {},
+        ]
+        best_label = ""
+        best_confidence = 0.0
+        for output in candidate_outputs:
+            label = self._norm_label(
+                output.get("recommendation")
+                or output.get("winner")
+                or output.get("final_choice")
+            )
+            if label not in self.MALIGNANT_LABELS:
+                continue
+            confidence = self._safe_float(output.get("confidence"))
+            if confidence >= best_confidence:
+                best_label = label
+                best_confidence = confidence
+        return best_label
 
     def _rank_candidates(self, candidate_scores: Dict[str, float]) -> List[Tuple[str, float]]:
         ranked = sorted(candidate_scores.items(), key=lambda x: x[1], reverse=True)

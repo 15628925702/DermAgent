@@ -314,11 +314,20 @@ class ReflectionEngine:
         retrieval_confidence = str(
             retrieval_summary.get("retrieval_confidence", "low")
         ).lower()
+        risk_summary = state.final_decision.get("risk_summary", {}) or {}
+        risk_level = str(risk_summary.get("risk_level", "")).lower()
+        suspicious_malignancy = bool(risk_summary.get("suspicious_malignancy", False))
+        final_label = self._get_final_label(state)
+        malignant_mismatch = (
+            suspicious_malignancy
+            and risk_level in {"medium", "high"}
+            and final_label not in {"MEL", "BCC", "SCC"}
+        )
 
         hard_case = (
-            confidence == "low"
-            or uncertainty == "high"
-            or not supports_top1
+            (confidence == "low" and retrieval_confidence == "low")
+            or (uncertainty == "high" and not supports_top1)
+            or malignant_mismatch
         )
 
         confusion_case = self._should_write_confusion(state)
@@ -326,7 +335,7 @@ class ReflectionEngine:
         needs_more_experience = (
             hard_case
             or confusion_case
-            or retrieval_confidence == "low"
+            or (retrieval_confidence == "low" and confidence == "low")
         )
 
         return {
@@ -335,6 +344,7 @@ class ReflectionEngine:
             "needs_more_experience": needs_more_experience,
             "low_retrieval_support": retrieval_confidence == "low",
             "fallback_case": bool((state.perception or {}).get("fallback_reason")),
+            "malignant_mismatch": malignant_mismatch,
         }
 
     def _build_prototype_features(
@@ -401,11 +411,17 @@ class ReflectionEngine:
         uncertainty = state.get_uncertainty_level()
 
         return (
-            uncertainty in {"medium", "high"}
-            or "compare_skill" in selected
-            or "mel_nev_specialist_skill" in selected
-            or "ack_scc_specialist_skill" in selected
-            or retrieval_summary.get("has_confusion_support", False)
+            retrieval_summary.get("has_confusion_support", False)
+            or (
+                uncertainty in {"medium", "high"}
+                and (
+                    "compare_skill" in selected
+                    or "mel_nev_specialist_skill" in selected
+                    or "ack_scc_specialist_skill" in selected
+                    or "bcc_scc_specialist_skill" in selected
+                    or "bcc_sek_specialist_skill" in selected
+                )
+            )
         )
 
     # =========================
