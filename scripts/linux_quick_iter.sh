@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PROJECT_DIR="${1:-$HOME/derm_agent}"
-TRAIN_HOURS="${TRAIN_HOURS:-0.05}"
+TRAIN_HOURS="${TRAIN_HOURS:-0.2}"
 SAVE_DIR="${SAVE_DIR:-outputs/train_runs/quick_iter}"
 BASE_RUN_DIR="${BASE_RUN_DIR:-outputs/train_runs/final_v3_8h}"
 COMPARE_OUTPUT="${COMPARE_OUTPUT:-outputs/quick_compare/quick_iter.json}"
