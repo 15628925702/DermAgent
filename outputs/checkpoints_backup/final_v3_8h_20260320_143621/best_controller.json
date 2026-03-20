@@ -1,0 +1,621 @@
+{
+  "format_version": 3,
+  "metadata": {
+    "epoch": 13,
+    "stage": "best",
+    "val_summary": {
+      "num_cases": 346,
+      "metrics": {
+        "accuracy_top1": 0.4884,
+        "accuracy_top3": 0.7601,
+        "malignant_recall": 0.689,
+        "confusion_accuracy": 0.6978
+      },
+      "counts": {
+        "correct_top1": 169,
+        "correct_top3": 263,
+        "malignant_total": 164,
+        "malignant_hit": 113,
+        "ack_scc_total": 139,
+        "ack_scc_correct": 97,
+        "errors": 0
+      },
+      "bank_stats": {
+        "total": 3246,
+        "raw_case": 1614,
+        "prototype": 6,
+        "confusion": 4,
+        "rule": 8,
+        "hard_case": 1614,
+        "unknown": 0
+      },
+      "update_online": false,
+      "use_reflection": false,
+      "use_rule_memory": true,
+      "enable_rule_compression": false,
+      "update_rule_scorer": false
+    },
+    "split_summary": {
+      "train": {
+        "num_cases": 1608,
+        "label_counts": {
+          "ACK": 511,
+          "BCC": 591,
+          "MEL": 36,
+          "NEV": 171,
+          "SCC": 134,
+          "SEK": 165
+        }
+      },
+      "val": {
+        "num_cases": 346,
+        "label_counts": {
+          "ACK": 110,
+          "BCC": 127,
+          "MEL": 8,
+          "NEV": 37,
+          "SCC": 29,
+          "SEK": 35
+        }
+      },
+      "test": {
+        "num_cases": 344,
+        "label_counts": {
+          "ACK": 109,
+          "BCC": 127,
+          "MEL": 8,
+          "NEV": 36,
+          "SCC": 29,
+          "SEK": 35
+        }
+      },
+      "path": "outputs/splits/pad_ufes20_full.json"
+    },
+    "designer_state_path": "outputs/train_runs/final_v3_8h/latest_skill_designer.json"
+  },
+  "skill_index": {
+    "ack_scc_specialist_skill": {
+      "skill_id": "ack_scc_specialist_skill",
+      "description": "Resolve ACK vs SCC confusion with specialist priors.",
+      "when_to_use": "When ACK/SCC pair is present or confusion memory points to this pair.",
+      "constraints": [
+        "Useful only when SCC is plausible or metadata resembles sun-exposed keratinizing lesions."
+      ],
+      "category": "specialist",
+      "threshold": 0.5,
+      "priority": -0.5894,
+      "routable": true,
+      "embedding": [
+        0.7,
+        0.6,
+        0.4
+      ],
+      "feature_weights": {
+        "bias": -0.6594,
+        "confusion_support": 0.01,
+        "has_ack_scc_pair": 8.1572,
+        "has_bcc_scc_pair": 0.809,
+        "has_bcc_sek_pair": 0.0,
+        "has_confusion_support": 0.5845,
+        "has_malignant_candidate": -0.058,
+        "has_mel_nev_pair": -0.0394,
+        "malignant_candidate_ratio": 0.1128,
+        "metadata_present": -0.2094,
+        "num_malignant_cues": 0.1813,
+        "num_suspicious_cues": 0.0214,
+        "num_visual_cues": 0.0285,
+        "prototype_support": -0.1229,
+        "raw_case_support": -0.1651,
+        "retrieval_high": -0.162,
+        "retrieval_low": -0.0231,
+        "retrieval_medium": -0.0242,
+        "retrieval_recommends_ack_scc": 0.6696,
+        "retrieval_recommends_bcc_scc": 0.0364,
+        "retrieval_recommends_bcc_sek": 0.0,
+        "retrieval_recommends_mel_nev": 0.0,
+        "strong_invasive_history": -0.0007,
+        "sun_exposed_site": 1.157,
+        "supports_top1": 0.5683,
+        "top_candidate_count": -4.4497,
+        "top_gap": 2.1349,
+        "top_gap_small": 2.0377,
+        "uncertainty_high": -0.295,
+        "uncertainty_low": 0.0856,
+        "uncertainty_medium": 0.0
+      },
+      "stats": {
+        "helpful": 12867.0,
+        "updates": 20994.0,
+        "uses": 20989.0
+      },
+      "success_rate": 0.613
+    },
+    "bcc_scc_specialist_skill": {
+      "skill_id": "bcc_scc_specialist_skill",
+      "description": "Resolve BCC vs SCC confusion with morphology and site-aware criteria.",
+      "when_to_use": "When BCC and SCC are both plausible or confusion memory highlights this pair.",
+      "constraints": [
+        "Useful only when both keratinizing malignancy candidates are plausible."
+      ],
+      "category": "specialist",
+      "threshold": 0.5,
+      "priority": -0.7626,
+      "routable": true,
+      "embedding": [
+        0.8,
+        0.55,
+        0.35
+      ],
+      "feature_weights": {
+        "bias": -0.8326,
+        "confusion_support": -0.4126,
+        "has_ack_scc_pair": -1.9468,
+        "has_bcc_scc_pair": 6.8963,
+        "has_bcc_sek_pair": 0.0,
+        "has_confusion_support": 0.0619,
+        "has_malignant_candidate": -0.1626,
+        "has_mel_nev_pair": 0.0,
+        "malignant_candidate_ratio": 1.6154,
+        "metadata_present": -0.4126,
+        "num_malignant_cues": 0.22,
+        "num_suspicious_cues": 0.0,
+        "num_visual_cues": 0.0,
+        "prototype_support": -0.4126,
+        "raw_case_support": -0.4126,
+        "retrieval_high": -0.4126,
+        "retrieval_low": 0.0,
+        "retrieval_medium": 0.0,
+        "retrieval_recommends_ack_scc": -0.4126,
+        "retrieval_recommends_bcc_scc": 0.498,
+        "retrieval_recommends_bcc_sek": 0.0,
+        "retrieval_recommends_mel_nev": 0.0,
+        "strong_invasive_history": 2.4884,
+        "sun_exposed_site": 1.4283,
+        "supports_top1": 0.0992,
+        "top_candidate_count": 0.1723,
+        "top_gap": 0.1268,
+        "top_gap_small": 0.2418,
+        "uncertainty_high": -0.4126,
+        "uncertainty_low": 0.0,
+        "uncertainty_medium": 0.0
+      },
+      "stats": {
+        "helpful": 16048.0,
+        "updates": 20904.0,
+        "uses": 20904.0
+      },
+      "success_rate": 0.7677
+    },
+    "bcc_sek_specialist_skill": {
+      "skill_id": "bcc_sek_specialist_skill",
+      "description": "Resolve BCC vs SEK confusion using benign-versus-basal-cell features.",
+      "when_to_use": "When BCC and SEK are both plausible or confusion memory highlights this pair.",
+      "constraints": [
+        "Useful only when a benign keratosis alternative remains plausible."
+      ],
+      "category": "specialist",
+      "threshold": 0.56,
+      "priority": -0.8519,
+      "routable": true,
+      "embedding": [
+        0.55,
+        0.45,
+        0.75
+      ],
+      "feature_weights": {
+        "bias": -0.8519,
+        "confusion_support": -0.4319,
+        "has_ack_scc_pair": -2.6672,
+        "has_bcc_scc_pair": 2.2828,
+        "has_bcc_sek_pair": 1.7,
+        "has_confusion_support": -0.0319,
+        "has_malignant_candidate": -0.4319,
+        "has_mel_nev_pair": 0.0,
+        "malignant_candidate_ratio": 0.6171,
+        "metadata_present": -0.2819,
+        "num_malignant_cues": 0.0,
+        "num_suspicious_cues": 0.0,
+        "num_visual_cues": 0.0,
+        "prototype_support": -0.4319,
+        "raw_case_support": -0.4319,
+        "retrieval_high": -0.4319,
+        "retrieval_low": 0.0,
+        "retrieval_medium": 0.0,
+        "retrieval_recommends_ack_scc": -0.4319,
+        "retrieval_recommends_bcc_scc": -0.3424,
+        "retrieval_recommends_bcc_sek": 0.85,
+        "retrieval_recommends_mel_nev": 0.0,
+        "strong_invasive_history": 0.715,
+        "sun_exposed_site": -0.8991,
+        "supports_top1": -0.7134,
+        "top_candidate_count": 5.406,
+        "top_gap": -2.307,
+        "top_gap_small": -1.4055,
+        "uncertainty_high": -0.2319,
+        "uncertainty_low": 0.0,
+        "uncertainty_medium": 0.0
+      },
+      "stats": {
+        "helpful": 0.0,
+        "updates": 20904.0,
+        "uses": 1.0
+      },
+      "success_rate": 0.0
+    },
+    "compare_skill": {
+      "skill_id": "compare_skill",
+      "description": "Directly compare the top ambiguous candidates.",
+      "when_to_use": "When top candidates are close, uncertainty is high, or confusion memory exists.",
+      "constraints": [
+        "Best when at least two plausible candidates are available."
+      ],
+      "category": "comparison",
+      "threshold": 0.5499973977695167,
+      "priority": 0.3283,
+      "routable": true,
+      "embedding": [
+        0.2,
+        0.9,
+        0.2
+      ],
+      "feature_weights": {
+        "bias": 0.3283,
+        "confusion_support": 0.4362,
+        "has_ack_scc_pair": 0.1856,
+        "has_bcc_scc_pair": 0.1852,
+        "has_bcc_sek_pair": 0.0,
+        "has_confusion_support": 1.1362,
+        "has_malignant_candidate": 0.4697,
+        "has_mel_nev_pair": 0.0086,
+        "malignant_candidate_ratio": 0.2467,
+        "metadata_present": 0.4783,
+        "num_malignant_cues": 0.0143,
+        "num_suspicious_cues": 0.0164,
+        "num_visual_cues": 0.0219,
+        "prototype_support": 0.4427,
+        "raw_case_support": 0.4677,
+        "retrieval_high": 0.4588,
+        "retrieval_low": 0.353,
+        "retrieval_medium": 0.0166,
+        "retrieval_recommends_ack_scc": 0.4426,
+        "retrieval_recommends_bcc_scc": 0.3153,
+        "retrieval_recommends_bcc_sek": 0.0,
+        "retrieval_recommends_mel_nev": 0.0,
+        "strong_invasive_history": 0.1646,
+        "sun_exposed_site": 0.3519,
+        "supports_top1": 0.4169,
+        "top_candidate_count": 0.6504,
+        "top_gap": 0.1027,
+        "top_gap_small": 1.213,
+        "uncertainty_high": 1.6127,
+        "uncertainty_low": 0.0656,
+        "uncertainty_medium": 0.6
+      },
+      "stats": {
+        "helpful": 20994.0,
+        "updates": 20994.0,
+        "uses": 20994.0
+      },
+      "success_rate": 1.0
+    },
+    "malignancy_risk_skill": {
+      "skill_id": "malignancy_risk_skill",
+      "description": "Estimate malignant tendency and produce a safety-oriented label preference.",
+      "when_to_use": "When malignant labels or malignant cues are present.",
+      "constraints": [
+        "Should primarily act as a safety constraint."
+      ],
+      "category": "risk",
+      "threshold": 0.4991022304832714,
+      "priority": 0.3285,
+      "routable": true,
+      "embedding": [
+        0.8,
+        0.8,
+        0.1
+      ],
+      "feature_weights": {
+        "bias": 0.3105,
+        "confusion_support": 0.5186,
+        "has_ack_scc_pair": 0.1943,
+        "has_bcc_scc_pair": 0.1354,
+        "has_bcc_sek_pair": 0.0,
+        "has_confusion_support": 0.5186,
+        "has_malignant_candidate": 1.7308,
+        "has_mel_nev_pair": 0.0045,
+        "malignant_candidate_ratio": 1.0581,
+        "metadata_present": 0.5105,
+        "num_malignant_cues": 0.915,
+        "num_suspicious_cues": 0.4071,
+        "num_visual_cues": 0.0094,
+        "prototype_support": 0.5052,
+        "raw_case_support": 0.524,
+        "retrieval_high": 0.5313,
+        "retrieval_low": 0.0117,
+        "retrieval_medium": -0.0326,
+        "retrieval_recommends_ack_scc": 0.5083,
+        "retrieval_recommends_bcc_scc": 0.3519,
+        "retrieval_recommends_bcc_sek": 0.0,
+        "retrieval_recommends_mel_nev": 0.0,
+        "strong_invasive_history": 0.6828,
+        "sun_exposed_site": 0.3205,
+        "supports_top1": 0.5164,
+        "top_candidate_count": 0.5092,
+        "top_gap": 0.0891,
+        "top_gap_small": 0.235,
+        "uncertainty_high": 0.4822,
+        "uncertainty_low": 0.0283,
+        "uncertainty_medium": 0.0
+      },
+      "stats": {
+        "helpful": 20990.0,
+        "updates": 20994.0,
+        "uses": 20992.0
+      },
+      "success_rate": 0.9999
+    },
+    "mel_nev_specialist_skill": {
+      "skill_id": "mel_nev_specialist_skill",
+      "description": "Resolve melanoma vs nevus confusion with targeted criteria.",
+      "when_to_use": "When MEL and NEV are both plausible or confusion memory highlights this pair.",
+      "constraints": [
+        "Useful only when melanocytic ambiguity exists."
+      ],
+      "category": "specialist",
+      "threshold": 0.56,
+      "priority": -0.6026,
+      "routable": true,
+      "embedding": [
+        0.7,
+        0.4,
+        0.7
+      ],
+      "feature_weights": {
+        "bias": -0.6026,
+        "confusion_support": -0.0572,
+        "has_ack_scc_pair": -2.818,
+        "has_bcc_scc_pair": -2.1339,
+        "has_bcc_sek_pair": 0.0,
+        "has_confusion_support": 0.3928,
+        "has_malignant_candidate": -0.0812,
+        "has_mel_nev_pair": 1.6784,
+        "malignant_candidate_ratio": -0.8739,
+        "metadata_present": -0.1526,
+        "num_malignant_cues": -0.0174,
+        "num_suspicious_cues": -0.0103,
+        "num_visual_cues": -0.0137,
+        "prototype_support": -0.1071,
+        "raw_case_support": -0.1398,
+        "retrieval_high": -0.099,
+        "retrieval_low": 0.042,
+        "retrieval_medium": -0.0957,
+        "retrieval_recommends_ack_scc": -0.1037,
+        "retrieval_recommends_bcc_scc": 0.0676,
+        "retrieval_recommends_bcc_sek": 0.0,
+        "retrieval_recommends_mel_nev": 0.8,
+        "strong_invasive_history": -3.3132,
+        "sun_exposed_site": -1.5377,
+        "supports_top1": -0.6767,
+        "top_candidate_count": 3.9377,
+        "top_gap": -0.7906,
+        "top_gap_small": -1.5638,
+        "uncertainty_high": 0.2384,
+        "uncertainty_low": -0.0411,
+        "uncertainty_medium": 0.0
+      },
+      "stats": {
+        "helpful": 130.0,
+        "updates": 20994.0,
+        "uses": 196.0
+      },
+      "success_rate": 0.6633
+    },
+    "metadata_consistency_skill": {
+      "skill_id": "metadata_consistency_skill",
+      "description": "Use age, site, and history priors to validate or penalize labels.",
+      "when_to_use": "When metadata is available and visual or retrieval evidence is unstable.",
+      "constraints": [
+        "Only useful when metadata exists."
+      ],
+      "category": "consistency",
+      "threshold": 0.517208674101611,
+      "priority": -0.2115,
+      "routable": true,
+      "embedding": [
+        0.3,
+        0.3,
+        0.9
+      ],
+      "feature_weights": {
+        "bias": -0.2464,
+        "confusion_support": 0.1012,
+        "has_ack_scc_pair": -0.2571,
+        "has_bcc_scc_pair": 0.3116,
+        "has_bcc_sek_pair": 0.0,
+        "has_confusion_support": 0.1012,
+        "has_malignant_candidate": -0.0339,
+        "has_mel_nev_pair": -0.0154,
+        "malignant_candidate_ratio": 0.1153,
+        "metadata_present": 1.0693,
+        "num_malignant_cues": 0.0809,
+        "num_suspicious_cues": 0.077,
+        "num_visual_cues": 0.1027,
+        "prototype_support": 0.1716,
+        "raw_case_support": 0.0241,
+        "retrieval_high": 0.0068,
+        "retrieval_low": 0.7814,
+        "retrieval_medium": 0.0398,
+        "retrieval_recommends_ack_scc": 0.1722,
+        "retrieval_recommends_bcc_scc": 0.0268,
+        "retrieval_recommends_bcc_sek": 0.0,
+        "retrieval_recommends_mel_nev": 0.0,
+        "strong_invasive_history": 0.0117,
+        "sun_exposed_site": -0.1099,
+        "supports_top1": -1.0017,
+        "top_candidate_count": -0.4694,
+        "top_gap": 0.5063,
+        "top_gap_small": -0.1553,
+        "uncertainty_high": 0.1955,
+        "uncertainty_low": 0.3081,
+        "uncertainty_medium": 0.25
+      },
+      "stats": {
+        "helpful": 3992.0,
+        "updates": 20994.0,
+        "uses": 3992.0
+      },
+      "success_rate": 1.0
+    },
+    "uncertainty_assessment_skill": {
+      "skill_id": "uncertainty_assessment_skill",
+      "description": "Estimate uncertainty and keep a controller-side calibration anchor.",
+      "when_to_use": "Nearly always useful as a lightweight calibration skill.",
+      "constraints": [
+        "Should not override diagnosis directly."
+      ],
+      "category": "calibration",
+      "threshold": 0.45,
+      "priority": 1.3806,
+      "routable": true,
+      "embedding": [
+        0.9,
+        0.2,
+        0.1
+      ],
+      "feature_weights": {
+        "bias": 1.3736,
+        "confusion_support": 0.4501,
+        "has_ack_scc_pair": 0.1315,
+        "has_bcc_scc_pair": 0.1761,
+        "has_bcc_sek_pair": 0.0,
+        "has_confusion_support": 0.4501,
+        "has_malignant_candidate": 0.4666,
+        "has_mel_nev_pair": 0.0032,
+        "malignant_candidate_ratio": 0.2339,
+        "metadata_present": 0.4736,
+        "num_malignant_cues": 0.007,
+        "num_suspicious_cues": 0.0078,
+        "num_visual_cues": 0.0104,
+        "prototype_support": 0.4555,
+        "raw_case_support": 0.4671,
+        "retrieval_high": 0.4636,
+        "retrieval_low": 0.2025,
+        "retrieval_medium": 0.0074,
+        "retrieval_recommends_ack_scc": 0.4554,
+        "retrieval_recommends_bcc_scc": 0.3521,
+        "retrieval_recommends_bcc_sek": 0.0,
+        "retrieval_recommends_mel_nev": 0.0,
+        "strong_invasive_history": 0.1413,
+        "sun_exposed_site": 0.2859,
+        "supports_top1": 0.4334,
+        "top_candidate_count": 0.4281,
+        "top_gap": 0.0805,
+        "top_gap_small": 0.2245,
+        "uncertainty_high": 1.1443,
+        "uncertainty_low": 0.0313,
+        "uncertainty_medium": 0.4
+      },
+      "stats": {
+        "helpful": 20994.0,
+        "updates": 20994.0,
+        "uses": 20994.0
+      },
+      "success_rate": 1.0
+    }
+  },
+  "controller": {
+    "learning_rate": 0.08,
+    "max_skills": 4,
+    "stop_weights": {
+      "bias": 0.03515,
+      "confusion_support": -0.189835,
+      "has_ack_scc_pair": 0.256403,
+      "has_bcc_scc_pair": -0.28396,
+      "has_bcc_sek_pair": 0.0,
+      "has_confusion_support": -0.889835,
+      "has_malignant_candidate": 0.004658,
+      "has_mel_nev_pair": 0.00236,
+      "malignant_candidate_ratio": -0.161148,
+      "metadata_present": -0.11485,
+      "num_malignant_cues": -0.111571,
+      "num_suspicious_cues": -0.110981,
+      "num_visual_cues": -0.147975,
+      "prototype_support": -0.280509,
+      "raw_case_support": -0.209465,
+      "retrieval_high": 0.510995,
+      "retrieval_low": -0.53087,
+      "retrieval_medium": 0.255025,
+      "retrieval_recommends_ack_scc": -0.278355,
+      "retrieval_recommends_bcc_scc": -0.001376,
+      "retrieval_recommends_bcc_sek": 0.0,
+      "retrieval_recommends_mel_nev": 0.0,
+      "strong_invasive_history": -0.010477,
+      "sun_exposed_site": 0.103864,
+      "supports_top1": 0.35473,
+      "top_candidate_count": 0.474046,
+      "top_gap": -0.613386,
+      "top_gap_small": 0.148495,
+      "uncertainty_high": -0.420926,
+      "uncertainty_low": 0.456075,
+      "uncertainty_medium": 0.15
+    }
+  },
+  "final_scorer": {
+    "version": 2,
+    "enabled": true,
+    "learning_rate": 0.01,
+    "margin_target": 0.45,
+    "weights": {
+      "base_total": 0.115864,
+      "bias": 0.0,
+      "compare_score": -0.129909,
+      "confusion_score": -0.08006,
+      "in_support_labels": -0.061572,
+      "is_perception_top1": 0.001887,
+      "malignancy_score": -0.140906,
+      "malignant_candidate": 0.002039,
+      "matches_memory_consensus": -0.049774,
+      "memory_consensus_score": -0.039819,
+      "metadata_score": -0.088514,
+      "perception_score": -0.177866,
+      "prototype_score": -0.118547,
+      "retrieval_confidence_high": 0.0,
+      "retrieval_confidence_low": 0.0,
+      "retrieval_confidence_medium": 0.0,
+      "retrieval_score": -0.023039,
+      "specialist_score": -0.085674
+    }
+  },
+  "rule_scorer": {
+    "version": 1,
+    "learning_rate": 0.03,
+    "threshold": 0.52,
+    "weights": {
+      "bias": -0.403498,
+      "compression_high": -0.003498,
+      "compression_medium": 0.15,
+      "has_confusion_support": -0.163498,
+      "priority": 0.21942,
+      "requires_all_match": 0.227048,
+      "requires_any_overlap": 0.319454,
+      "retrieval_high": -0.353498,
+      "retrieval_low": 0.18,
+      "retrieval_medium": 0.06,
+      "source_count": 0.046502,
+      "specialist_hint": 0.057081,
+      "supports_top1": -0.503498,
+      "uncertainty_high": -0.053498,
+      "uncertainty_medium": 0.1
+    },
+    "rule_biases": {
+      "rule_label_ack_hardcase": 0.335139,
+      "rule_label_bcc_hardcase": -0.168081,
+      "rule_label_nev_hardcase": 0.134511,
+      "rule_label_scc_hardcase": -0.332115,
+      "rule_pair_ack_scc": 0.301347,
+      "rule_pair_bcc_scc": -0.199209,
+      "rule_pair_nev_scc": 0.11274,
+      "rule_pair_nev_sek": -0.48783
+    }
+  }
+}
