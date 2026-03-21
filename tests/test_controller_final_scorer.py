@@ -76,3 +76,75 @@ def test_final_scorer_prefers_anchor_plus_consistent_correction():
     )
 
     assert ranked[0][0] == "MEL"
+
+
+def test_controller_targets_follow_skill_evidence_not_just_rule_presence():
+    controller = LearnableSkillController(build_default_skill_index())
+    state = create_case_state(
+        {
+            "file": "evidence.png",
+            "metadata": {"site": "face", "age": 68},
+            "text": "",
+            "true_label": "BCC",
+        }
+    )
+    state.perception = {
+        "ddx_candidates": [
+            {"name": "BCC", "score": 0.54},
+            {"name": "SCC", "score": 0.51},
+        ],
+        "uncertainty": {"level": "high"},
+    }
+    state.retrieval = {
+        "retrieval_summary": {
+            "retrieval_confidence": "low",
+            "supports_top1": False,
+        }
+    }
+    state.planner = {
+        "case_features": {
+            "top_gap_small": True,
+            "has_malignant_candidate": True,
+        }
+    }
+    state.final_decision = {"final_label": "SCC"}
+    state.skill_outputs = {
+        "compare_skill": {
+            "supports": "BCC",
+            "confidence": 0.82,
+            "applicable": 1.0,
+            "local_decision": {
+                "supports": "BCC",
+                "opposes": "SCC",
+                "confidence": 0.82,
+                "applicable": 1.0,
+            },
+        },
+        "bcc_scc_specialist_skill": {
+            "supports": "SCC",
+            "confidence": 0.76,
+            "applicable": 1.0,
+            "local_decision": {
+                "supports": "SCC",
+                "opposes": "BCC",
+                "confidence": 0.76,
+                "applicable": 1.0,
+            },
+        },
+        "metadata_consistency_skill": {
+            "supported_labels": ["BCC"],
+            "penalized_labels": ["SCC"],
+            "score": 0.7,
+        },
+        "malignancy_risk_skill": {
+            "risk_level": "high",
+            "preferred_label": "BCC",
+        },
+    }
+
+    targets = controller._build_targets(state)
+
+    assert targets["compare_skill"] > 0.85
+    assert targets["metadata_consistency_skill"] > 0.8
+    assert targets["malignancy_risk_skill"] > 0.9
+    assert targets["bcc_scc_specialist_skill"] < 0.2

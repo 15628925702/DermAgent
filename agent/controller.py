@@ -282,7 +282,7 @@ class LearnableSkillController:
                 prediction=prediction,
                 learning_rate=self.learning_rate,
             )
-            helpful = spec.skill_id in state.selected_skills and (is_correct or target >= 1.0)
+            helpful = spec.skill_id in state.selected_skills and (is_correct or target >= 0.65)
             if spec.skill_id in state.selected_skills:
                 spec.record_use(helpful=helpful)
             feedback["updated_skills"].append(
@@ -383,22 +383,179 @@ class LearnableSkillController:
             or ""
         ).strip().upper()
         incorrect = bool(true_label) and final_label and true_label != final_label
+        case_features = state.planner.get("case_features", {}) or {}
+        top_gap_small = bool(case_features.get("top_gap_small", False))
+        has_malignant_candidate = bool(
+            case_features.get("has_malignant_candidate", bool({"MEL", "BCC", "SCC"}.intersection(top_names)))
+        )
+        skill_outputs = state.skill_outputs or {}
 
         targets = {
             "uncertainty_assessment_skill": 1.0,
-            "compare_skill": 1.0 if state.get_uncertainty_level() in {"medium", "high"} or incorrect or len(top_names) >= 2 else 0.0,
-            "malignancy_risk_skill": 1.0 if true_label in {"MEL", "BCC", "SCC"} or {"MEL", "BCC", "SCC"}.intersection(top_names) else 0.0,
-            "metadata_consistency_skill": 1.0 if metadata and (
+            "compare_skill": 0.85 if (state.get_uncertainty_level() in {"medium", "high"} or incorrect or top_gap_small) else (0.35 if len(top_names) >= 2 else 0.0),
+            "malignancy_risk_skill": 0.8 if true_label in {"MEL", "BCC", "SCC"} else (0.45 if has_malignant_candidate else 0.0),
+            "metadata_consistency_skill": 0.7 if metadata and (
                 str(retrieval_summary.get("retrieval_confidence", "low")).lower() == "low"
                 or not retrieval_summary.get("supports_top1", False)
                 or incorrect
-            ) else 0.0,
-            "ack_scc_specialist_skill": 1.0 if {"ACK", "SCC"}.issubset(set(top_names)) or true_label in {"ACK", "SCC"} and "SCC" in top_names else 0.0,
-            "bcc_scc_specialist_skill": 1.0 if {"BCC", "SCC"}.issubset(set(top_names)) or true_label in {"BCC", "SCC"} and bool({"BCC", "SCC"}.intersection(set(top_names))) else 0.0,
-            "bcc_sek_specialist_skill": 1.0 if {"BCC", "SEK"}.issubset(set(top_names)) or true_label in {"BCC", "SEK"} and bool({"BCC", "SEK"}.intersection(set(top_names))) else 0.0,
-            "mel_nev_specialist_skill": 1.0 if {"MEL", "NEV"}.issubset(set(top_names)) or true_label in {"MEL", "NEV"} and "NEV" in top_names else 0.0,
+            ) else (0.25 if metadata else 0.0),
+            "ack_scc_specialist_skill": 0.85 if {"ACK", "SCC"}.issubset(set(top_names)) else (0.35 if true_label in {"ACK", "SCC"} and "SCC" in top_names else 0.0),
+            "bcc_scc_specialist_skill": 0.85 if {"BCC", "SCC"}.issubset(set(top_names)) else (0.35 if true_label in {"BCC", "SCC"} and bool({"BCC", "SCC"}.intersection(set(top_names))) else 0.0),
+            "bcc_sek_specialist_skill": 0.85 if {"BCC", "SEK"}.issubset(set(top_names)) else (0.35 if true_label in {"BCC", "SEK"} and bool({"BCC", "SEK"}.intersection(set(top_names))) else 0.0),
+            "mel_nev_specialist_skill": 0.85 if {"MEL", "NEV"}.issubset(set(top_names)) else (0.35 if true_label in {"MEL", "NEV"} and "NEV" in top_names else 0.0),
         }
-        return targets
+
+        targets["compare_skill"] = self._decision_support_target(
+            output=skill_outputs.get("compare_skill", {}) or {},
+            true_label=true_label,
+            fallback=targets["compare_skill"],
+        )
+        targets["ack_scc_specialist_skill"] = self._decision_support_target(
+            output=skill_outputs.get("ack_scc_specialist_skill", {}) or {},
+            true_label=true_label,
+            fallback=targets["ack_scc_specialist_skill"],
+        )
+        targets["bcc_scc_specialist_skill"] = self._decision_support_target(
+            output=skill_outputs.get("bcc_scc_specialist_skill", {}) or {},
+            true_label=true_label,
+            fallback=targets["bcc_scc_specialist_skill"],
+        )
+        targets["bcc_sek_specialist_skill"] = self._decision_support_target(
+            output=skill_outputs.get("bcc_sek_specialist_skill", {}) or {},
+            true_label=true_label,
+            fallback=targets["bcc_sek_specialist_skill"],
+        )
+        targets["mel_nev_specialist_skill"] = self._decision_support_target(
+            output=skill_outputs.get("mel_nev_specialist_skill", {}) or {},
+            true_label=true_label,
+            fallback=targets["mel_nev_specialist_skill"],
+        )
+        targets["metadata_consistency_skill"] = self._metadata_target(
+            output=skill_outputs.get("metadata_consistency_skill", {}) or {},
+            true_label=true_label,
+            final_label=final_label,
+            fallback=targets["metadata_consistency_skill"],
+        )
+        targets["malignancy_risk_skill"] = self._malignancy_target(
+            output=skill_outputs.get("malignancy_risk_skill", {}) or {},
+            true_label=true_label,
+            fallback=targets["malignancy_risk_skill"],
+        )
+        return {
+            skill_id: round(self._clamp01(value), 4)
+            for skill_id, value in targets.items()
+        }
+
+    def _decision_support_target(
+        self,
+        *,
+        output: Dict[str, Any],
+        true_label: str,
+        fallback: float,
+    ) -> float:
+        if not output:
+            return fallback
+        local = output.get("local_decision", {}) or {}
+        supports = self._norm_label(
+            local.get("supports")
+            or output.get("supports")
+            or output.get("supported_label")
+            or output.get("winner")
+            or output.get("recommendation")
+        )
+        opposes = self._norm_label(
+            local.get("opposes")
+            or output.get("loser")
+        )
+        confidence = self._safe_float(
+            local.get("confidence", output.get("confidence")),
+            default=0.0,
+        )
+        applicable = self._safe_float(
+            local.get("applicable", output.get("applicable")),
+            default=1.0,
+        )
+        if applicable <= 0.05:
+            return min(fallback, 0.05)
+
+        positive_target = min(1.0, 0.4 + 0.35 * confidence + 0.25 * applicable)
+        negative_target = max(0.0, 0.2 - 0.15 * confidence)
+
+        if true_label and supports == true_label:
+            return max(fallback, positive_target)
+        if true_label and opposes == true_label:
+            return min(fallback, 0.05)
+        if true_label and supports not in {"", "UNKNOWN"} and supports != true_label:
+            return min(fallback, negative_target)
+        return fallback
+
+    def _metadata_target(
+        self,
+        *,
+        output: Dict[str, Any],
+        true_label: str,
+        final_label: str,
+        fallback: float,
+    ) -> float:
+        if not output:
+            return fallback
+        supported = {
+            self._norm_label(x)
+            for x in (output.get("supported_diagnoses", []) or output.get("supported_labels", []) or [])
+        }
+        penalized = {
+            self._norm_label(x)
+            for x in (output.get("penalized_diagnoses", []) or output.get("penalized_labels", []) or [])
+        }
+        score = self._safe_float(output.get("score"), default=0.0)
+
+        if true_label and true_label in supported:
+            return max(fallback, min(1.0, 0.78 + 0.12 * max(0.0, score)))
+        if true_label and true_label in penalized:
+            return min(fallback, 0.05)
+        if final_label and final_label in supported and true_label and final_label != true_label:
+            return min(fallback, 0.15)
+        if supported or penalized:
+            return max(fallback, min(0.6, 0.3 + 0.1 * len(supported)))
+        return fallback
+
+    def _malignancy_target(
+        self,
+        *,
+        output: Dict[str, Any],
+        true_label: str,
+        fallback: float,
+    ) -> float:
+        if not output:
+            return fallback
+        risk_level = self._norm_text(output.get("risk_level") or output.get("level"))
+        preferred = self._norm_label(
+            output.get("preferred_label")
+            or output.get("recommendation")
+            or output.get("supports")
+        )
+        malignant_truth = true_label in {"MEL", "BCC", "SCC"}
+        if malignant_truth:
+            target = fallback
+            if risk_level == "high":
+                target = max(target, 0.92)
+            elif risk_level == "medium":
+                target = max(target, 0.74)
+            elif risk_level == "low":
+                target = min(target, 0.2)
+            if preferred == true_label:
+                target = max(target, 0.95)
+            return target
+        if risk_level == "high":
+            return min(fallback, 0.08)
+        if risk_level == "medium":
+            return min(fallback, 0.2)
+        if risk_level == "low":
+            return max(0.12, min(fallback, 0.3))
+        return fallback
+
+    def _clamp01(self, value: float) -> float:
+        return max(0.0, min(1.0, float(value)))
 
     def _safe_float(self, value: Any, default: float = 0.0) -> float:
         try:
@@ -412,6 +569,12 @@ class LearnableSkillController:
         if value is None:
             return ""
         return str(value).strip().lower()
+
+    def _norm_label(self, value: Any) -> str:
+        if value is None:
+            return "UNKNOWN"
+        text = str(value).strip().upper()
+        return text if text else "UNKNOWN"
 
     def _site_matches(self, site: str, keywords: List[str]) -> bool:
         if not site:
