@@ -11,7 +11,7 @@
 职责：从 image + metadata 提取初始诊断线索
 输入：CaseState
 输出：perception result
-依赖：models/vlm_backend.py, llm/gpt_api.py
+依赖：models/vlm_backend.py, integrations/openai_client.py
 被这些文件使用：agent/run_agent.py, agent/planner.py
 
 ## memory/schema.py

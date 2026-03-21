@@ -26,17 +26,10 @@ memory/
   writer.py
   compressor.py
 integrations/
-  langchain/
-    tools.py
-    planner_chain.py
-config/
-  settings.py
 datasets/
   pad_ufes20.py
 models/
   vlm_backend.py
-llm/
-  gpt_api.py
 scripts/
   run_eval.py
 docs/

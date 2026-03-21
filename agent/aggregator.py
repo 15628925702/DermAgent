@@ -25,6 +25,10 @@ class DecisionAggregator:
         risk_summary = self._build_risk_summary(state)
         self._add_malignancy_evidence(state, candidate_scores, candidate_features, evidence_log)
         self._add_memory_consensus_evidence(state, candidate_scores, candidate_features, evidence_log)
+        raw_candidate_scores = {
+            label: round(float(score), 6)
+            for label, score in candidate_scores.items()
+        }
         self._finalize_candidate_features(state, candidate_scores, candidate_features)
 
         if self.final_scorer is not None and candidate_features:
@@ -67,9 +71,7 @@ class DecisionAggregator:
             ),
             "aggregator_debug": {
                 "candidate_scores": {name: round(score, 4) for name, score in ranked_candidates},
-                "candidate_base_scores": {
-                    name: round(score, 4) for name, score in self._rank_candidates(candidate_scores)
-                },
+                "candidate_base_scores": {name: round(score, 4) for name, score in self._rank_candidates(raw_candidate_scores)},
                 "candidate_features": feature_debug,
                 "num_evidence_items": len(evidence_log),
                 "memory_consensus_label": (state.retrieval.get("retrieval_summary", {}) or {}).get("memory_consensus_label", ""),
@@ -195,7 +197,9 @@ class DecisionAggregator:
     ) -> None:
         compare_output = state.skill_outputs.get("compare_skill", {}) or {}
         winner = self._norm_label(
-            compare_output.get("winner")
+            compare_output.get("supports")
+            or compare_output.get("supported_label")
+            or compare_output.get("winner")
             or compare_output.get("recommendation")
             or compare_output.get("final_choice")
         )
@@ -223,7 +227,9 @@ class DecisionAggregator:
                 continue
             output = output or {}
             recommendation = self._norm_label(
-                output.get("recommendation")
+                output.get("supports")
+                or output.get("supported_label")
+                or output.get("recommendation")
                 or output.get("winner")
                 or output.get("final_choice")
             )
@@ -344,7 +350,55 @@ class DecisionAggregator:
         perception_top1 = perception_top1[0] if perception_top1 else ""
 
         for label, features in candidate_features.items():
+            raw_total = float(candidate_scores.get(label, 0.0))
+            perception_anchor = max(0.0, self._safe_float(features.get("perception_score")))
+            if perception_anchor <= 0.0:
+                # Keep non-perception candidates available, but only as weak fallback options.
+                perception_anchor = 0.04
+                if label in support_labels:
+                    perception_anchor += 0.03
+                if memory_consensus_label and label == memory_consensus_label:
+                    perception_anchor += 0.03
+
+            retrieval_correction = (
+                0.16 * self._safe_float(features.get("retrieval_score"))
+                + 0.12 * self._safe_float(features.get("prototype_score"))
+                + 0.14 * self._safe_float(features.get("confusion_score"))
+                + 0.16 * self._safe_float(features.get("memory_consensus_score"))
+            )
+            skill_correction = (
+                0.16 * self._safe_float(features.get("compare_score"))
+                + 0.20 * self._safe_float(features.get("specialist_score"))
+                + 0.10 * self._safe_float(features.get("metadata_score"))
+                + 0.12 * self._safe_float(features.get("malignancy_score"))
+            )
+            positive_support_sources = self._count_positive_support_sources(features)
+            multi_source_bonus = 0.04 * max(0, min(3, positive_support_sources - 1))
+            off_perception_penalty = -0.08 if self._safe_float(features.get("perception_score")) <= 0.0 else 0.0
+            correction_raw = retrieval_correction + skill_correction + multi_source_bonus + off_perception_penalty
+
+            max_upward_correction = 0.18 + 0.28 * perception_anchor
+            if label == perception_top1:
+                max_upward_correction += 0.08
+            if label == memory_consensus_label and retrieval_confidence in {"medium", "high"}:
+                max_upward_correction += 0.05
+            max_downward_correction = 0.12 + 0.18 * perception_anchor
+            evidence_correction = self._clip(
+                correction_raw,
+                lower=-max_downward_correction,
+                upper=max_upward_correction,
+            )
+
+            candidate_scores[label] = perception_anchor + evidence_correction
             features["bias"] = 1.0
+            features["raw_total"] = round(raw_total, 6)
+            features["perception_anchor"] = round(perception_anchor, 6)
+            features["retrieval_correction"] = round(retrieval_correction, 6)
+            features["skill_correction"] = round(skill_correction, 6)
+            features["multi_source_bonus"] = round(multi_source_bonus, 6)
+            features["off_perception_penalty"] = round(off_perception_penalty, 6)
+            features["evidence_correction_raw"] = round(correction_raw, 6)
+            features["evidence_correction"] = round(evidence_correction, 6)
             features["base_total"] = round(float(candidate_scores.get(label, 0.0)), 6)
             features["is_perception_top1"] = 1.0 if label == perception_top1 else 0.0
             features["in_support_labels"] = 1.0 if label in support_labels else 0.0
@@ -630,6 +684,25 @@ class DecisionAggregator:
         candidate_scores[label] = candidate_scores.get(label, 0.0) + float(delta)
         features = candidate_features.setdefault(label, {})
         features[feature_name] = float(features.get(feature_name, 0.0)) + float(delta)
+
+    def _count_positive_support_sources(self, features: Dict[str, float]) -> int:
+        count = 0
+        for name in [
+            "retrieval_score",
+            "prototype_score",
+            "confusion_score",
+            "compare_score",
+            "specialist_score",
+            "metadata_score",
+            "malignancy_score",
+            "memory_consensus_score",
+        ]:
+            if self._safe_float(features.get(name)) > 0.0:
+                count += 1
+        return count
+
+    def _clip(self, value: float, *, lower: float, upper: float) -> float:
+        return max(lower, min(upper, float(value)))
 
     def _norm_label(self, value: Any) -> str:
         if value is None:

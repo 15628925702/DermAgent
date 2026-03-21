@@ -34,10 +34,12 @@ def evaluate_run(
     run_path = Path(run_dir)
     controller_path = run_path / "best_controller.json"
     bank_path = run_path / "best_bank.json"
+    manifest_path = run_path / "run_manifest.json"
     if not controller_path.exists():
         raise FileNotFoundError(f"Missing checkpoint: {controller_path}")
     if not bank_path.exists():
         raise FileNotFoundError(f"Missing bank checkpoint: {bank_path}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
 
     result = run_evaluation(
         dataset_root=dataset_root,
@@ -60,6 +62,7 @@ def evaluate_run(
     )
     return {
         "run_dir": str(run_path),
+        "manifest": manifest,
         "controller_path": str(controller_path),
         "bank_path": str(bank_path),
         "metrics": result.get("metrics", {}) or {},
@@ -118,7 +121,7 @@ def promote_run(candidate_run_dir: str | Path, promote_dir: str | Path) -> Dict[
     promote_path.mkdir(parents=True, exist_ok=True)
 
     copied: Dict[str, str] = {}
-    for name in ["best_controller.json", "best_bank.json", "best_skill_designer.json", "train_summary.json"]:
+    for name in ["best_controller.json", "best_bank.json", "best_skill_designer.json", "train_summary.json", "run_manifest.json"]:
         src = candidate_path / name
         if not src.exists():
             continue

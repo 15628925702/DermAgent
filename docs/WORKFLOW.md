@@ -22,6 +22,11 @@ Use this after a small code change:
 STAGE=smoke RUN_NAME=mainline_smoke_try1 bash scripts/linux_mainline_workflow.sh
 ```
 
+This workflow now defaults to a clean initialization. It will not silently warm-start from
+seed checkpoints or older runs unless you explicitly pass an init mode.
+
+See [RUN_MODES.md](/g:/0-newResearch/derm_agent/docs/RUN_MODES.md) for the recommended run semantics and server commands.
+
 Default smoke settings:
 
 - limit: 80
@@ -34,6 +39,20 @@ Use this only after smoke is acceptable:
 
 ```bash
 STAGE=overnight RUN_NAME=mainline_overnight_try1 FULL_EPOCHS=7 bash scripts/linux_mainline_workflow.sh
+```
+
+If you want a warm start, pass it explicitly:
+
+```bash
+INIT_MODE=seed STAGE=overnight RUN_NAME=mainline_seed_try1 FULL_EPOCHS=7 bash scripts/linux_mainline_workflow.sh
+```
+
+```bash
+INIT_MODE=run_best BASE_RUN_DIR=outputs/train_runs/mainline_current STAGE=overnight RUN_NAME=mainline_from_best_try1 FULL_EPOCHS=7 bash scripts/linux_mainline_workflow.sh
+```
+
+```bash
+INIT_MODE=resume RUN_NAME=mainline_resume_try1 STAGE=overnight FULL_EPOCHS=7 bash scripts/linux_mainline_workflow.sh
 ```
 
 ## Review Only

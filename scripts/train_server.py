@@ -31,6 +31,18 @@ from memory.skill_index import build_default_skill_index
 
 MALIGNANT_LABELS = {"MEL", "BCC", "SCC"}
 ACK_SCC_LABELS = {"ACK", "SCC"}
+RUN_ARTIFACT_NAMES = {
+    "best_bank.json",
+    "best_controller.json",
+    "best_skill_designer.json",
+    "latest_bank.json",
+    "latest_controller.json",
+    "latest_skill_designer.json",
+    "run_manifest.json",
+    "skill_evolution.jsonl",
+    "train_log.jsonl",
+    "train_summary.json",
+}
 
 
 def main() -> None:
@@ -41,9 +53,14 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--eval-every", type=int, default=1)
     parser.add_argument("--save-dir", default="outputs/train_runs/latest")
+    parser.add_argument("--run-name", default=None)
+    parser.add_argument("--init-mode", default="clean")
+    parser.add_argument("--base-run-dir", default=None)
+    parser.add_argument("--notes", default="")
     parser.add_argument("--controller-state-in", default=None)
     parser.add_argument("--bank-state-in", default=None)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--allow-dirty-save-dir", action="store_true")
     parser.add_argument("--split-json", default=None)
     parser.add_argument("--train-ratio", type=float, default=0.7)
     parser.add_argument("--val-ratio", type=float, default=0.15)
@@ -91,6 +108,37 @@ def main() -> None:
     else:
         controller_in = args.controller_state_in
         bank_in = args.bank_state_in
+
+    validate_save_dir_state(
+        save_dir=save_dir,
+        resume=args.resume,
+        allow_dirty_save_dir=args.allow_dirty_save_dir,
+    )
+
+    manifest_path = save_dir / "run_manifest.json"
+    init_summary = build_init_summary(
+        init_mode=args.init_mode,
+        base_run_dir=args.base_run_dir,
+        controller_in=controller_in,
+        bank_in=bank_in,
+        resume=args.resume,
+    )
+    run_config = build_run_config(args=args, save_dir=save_dir)
+    write_run_manifest(
+        path=manifest_path,
+        payload={
+            "format_version": 1,
+            "run_name": args.run_name or save_dir.name,
+            "save_dir": str(save_dir),
+            "status": "running",
+            "created_at": datetime.now().isoformat(timespec="seconds"),
+            "updated_at": datetime.now().isoformat(timespec="seconds"),
+            "initialization": init_summary,
+            "config": run_config,
+            "artifacts": build_artifact_summary(save_dir),
+        },
+        resume=args.resume,
+    )
 
     bank = ExperienceBank.from_json(bank_in) if bank_in and Path(bank_in).exists() else ExperienceBank()
 
@@ -188,6 +236,9 @@ def main() -> None:
                 "train_summary": train_summary,
                 "split_summary": split_summary,
                 "designer_state_path": str(latest_designer_path),
+                "run_name": args.run_name or save_dir.name,
+                "init_mode": args.init_mode,
+                "resume": args.resume,
             },
         )
         bank.save_json(latest_bank_path)
@@ -253,6 +304,9 @@ def main() -> None:
                         "val_summary": val_summary,
                         "split_summary": split_summary,
                         "designer_state_path": str(latest_designer_path),
+                        "run_name": args.run_name or save_dir.name,
+                        "init_mode": args.init_mode,
+                        "resume": args.resume,
                     },
                 )
                 bank.save_json(best_bank_path)
@@ -325,12 +379,15 @@ def main() -> None:
         )
 
     summary = {
+        "run_name": args.run_name or save_dir.name,
         "dataset_root": args.dataset_root,
         "num_total_cases": len(all_cases),
         "epochs": args.epochs,
         "best_epoch": best_epoch,
         "best_metric": round(best_metric, 4) if best_metric > float("-inf") else None,
         "save_dir": str(save_dir),
+        "initialization": init_summary,
+        "config": run_config,
         "split": split_summary,
         "curriculum": {
             "rule_compression_start_epoch": args.rule_compression_start_epoch,
@@ -351,6 +408,24 @@ def main() -> None:
         "best_test": best_test_summary,
     }
     (save_dir / "train_summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_run_manifest(
+        path=manifest_path,
+        payload={
+            "format_version": 1,
+            "run_name": args.run_name or save_dir.name,
+            "save_dir": str(save_dir),
+            "status": "completed",
+            "created_at": load_manifest_created_at(manifest_path),
+            "updated_at": datetime.now().isoformat(timespec="seconds"),
+            "initialization": init_summary,
+            "config": run_config,
+            "artifacts": build_artifact_summary(save_dir),
+            "summary_path": str(save_dir / "train_summary.json"),
+            "best_metric": summary["best_metric"],
+            "best_epoch": summary["best_epoch"],
+        },
+        resume=True,
+    )
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
 
@@ -519,6 +594,108 @@ def append_jsonl(path: Path, payload: Dict[str, Any]) -> None:
 
 def safe_div(numerator: int, denominator: int) -> float:
     return 0.0 if denominator <= 0 else round(numerator / denominator, 4)
+
+
+def validate_save_dir_state(*, save_dir: Path, resume: bool, allow_dirty_save_dir: bool) -> None:
+    existing_artifacts = find_existing_run_artifacts(save_dir)
+    if not existing_artifacts:
+        return
+    if resume or allow_dirty_save_dir:
+        return
+    artifact_list = ", ".join(existing_artifacts)
+    raise SystemExit(
+        f"Refusing to start a fresh run in non-empty save dir: {save_dir}. "
+        f"Found existing run artifacts: {artifact_list}. "
+        "Use a new SAVE_DIR, or pass --resume for continuation."
+    )
+
+
+def find_existing_run_artifacts(save_dir: Path) -> List[str]:
+    if not save_dir.exists():
+        return []
+    found = sorted(name for name in RUN_ARTIFACT_NAMES if (save_dir / name).exists())
+    if found:
+        return found
+    generated_files = []
+    for child in sorted(save_dir.iterdir()):
+        if child.is_file():
+            generated_files.append(child.name)
+    return generated_files
+
+
+def build_init_summary(
+    *,
+    init_mode: str,
+    base_run_dir: str | None,
+    controller_in: str | None,
+    bank_in: str | None,
+    resume: bool,
+) -> Dict[str, Any]:
+    controller_path = str(controller_in) if controller_in else None
+    bank_path = str(bank_in) if bank_in else None
+    return {
+        "mode": str(init_mode).strip() or "clean",
+        "resume": bool(resume),
+        "base_run_dir": str(base_run_dir) if base_run_dir else None,
+        "controller_state_in": controller_path,
+        "bank_state_in": bank_path,
+        "controller_state_exists": bool(controller_path and Path(controller_path).exists()),
+        "bank_state_exists": bool(bank_path and Path(bank_path).exists()),
+    }
+
+
+def build_run_config(*, args: argparse.Namespace, save_dir: Path) -> Dict[str, Any]:
+    return {
+        "run_name": args.run_name or save_dir.name,
+        "dataset_root": args.dataset_root,
+        "limit": args.limit,
+        "epochs": args.epochs,
+        "seed": args.seed,
+        "eval_every": args.eval_every,
+        "save_dir": str(save_dir),
+        "split_json": args.split_json,
+        "train_ratio": args.train_ratio,
+        "val_ratio": args.val_ratio,
+        "test_ratio": args.test_ratio,
+        "rule_compression_start_epoch": args.rule_compression_start_epoch,
+        "rule_memory_start_epoch": args.rule_memory_start_epoch,
+        "rule_learning_start_epoch": args.rule_learning_start_epoch,
+        "skill_evolution_start_epoch": args.skill_evolution_start_epoch,
+        "skill_evolution_every": args.skill_evolution_every,
+        "enable_controller": bool(args.enable_controller),
+        "enable_final_scorer": bool(args.enable_final_scorer),
+        "disable_compare": bool(args.disable_compare),
+        "enable_malignancy": bool(args.enable_malignancy) and not bool(args.disable_malignancy),
+        "disable_metadata_consistency": bool(args.disable_metadata_consistency),
+        "allow_dirty_save_dir": bool(args.allow_dirty_save_dir),
+        "notes": str(args.notes or ""),
+        "argv": list(sys.argv),
+    }
+
+
+def build_artifact_summary(save_dir: Path) -> Dict[str, str]:
+    artifacts: Dict[str, str] = {}
+    for name in sorted(RUN_ARTIFACT_NAMES):
+        path = save_dir / name
+        if path.exists():
+            artifacts[name] = str(path)
+    return artifacts
+
+
+def write_run_manifest(*, path: Path, payload: Dict[str, Any], resume: bool) -> None:
+    if path.exists() and not resume:
+        raise SystemExit(
+            f"Run manifest already exists: {path}. "
+            "Use a new SAVE_DIR, or pass --resume if you mean to continue this run."
+        )
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def load_manifest_created_at(path: Path) -> str:
+    if not path.exists():
+        return datetime.now().isoformat(timespec="seconds")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return str(payload.get("created_at") or datetime.now().isoformat(timespec="seconds"))
 
 
 if __name__ == "__main__":

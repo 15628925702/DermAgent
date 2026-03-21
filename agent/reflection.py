@@ -430,6 +430,7 @@ class ReflectionEngine:
 
         return (
             self._is_top1_correct(state)
+            and
             confidence in {"medium", "high"}
             and uncertainty in {"low", "medium"}
             and (len(visual_cues) > 0 or len(self._build_decisive_factors(state, self._get_final_label(state))) >= 2)
@@ -460,15 +461,17 @@ class ReflectionEngine:
 
         return (
             self._is_top1_correct(state)
-            retrieval_summary.get("has_confusion_support", False)
-            or (
-                uncertainty in {"medium", "high"}
-                and (
-                    "compare_skill" in selected
-                    or "mel_nev_specialist_skill" in selected
-                    or "ack_scc_specialist_skill" in selected
-                    or "bcc_scc_specialist_skill" in selected
-                    or "bcc_sek_specialist_skill" in selected
+            and (
+                retrieval_summary.get("has_confusion_support", False)
+                or (
+                    uncertainty in {"medium", "high"}
+                    and (
+                        "compare_skill" in selected
+                        or "mel_nev_specialist_skill" in selected
+                        or "ack_scc_specialist_skill" in selected
+                        or "bcc_scc_specialist_skill" in selected
+                        or "bcc_sek_specialist_skill" in selected
+                    )
                 )
             )
         )

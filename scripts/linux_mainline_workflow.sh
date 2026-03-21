@@ -18,6 +18,10 @@ MIN_TOP3_GAIN="${MIN_TOP3_GAIN:-0.0}"
 MIN_MALIGNANT_RECALL_GAIN="${MIN_MALIGNANT_RECALL_GAIN:-0.0}"
 MIN_CONFUSION_GAIN="${MIN_CONFUSION_GAIN:-0.0}"
 START_QWEN="${START_QWEN:-1}"
+INIT_MODE="${INIT_MODE:-clean}"
+BASE_RUN_DIR="${BASE_RUN_DIR:-}"
+CONTROLLER_IN="${CONTROLLER_IN:-}"
+BANK_IN="${BANK_IN:-}"
 
 cd "$PROJECT_DIR"
 
@@ -32,10 +36,11 @@ else
 fi
 
 if [[ -d "$PROMOTE_DIR" && -f "$PROMOTE_DIR/best_controller.json" && -f "$PROMOTE_DIR/best_bank.json" ]]; then
-  BASELINE_RUN_DIR="$PROMOTE_DIR"
+  DEFAULT_BASELINE_RUN_DIR="$PROMOTE_DIR"
 else
-  BASELINE_RUN_DIR="${BASELINE_RUN_DIR:-outputs/train_runs/final_v3_8h}"
+  DEFAULT_BASELINE_RUN_DIR="outputs/train_runs/final_v3_8h"
 fi
+BASELINE_RUN_DIR="${BASELINE_RUN_DIR:-$DEFAULT_BASELINE_RUN_DIR}"
 
 if [[ -z "$RUN_NAME" ]]; then
   RUN_NAME="mainline_${STAGE}_$(date +%Y%m%d_%H%M%S)"
@@ -71,24 +76,29 @@ case "$STAGE" in
   smoke)
     start_qwen_if_needed
     echo "[stage] smoke train"
-    python scripts/train_server.py \
-      --dataset-root "$DATASET_ROOT" \
-      --limit "$SMOKE_LIMIT" \
-      --epochs "$SMOKE_EPOCHS" \
-      --eval-every 1 \
-      --save-dir "$SAVE_DIR"
+    SAVE_DIR="$SAVE_DIR" \
+    SPLIT_JSON="$FULL_SPLIT_JSON" \
+    LIMIT="$SMOKE_LIMIT" \
+    INIT_MODE="$INIT_MODE" \
+    BASE_RUN_DIR="$BASE_RUN_DIR" \
+    CONTROLLER_IN="$CONTROLLER_IN" \
+    BANK_IN="$BANK_IN" \
+    EPOCHS="$SMOKE_EPOCHS" \
+    bash scripts/linux_train_8h.sh "$PROJECT_DIR"
     echo "[stage] smoke review"
     run_review
     ;;
   overnight)
     start_qwen_if_needed
     echo "[stage] overnight train"
-    python scripts/train_server.py \
-      --dataset-root "$DATASET_ROOT" \
-      --epochs "$FULL_EPOCHS" \
-      --eval-every 1 \
-      --split-json "$FULL_SPLIT_JSON" \
-      --save-dir "$SAVE_DIR"
+    SAVE_DIR="$SAVE_DIR" \
+    SPLIT_JSON="$FULL_SPLIT_JSON" \
+    INIT_MODE="$INIT_MODE" \
+    BASE_RUN_DIR="$BASE_RUN_DIR" \
+    CONTROLLER_IN="$CONTROLLER_IN" \
+    BANK_IN="$BANK_IN" \
+    EPOCHS="$FULL_EPOCHS" \
+    bash scripts/linux_train_8h.sh "$PROJECT_DIR"
     echo "[stage] overnight review"
     run_review
     ;;

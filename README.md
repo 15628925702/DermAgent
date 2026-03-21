@@ -8,6 +8,7 @@ DermAgent is a dermatology-agent research workspace organized around four main l
 Useful entry points:
 
 - [WORKFLOW.md](/g:/0-newResearch/derm_agent/docs/WORKFLOW.md): mainline experiment workflow
+- [RUN_MODES.md](/g:/0-newResearch/derm_agent/docs/RUN_MODES.md): clean vs warm-start vs resume semantics
 - [docs/ROOT_ORGANIZATION.md](/g:/0-newResearch/derm_agent/docs/ROOT_ORGANIZATION.md): what belongs in root vs `outputs/`
 - [OUTPUT_LAYOUT.md](/g:/0-newResearch/derm_agent/docs/OUTPUT_LAYOUT.md): artifact and checkpoint layout
 - [PROJECT_TREE.txt](/g:/0-newResearch/derm_agent/docs/PROJECT_TREE.txt): compact module map

@@ -6,7 +6,7 @@ This file explains what belongs in the project root and what should live elsewhe
 
 These are the minimal root-level entry points and project metadata:
 
-- `agent/`, `skills/`, `memory/`, `datasets/`, `evaluation/`, `integrations/`, `models/`, `llm/`, `config/`
+- `agent/`, `skills/`, `memory/`, `datasets/`, `evaluation/`, `integrations/`, `models/`
 - `scripts/`
 - `tests/`
 - `data/`
@@ -26,7 +26,7 @@ These are the minimal root-level entry points and project metadata:
 - `datasets/`: dataset loaders and split helpers
 - `evaluation/`: metric and comparison helpers
 - `integrations/`: external adapters
-- `models/`, `llm/`, `config/`: model and config glue
+- `models/`: model-facing helpers
 
 These should stay under version control.
 

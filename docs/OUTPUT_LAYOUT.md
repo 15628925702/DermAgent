@@ -9,6 +9,7 @@ This project keeps generated artifacts under `outputs/` with a small number of t
   - currently includes `controller_v2.json` and `experience_bank.json`
 - `outputs/train_runs/`
   - active or recent experiment directories you still compare against
+  - each run should include `run_manifest.json` and `train_summary.json`
 - `outputs/splits/`
   - dataset split manifests
 - `outputs/logs/`
@@ -42,6 +43,9 @@ Move to `outputs/archive/` when a run is:
 Recommended naming:
 
 - long runs: `final_*`, `mainline_*`
+- clean runs: `clean_*`
+- seeded runs: `seed_*`
+- baseline warm-start runs: `frombest_*`
 - focused experiments: `writegate_*`, `ablation_*`
 - quick local checks: `quick_*`, then archive quickly if no longer needed
 
