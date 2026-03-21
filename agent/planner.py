@@ -51,17 +51,22 @@ class ExperienceSkillPlanner:
     def plan(self, state: CaseState) -> Dict[str, object]:
         selected: List[str] = []
         routing_reasons: List[Dict[str, Any]] = []
+        decision_trace: List[Dict[str, Any]] = []
+
+        case_features = self.extract_case_features(state)
+        top_names = list(case_features["top_names"])
+        uncertainty = str(case_features["uncertainty"])
+        retrieval_confidence = str(case_features["retrieval_confidence"])
+        supports_top1 = bool(case_features["supports_top1"])
+        has_confusion_support = bool(case_features["has_confusion_support"])
 
         if self._is_enabled("uncertainty_assessment_skill"):
             selected.append("uncertainty_assessment_skill")
-
-        ddx = state.perception.get("ddx_candidates", []) or []
-        top_names = [
-            str(x.get("name", "")).strip().upper()
-            for x in ddx[:3]
-            if str(x.get("name", "")).strip()
-        ]
-        uncertainty = str((state.perception.get("uncertainty", {}) or {}).get("level", "high")).lower()
+            decision_trace.append({
+                "skill": "uncertainty_assessment_skill",
+                "selected": True,
+                "trigger": "always_on_core_skill",
+            })
 
         retrieval_summary = state.retrieval.get("retrieval_summary", {}) or {}
         confusion_hits = state.retrieval.get("confusion_hits", []) or []
@@ -72,9 +77,6 @@ class ExperienceSkillPlanner:
         retrieval_recommended_skills = [
             str(x).strip() for x in retrieval_summary.get("recommended_skills", []) if str(x).strip()
         ]
-        retrieval_confidence = str(retrieval_summary.get("retrieval_confidence", "low")).lower()
-        has_confusion_support = bool(retrieval_summary.get("has_confusion_support", False))
-        supports_top1 = bool(retrieval_summary.get("supports_top1", False))
         confusion_pairs = [
             tuple(sorted(str(x).strip().upper() for x in item.get("pair", []) if str(x).strip()))
             for item in confusion_hits
@@ -97,38 +99,47 @@ class ExperienceSkillPlanner:
         if not recommended_skills:
             recommended_skills = retrieval_recommended_skills
 
-        if self._is_enabled("compare_skill") and uncertainty in {"medium", "high"}:
+        compare_selected, compare_trigger, compare_detail = self._should_add_compare_skill(
+            case_features=case_features,
+            recommended_skills=recommended_skills,
+        )
+        if self._is_enabled("compare_skill") and compare_selected:
             selected.append("compare_skill")
             routing_reasons.append({
                 "skill": "compare_skill",
-                "trigger": "uncertainty_threshold",
-                "detail": {"uncertainty": uncertainty},
+                "trigger": compare_trigger,
+                "detail": compare_detail,
             })
+        decision_trace.append({
+            "skill": "compare_skill",
+            "selected": self._is_enabled("compare_skill") and compare_selected,
+            "trigger": compare_trigger,
+            "detail": compare_detail,
+        })
 
-        if self._is_enabled("compare_skill") and "compare_skill" in recommended_skills and "compare_skill" not in selected:
-            selected.append("compare_skill")
-            routing_reasons.append({
-                "skill": "compare_skill",
-                "trigger": "memory_or_rule_recommended_skill",
-                "detail": {
-                    "memory_recommended_skills": memory_recommended_skills,
-                    "rule_recommended_skills": rule_recommended_skills,
-                },
-            })
-
-        if self._is_enabled("malignancy_risk_skill") and {"MEL", "BCC", "SCC"}.intersection(top_names):
+        if self._is_enabled("malignancy_risk_skill") and bool(case_features["has_malignant_candidate"]):
             selected.append("malignancy_risk_skill")
             routing_reasons.append({
                 "skill": "malignancy_risk_skill",
                 "trigger": "malignant_candidate_in_top_k",
                 "detail": {"top_names": top_names},
             })
+            decision_trace.append({
+                "skill": "malignancy_risk_skill",
+                "selected": True,
+                "trigger": "malignant_candidate_in_top_k",
+                "detail": {"top_names": top_names},
+            })
+        else:
+            decision_trace.append({
+                "skill": "malignancy_risk_skill",
+                "selected": False,
+                "trigger": "malignant_candidate_in_top_k",
+                "detail": {"top_names": top_names},
+            })
 
         if self._is_enabled("metadata_consistency_skill") and self._should_add_metadata_skill(
-            state=state,
-            uncertainty=uncertainty,
-            retrieval_confidence=retrieval_confidence,
-            supports_top1=supports_top1,
+            case_features=case_features,
         ):
             selected.append("metadata_consistency_skill")
             routing_reasons.append({
@@ -140,29 +151,75 @@ class ExperienceSkillPlanner:
                     "metadata_keys": list(state.get_metadata().keys()),
                 },
             })
+            decision_trace.append({
+                "skill": "metadata_consistency_skill",
+                "selected": True,
+                "trigger": "metadata_or_support_check",
+                "detail": {
+                    "retrieval_confidence": retrieval_confidence,
+                    "supports_top1": supports_top1,
+                    "metadata_present": case_features["metadata_present"],
+                },
+            })
+        else:
+            decision_trace.append({
+                "skill": "metadata_consistency_skill",
+                "selected": False,
+                "trigger": "metadata_or_support_check",
+                "detail": {
+                    "retrieval_confidence": retrieval_confidence,
+                    "supports_top1": supports_top1,
+                    "metadata_present": case_features["metadata_present"],
+                },
+            })
 
         if self.use_specialist:
             for config in self.SPECIALIST_CONFIGS:
                 target_pair = tuple(config["pair"])
                 skill_name = str(config["skill"])
                 if not self._is_enabled(skill_name):
+                    decision_trace.append({
+                        "skill": skill_name,
+                        "selected": False,
+                        "trigger": "skill_disabled",
+                        "detail": {"target_pair": list(target_pair)},
+                    })
                     continue
-                if not self._should_add_pair_specialist(
+                specialist_selected, specialist_reason = self._should_add_pair_specialist(
                     target_pair=target_pair,
-                    top_names=top_names,
+                    case_features=case_features,
                     confusion_pairs=confusion_pairs,
                     recommended_skills=recommended_skills,
                     state=state,
                     allow_metadata_proxy=bool(config.get("allow_metadata_proxy", False)),
-                ):
+                )
+                if not specialist_selected:
+                    decision_trace.append({
+                        "skill": skill_name,
+                        "selected": False,
+                        "trigger": specialist_reason,
+                        "detail": {
+                            "target_pair": list(target_pair),
+                            "recommended_skills": recommended_skills,
+                        },
+                    })
                     continue
                 selected.append(skill_name)
                 routing_reasons.append({
                     "skill": skill_name,
-                    "trigger": "pair_or_scored_rule_support",
+                    "trigger": specialist_reason,
                     "detail": {
                         "target_pair": list(target_pair),
                         "rule_recommended_skills": rule_recommended_skills,
+                    },
+                })
+                decision_trace.append({
+                    "skill": skill_name,
+                    "selected": True,
+                    "trigger": specialist_reason,
+                    "detail": {
+                        "target_pair": list(target_pair),
+                        "recommended_skills": recommended_skills,
                     },
                 })
 
@@ -173,6 +230,11 @@ class ExperienceSkillPlanner:
             "retrieval_confidence": retrieval_confidence,
             "has_confusion_support": has_confusion_support,
             "supports_top1": supports_top1,
+            "top_gap": case_features["top_gap"],
+            "top_gap_small": case_features["top_gap_small"],
+            "metadata_present": case_features["metadata_present"],
+            "sun_exposed_site": case_features["sun_exposed_site"],
+            "strong_invasive_history": case_features["strong_invasive_history"],
             "memory_recommended_skills": memory_recommended_skills,
             "rule_recommended_skills": rule_recommended_skills,
             "recommended_skills": recommended_skills,
@@ -207,7 +269,9 @@ class ExperienceSkillPlanner:
         state.planner = {
             "selected_skills": state.selected_skills,
             "reason": routing_reasons,
+            "decision_trace": decision_trace,
             "flags": planner_flags,
+            "case_features": case_features,
             "rule_selected_skills": rule_selected,
             "skill_scores": controller_payload.get("skill_scores", {}),
             "stop_probability": controller_payload.get("stop_probability"),
@@ -229,25 +293,97 @@ class ExperienceSkillPlanner:
         )
         return state.planner
 
+    def extract_case_features(self, state: CaseState) -> Dict[str, Any]:
+        ddx = state.perception.get("ddx_candidates", []) or []
+        top_names = [
+            str(x.get("name", "")).strip().upper()
+            for x in ddx[:3]
+            if str(x.get("name", "")).strip()
+        ]
+        top_scores = [
+            self._safe_float(item.get("score") or item.get("probability") or item.get("confidence"))
+            for item in ddx[:2]
+        ]
+        top_gap = round(max(0.0, (top_scores[0] if top_scores else 0.0) - (top_scores[1] if len(top_scores) > 1 else 0.0)), 4)
+
+        metadata = state.get_metadata()
+        retrieval_summary = state.retrieval.get("retrieval_summary", {}) or {}
+        site = self._norm_text(metadata.get("location") or metadata.get("site") or metadata.get("anatomical_site"))
+        history = self._norm_text(metadata.get("history") or metadata.get("clinical_history") or metadata.get("past_history"))
+        malignant_cues = [
+            str(x).strip().lower()
+            for x in ((state.perception.get("risk_cues", {}) or {}).get("malignant_cues", []) or [])
+            if str(x).strip()
+        ]
+
+        return {
+            "top_names": top_names,
+            "top_scores": [round(float(x), 4) for x in top_scores],
+            "top_gap": top_gap,
+            "top_gap_small": top_gap <= 0.15,
+            "uncertainty": str((state.perception.get("uncertainty", {}) or {}).get("level", "high")).lower(),
+            "retrieval_confidence": str(retrieval_summary.get("retrieval_confidence", "low")).lower(),
+            "supports_top1": bool(retrieval_summary.get("supports_top1", False)),
+            "has_confusion_support": bool(retrieval_summary.get("has_confusion_support", False)),
+            "metadata_present": bool(metadata),
+            "metadata_keys": list(metadata.keys()),
+            "has_malignant_candidate": bool({"MEL", "BCC", "SCC"}.intersection(top_names)),
+            "has_ack_scc_pair": {"ACK", "SCC"}.issubset(set(top_names)),
+            "has_bcc_scc_pair": {"BCC", "SCC"}.issubset(set(top_names)),
+            "has_bcc_sek_pair": {"BCC", "SEK"}.issubset(set(top_names)),
+            "has_mel_nev_pair": {"MEL", "NEV"}.issubset(set(top_names)),
+            "sun_exposed_site": self._site_matches(site, ["face", "scalp", "ear", "neck", "nose", "temple", "cheek", "hand", "forearm", "lip"]),
+            "strong_invasive_history": any(token in history for token in ["bleed", "bleeding", "rapid growth", "pain", "hurt", "ulcer", "ulcerated"]),
+            "has_malignant_cues": bool(malignant_cues),
+        }
+
+    def _should_add_compare_skill(
+        self,
+        *,
+        case_features: Dict[str, Any],
+        recommended_skills: List[str],
+    ) -> tuple[bool, str, Dict[str, Any]]:
+        if "compare_skill" in recommended_skills:
+            return True, "memory_or_rule_recommended_skill", {
+                "recommended_skills": recommended_skills,
+                "top_gap": case_features["top_gap"],
+            }
+        if str(case_features["uncertainty"]) in {"medium", "high"}:
+            return True, "uncertainty_threshold", {
+                "uncertainty": case_features["uncertainty"],
+                "top_gap": case_features["top_gap"],
+            }
+        if bool(case_features["top_gap_small"]):
+            return True, "small_top_gap", {
+                "top_gap": case_features["top_gap"],
+            }
+        return False, "not_triggered", {
+            "uncertainty": case_features["uncertainty"],
+            "top_gap": case_features["top_gap"],
+        }
+
     def _should_add_pair_specialist(
         self,
         target_pair: tuple[str, str],
-        top_names: List[str],
+        case_features: Dict[str, Any],
         confusion_pairs: List[tuple[str, ...]],
         recommended_skills: List[str],
         state: CaseState,
         allow_metadata_proxy: bool = False,
-    ) -> bool:
+    ) -> tuple[bool, str]:
         pair_set = set(target_pair)
         specialist_name = self._specialist_name_for_pair(pair_set)
+        top_names = list(case_features["top_names"])
         if pair_set.issubset(set(top_names)):
-            return True
+            return True, "pair_present_in_top_k"
         for pair in confusion_pairs:
             if set(pair) == pair_set:
-                return True
+                return True, "confusion_memory_pair_match"
         if allow_metadata_proxy and pair_set == {"ACK", "SCC"} and self._should_add_ack_scc_specialist_from_metadata(state=state, top_names=top_names):
-            return True
-        return specialist_name in recommended_skills
+            return True, "metadata_proxy_support"
+        if specialist_name in recommended_skills:
+            return True, "memory_or_rule_recommended_skill"
+        return False, "not_triggered"
 
     def _specialist_name_for_pair(self, pair_set: set[str]) -> str:
         if pair_set == {"ACK", "SCC"}:
@@ -260,17 +396,13 @@ class ExperienceSkillPlanner:
 
     def _should_add_metadata_skill(
         self,
-        state: CaseState,
-        uncertainty: str,
-        retrieval_confidence: str,
-        supports_top1: bool,
+        case_features: Dict[str, Any],
     ) -> bool:
-        metadata = state.get_metadata()
-        if not metadata:
+        if not bool(case_features["metadata_present"]):
             return False
-        if uncertainty in {"medium", "high"}:
+        if str(case_features["uncertainty"]) in {"medium", "high"}:
             return True
-        if retrieval_confidence == "low" or not supports_top1:
+        if str(case_features["retrieval_confidence"]) == "low" or not bool(case_features["supports_top1"]):
             return True
         return False
 
@@ -294,6 +426,14 @@ class ExperienceSkillPlanner:
         if value is None:
             return ""
         return str(value).strip().lower()
+
+    def _safe_float(self, value: Any) -> float:
+        try:
+            if value is None or value == "":
+                return 0.0
+            return float(value)
+        except (TypeError, ValueError):
+            return 0.0
 
     def _site_matches(self, site: str, keywords: List[str]) -> bool:
         if not site:
