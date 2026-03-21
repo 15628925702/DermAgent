@@ -5,23 +5,14 @@ from typing import Any, Dict, List, Optional
 from agent.state import CaseState
 from memory.experience_bank import ExperienceBank
 from memory.schema import (
-    build_hard_case_experience,
     build_confusion_experience,
+    build_hard_case_experience,
     build_prototype_experience,
     build_raw_case_experience,
 )
 
 
 class ExperienceWriter:
-    """
-    升级版经验写回器（Reflection-driven）
-
-    新增能力：
-    - 基于 reflection 自动决定写回策略
-    - 支持 hard case 写回
-    - 使用 structured reflection（prototype / confusion）
-    """
-
     def write_case(
         self,
         state: CaseState,
@@ -30,6 +21,9 @@ class ExperienceWriter:
     ) -> Dict[str, Any]:
         reflection = state.reflection or {}
         fallback_case = self._is_fallback_case(state)
+        is_correct = self._is_top1_correct(state)
+        confidence = self._get_final_confidence(state)
+        uncertainty = state.get_uncertainty_level()
 
         summary: Dict[str, Any] = {
             "case_id": state.get_case_id(),
@@ -38,59 +32,78 @@ class ExperienceWriter:
             "confusion_written": False,
             "hard_case_written": False,
             "fallback_case": fallback_case,
+            "is_top1_correct": is_correct,
+            "final_confidence": confidence,
+            "uncertainty": uncertainty,
             "skipped_reason": None,
         }
 
-        # =========================
-        # 1. raw case（始终写）
-        # =========================
-        raw_case_item = self._build_raw_case_item(state)
-        summary["raw_case_written"] = bank.add_if_not_exists(raw_case_item)
+        if is_correct and not fallback_case:
+            raw_case_item = self._build_raw_case_item(state)
+            summary["raw_case_written"] = bank.add_if_not_exists(raw_case_item)
+        else:
+            summary["skipped_reason"] = self._join_reasons(
+                summary.get("skipped_reason"),
+                "raw_case_requires_correct_non_fallback",
+            )
 
-        # =========================
-        # 2. 自动策略（核心🔥）
-        # =========================
         write_prototype = False
         write_confusion = False
         write_hard_case = False
 
         if auto:
             hints = reflection.get("writeback_hints", {}) or {}
-            signals = reflection.get("learning_signals", {}) or {}
 
-            write_prototype = hints.get("should_write_prototype", False)
-            write_confusion = hints.get("should_write_confusion", False)
-            write_hard_case = signals.get("hard_case", False)
+            write_prototype = (
+                is_correct
+                and confidence in {"medium", "high"}
+                and hints.get("should_write_prototype", False)
+            )
+            write_confusion = (
+                is_correct
+                and confidence in {"medium", "high"}
+                and hints.get("should_write_confusion", False)
+            )
+            write_hard_case = fallback_case or not is_correct
 
         if fallback_case:
             write_prototype = False
             write_confusion = False
             write_hard_case = True
-            summary["skipped_reason"] = "fallback_perception_only_raw_and_hard_case"
+            summary["skipped_reason"] = self._join_reasons(
+                summary.get("skipped_reason"),
+                "fallback_perception_only_raw_blocked",
+            )
 
-        # =========================
-        # 3. prototype
-        # =========================
         if write_prototype:
             prototype_item = self._build_prototype_item(state)
             if prototype_item:
                 summary["prototype_written"] = bank.add_if_not_exists(prototype_item)
+        elif auto:
+            summary["skipped_reason"] = self._join_reasons(
+                summary.get("skipped_reason"),
+                "prototype_requires_correct_confident_case",
+            )
 
-        # =========================
-        # 4. confusion
-        # =========================
         if write_confusion:
             confusion_item = self._build_confusion_item(state)
             if confusion_item:
                 summary["confusion_written"] = bank.add_if_not_exists(confusion_item)
+        elif auto:
+            summary["skipped_reason"] = self._join_reasons(
+                summary.get("skipped_reason"),
+                "confusion_requires_correct_confident_case",
+            )
 
-        # =========================
-        # 5. hard case（新增🔥）
-        # =========================
         if write_hard_case:
             hard_case_item = self._build_hard_case_item(state)
             if hard_case_item:
                 summary["hard_case_written"] = bank.add_if_not_exists(hard_case_item)
+        elif auto:
+            summary["skipped_reason"] = self._join_reasons(
+                summary.get("skipped_reason"),
+                "hard_case_requires_failure_or_fallback",
+            )
 
         state.trace(
             "experience_writeback",
@@ -99,10 +112,6 @@ class ExperienceWriter:
             payload=summary,
         )
         return summary
-
-    # =========================
-    # Raw case
-    # =========================
 
     def _build_raw_case_item(self, state: CaseState) -> Dict[str, Any]:
         return build_raw_case_experience(
@@ -113,10 +122,6 @@ class ExperienceWriter:
             retrieval=state.retrieval,
             metadata=state.get_metadata(),
         )
-
-    # =========================
-    # Prototype（用 reflection🔥）
-    # =========================
 
     def _build_prototype_item(self, state: CaseState) -> Optional[Dict[str, Any]]:
         reflection = state.reflection or {}
@@ -132,10 +137,6 @@ class ExperienceWriter:
             common_confusions=self._extract_other_ddx(state, proto.get("label", ""))[:5],
             recommended_skills=list(state.selected_skills)[:5],
         )
-
-    # =========================
-    # Confusion（用 reflection🔥）
-    # =========================
 
     def _build_confusion_item(self, state: CaseState) -> Optional[Dict[str, Any]]:
         reflection = state.reflection or {}
@@ -158,10 +159,6 @@ class ExperienceWriter:
             failure_modes=self._build_failure_modes(state),
         )
 
-    # =========================
-    # Hard case（新增🔥）
-    # =========================
-
     def _build_hard_case_item(self, state: CaseState) -> Optional[Dict[str, Any]]:
         reflection = state.reflection or {}
 
@@ -173,10 +170,6 @@ class ExperienceWriter:
             learning_signals=reflection.get("learning_signals", {}) or {},
             selected_skills=list(state.selected_skills),
         )
-
-    # =========================
-    # Helpers
-    # =========================
 
     def _extract_visual_cues(self, state: CaseState) -> List[str]:
         cues = state.perception.get("visual_cues", []) or []
@@ -225,3 +218,22 @@ class ExperienceWriter:
 
     def _is_fallback_case(self, state: CaseState) -> bool:
         return bool((state.perception or {}).get("fallback_reason"))
+
+    def _is_top1_correct(self, state: CaseState) -> bool:
+        true_label = str((state.case_info or {}).get("true_label", "")).strip().upper()
+        final_label = str(
+            (state.final_decision or {}).get("final_label")
+            or (state.final_decision or {}).get("diagnosis")
+            or ""
+        ).strip().upper()
+        return bool(true_label) and bool(final_label) and true_label == final_label
+
+    def _get_final_confidence(self, state: CaseState) -> str:
+        return str((state.final_decision or {}).get("confidence", "low")).strip().lower()
+
+    def _join_reasons(self, existing: Any, new_reason: str) -> str:
+        existing_text = "" if existing is None else str(existing).strip()
+        reasons = [existing_text] if existing_text and existing_text.lower() != "none" else []
+        if new_reason not in reasons:
+            reasons.append(new_reason)
+        return ",".join(reasons)
