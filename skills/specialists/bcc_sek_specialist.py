@@ -21,7 +21,18 @@ class BccSekSpecialistSkill(BaseSkill):
             result = {
                 "target_group": ["BCC", "SEK"],
                 "recommendation": None,
+                "supports": None,
+                "supported_label": None,
                 "group_scores": {"BCC": 0.0, "SEK": 0.0},
+                "applicable": 0.0,
+                "evidence_items": [],
+                "local_decision": {
+                    "supports": None,
+                    "opposes": None,
+                    "confidence": 0.0,
+                    "applicable": 0.0,
+                    "reason": "bcc_sek_not_present",
+                },
                 "confidence": 0.0,
                 "reason": "bcc_sek_not_present",
                 "rationale": ["BCC/SEK specialist not triggered by current candidates."],
@@ -159,16 +170,68 @@ class BccSekSpecialistSkill(BaseSkill):
         result = {
             "target_group": ["BCC", "SEK"],
             "recommendation": recommendation,
+            "supports": recommendation,
+            "supported_label": recommendation,
             "loser": loser,
             "group_scores": {name: round(value, 4) for name, value in scores.items()},
+            "applicable": 1.0,
+            "supporting_evidence": rationale[:24],
+            "evidence_items": self._build_evidence_items(
+                scores=scores,
+                recommendation=recommendation,
+                loser=loser,
+                confidence=confidence,
+                gap=gap,
+                rationale=rationale,
+            ),
             "confidence": round(confidence, 4),
             "gap": round(gap, 4),
             "reason": reason,
             "rationale": rationale[:24],
+            "local_decision": {
+                "supports": recommendation,
+                "opposes": loser,
+                "confidence": round(confidence, 4),
+                "applicable": 1.0,
+                "gap": round(gap, 4),
+                "reason": reason,
+            },
         }
         state.skill_outputs[self.name] = result
         state.trace(self.name, "success", f"BCC/SEK specialist completed: recommendation={recommendation}")
         return result
+
+    def _build_evidence_items(
+        self,
+        *,
+        scores: Dict[str, float],
+        recommendation: str,
+        loser: str,
+        confidence: float,
+        gap: float,
+        rationale: List[str],
+    ) -> List[Dict[str, Any]]:
+        items: List[Dict[str, Any]] = [
+            {
+                "source": self.name,
+                "type": "group_summary",
+                "supports": recommendation,
+                "opposes": loser,
+                "weight": round(confidence, 4),
+                "gap": round(gap, 4),
+                "group_scores": {name: round(value, 4) for name, value in scores.items()},
+            }
+        ]
+        for line in rationale[:8]:
+            items.append(
+                {
+                    "source": self.name,
+                    "type": "rationale",
+                    "supports": recommendation,
+                    "detail": line,
+                }
+            )
+        return items
 
     def _find_candidate(self, ddx: List[Dict[str, Any]], target: str) -> Dict[str, Any]:
         target = self._norm_label(target)

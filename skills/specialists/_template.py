@@ -5,6 +5,9 @@
 字段尽量统一：
 - target_group
 - recommendation
+- supports
+- supported_label
+- local_decision
 - supporting_evidence
 - confidence
 """

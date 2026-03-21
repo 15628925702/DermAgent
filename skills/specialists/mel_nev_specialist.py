@@ -40,7 +40,18 @@ class MelNevSpecialistSkill(BaseSkill):
             result = {
                 "target_group": ["MEL", "NEV"],
                 "recommendation": None,
+                "supports": None,
+                "supported_label": None,
+                "local_decision": {
+                    "supports": None,
+                    "opposes": None,
+                    "confidence": 0.0,
+                    "applicable": 0.0,
+                    "reason": "mel_nev_not_both_present",
+                },
                 "supporting_evidence": [],
+                "evidence_items": [],
+                "applicable": 0.0,
                 "confidence": 0.0,
                 "reason": "mel_nev_not_both_present",
             }
@@ -235,15 +246,34 @@ class MelNevSpecialistSkill(BaseSkill):
         result = {
             "target_group": ["MEL", "NEV"],
             "recommendation": recommendation,
+            "supports": recommendation,
+            "supported_label": recommendation,
             "loser": loser,
             "group_scores": {
                 "MEL": round(scores["MEL"], 4),
                 "NEV": round(scores["NEV"], 4),
             },
             "supporting_evidence": evidence[:20],
+            "evidence_items": self._build_evidence_items(
+                scores=scores,
+                recommendation=recommendation,
+                loser=loser,
+                confidence=confidence,
+                gap=gap,
+                evidence=evidence,
+            ),
+            "applicable": 1.0,
             "confidence": round(confidence, 4),
             "gap": round(gap, 4),
             "reason": reason,
+            "local_decision": {
+                "supports": recommendation,
+                "opposes": loser,
+                "confidence": round(confidence, 4),
+                "applicable": 1.0,
+                "gap": round(gap, 4),
+                "reason": reason,
+            },
         }
 
         state.skill_outputs[self.name] = result
@@ -258,6 +288,38 @@ class MelNevSpecialistSkill(BaseSkill):
             },
         )
         return result
+
+    def _build_evidence_items(
+        self,
+        *,
+        scores: Dict[str, float],
+        recommendation: str,
+        loser: str,
+        confidence: float,
+        gap: float,
+        evidence: List[str],
+    ) -> List[Dict[str, Any]]:
+        items: List[Dict[str, Any]] = [
+            {
+                "source": self.name,
+                "type": "group_summary",
+                "supports": recommendation,
+                "opposes": loser,
+                "weight": round(confidence, 4),
+                "gap": round(gap, 4),
+                "group_scores": {name: round(value, 4) for name, value in scores.items()},
+            }
+        ]
+        for line in evidence[:8]:
+            items.append(
+                {
+                    "source": self.name,
+                    "type": "rationale",
+                    "supports": recommendation,
+                    "detail": line,
+                }
+            )
+        return items
 
     def _find_candidate(self, ddx: List[Dict[str, Any]], target: str) -> Dict[str, Any]:
         target = self._norm_label(target)

@@ -16,10 +16,25 @@ class CompareSkill(BaseSkill):
         if len(candidates) == 0:
             result = {
                 "pair": [],
+                "candidates": [],
                 "winner": "UNKNOWN",
+                "supports": None,
+                "supported_label": None,
+                "loser": "",
                 "pair_scores": {},
                 "reason": "no_candidates",
                 "rationale": [],
+                "supporting_evidence": [],
+                "evidence_items": [],
+                "confidence": 0.0,
+                "applicable": 0.0,
+                "local_decision": {
+                    "supports": None,
+                    "opposes": None,
+                    "confidence": 0.0,
+                    "applicable": 0.0,
+                    "reason": "no_candidates",
+                },
             }
             state.skill_outputs[self.name] = result
             state.trace(self.name, "warning", "No candidates available for comparison")
@@ -31,10 +46,31 @@ class CompareSkill(BaseSkill):
                 "pair": [only_name],
                 "candidates": [only_name],
                 "winner": only_name,
+                "supports": only_name,
+                "supported_label": only_name,
+                "loser": "",
                 "pair_scores": {only_name: 1.0},
                 "reason": "single_candidate_only",
                 "rationale": ["Only one candidate available."],
+                "supporting_evidence": ["single_candidate_available"],
+                "evidence_items": [
+                    {
+                        "source": "perception",
+                        "type": "single_candidate",
+                        "supports": only_name,
+                        "weight": 1.0,
+                        "detail": "Only one candidate available.",
+                    }
+                ],
                 "confidence": 0.6,
+                "applicable": 0.4,
+                "local_decision": {
+                    "supports": only_name,
+                    "opposes": None,
+                    "confidence": 0.6,
+                    "applicable": 0.4,
+                    "reason": "single_candidate_only",
+                },
             }
             state.skill_outputs[self.name] = result
             state.trace(self.name, "success", "Single candidate fallback compare")
@@ -123,6 +159,8 @@ class CompareSkill(BaseSkill):
             "pair": candidate_names[:2],
             "candidates": candidate_names,
             "winner": winner,
+            "supports": winner,
+            "supported_label": winner,
             "loser": loser,
             "pair_scores": {
                 name: round(scores[name], 4)
@@ -131,7 +169,26 @@ class CompareSkill(BaseSkill):
             "gap": round(gap, 4),
             "reason": reason,
             "rationale": rationale,
+            "supporting_evidence": rationale[:12],
+            "evidence_items": self._build_evidence_items(
+                candidate_names=candidate_names,
+                scores=scores,
+                winner=winner,
+                loser=loser,
+                confidence=confidence,
+                gap=gap,
+                rationale=rationale,
+            ),
             "confidence": round(confidence, 4),
+            "applicable": 1.0,
+            "local_decision": {
+                "supports": winner,
+                "opposes": loser or None,
+                "confidence": round(confidence, 4),
+                "applicable": 1.0,
+                "gap": round(gap, 4),
+                "reason": reason,
+            },
         }
 
         state.skill_outputs[self.name] = result
@@ -148,6 +205,42 @@ class CompareSkill(BaseSkill):
             },
         )
         return result
+
+    def _build_evidence_items(
+        self,
+        *,
+        candidate_names: List[str],
+        scores: Dict[str, float],
+        winner: str,
+        loser: str,
+        confidence: float,
+        gap: float,
+        rationale: List[str],
+    ) -> List[Dict[str, Any]]:
+        items: List[Dict[str, Any]] = [
+            {
+                "source": "compare_skill",
+                "type": "pairwise_summary",
+                "supports": winner,
+                "opposes": loser or None,
+                "weight": round(confidence, 4),
+                "gap": round(gap, 4),
+                "candidate_scores": {
+                    name: round(scores[name], 4)
+                    for name in candidate_names
+                },
+            }
+        ]
+        for line in rationale[:8]:
+            items.append(
+                {
+                    "source": "compare_skill",
+                    "type": "rationale",
+                    "supports": winner,
+                    "detail": line,
+                }
+            )
+        return items
 
     def _metadata_compare_bonus(self, state: CaseState, c1: str, c2: str) -> Dict[str, float]:
         metadata = state.get_metadata()
