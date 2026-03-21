@@ -188,6 +188,8 @@ def build_default_skill_index() -> SkillIndex:
                 "has_confusion_support": 0.7,
                 "retrieval_low": 0.35,
                 "top_candidate_count": 0.2,
+                "planner_compare_selected": 0.45,
+                "planner_memory_signal": 0.18,
             },
         ),
         SkillSpec(
@@ -206,6 +208,7 @@ def build_default_skill_index() -> SkillIndex:
                 "num_malignant_cues": 0.9,
                 "num_suspicious_cues": 0.4,
                 "strong_invasive_history": 0.55,
+                "planner_malignancy_selected": 0.35,
             },
         ),
         SkillSpec(
@@ -225,6 +228,7 @@ def build_default_skill_index() -> SkillIndex:
                 "uncertainty_high": 0.45,
                 "uncertainty_medium": 0.25,
                 "strong_invasive_history": 0.15,
+                "planner_metadata_selected": 0.3,
             },
         ),
         SkillSpec(
@@ -243,6 +247,7 @@ def build_default_skill_index() -> SkillIndex:
                 "sun_exposed_site": 0.45,
                 "retrieval_recommends_ack_scc": 0.8,
                 "num_malignant_cues": 0.15,
+                "planner_ack_scc_signal": 0.55,
             },
         ),
         SkillSpec(
@@ -264,6 +269,7 @@ def build_default_skill_index() -> SkillIndex:
                 "sun_exposed_site": 0.15,
                 "strong_invasive_history": 0.2,
                 "top_gap_small": 0.3,
+                "planner_bcc_scc_signal": 0.55,
             },
         ),
         SkillSpec(
@@ -284,6 +290,7 @@ def build_default_skill_index() -> SkillIndex:
                 "sun_exposed_site": 0.18,
                 "top_gap_small": 0.28,
                 "uncertainty_high": 0.2,
+                "planner_bcc_sek_signal": 0.55,
             },
         ),
         SkillSpec(
@@ -302,6 +309,7 @@ def build_default_skill_index() -> SkillIndex:
                 "retrieval_recommends_mel_nev": 0.8,
                 "uncertainty_high": 0.35,
                 "top_gap_small": 0.45,
+                "planner_mel_nev_signal": 0.55,
             },
         ),
     ]

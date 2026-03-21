@@ -252,6 +252,8 @@ class ExperienceSkillPlanner:
                 planner_context={
                     "recommended_skills": recommended_skills,
                     "flags": planner_flags,
+                    "case_features": case_features,
+                    "decision_trace": decision_trace,
                 },
                 allowed_skills=self.enabled_skills,
             )

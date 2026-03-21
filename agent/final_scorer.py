@@ -17,7 +17,9 @@ class LearnableFinalScorer:
         self.weights: Dict[str, float] = {
             "bias": 0.0,
             "base_total": 1.0,
+            "raw_total": 0.1,
             "perception_score": 0.0,
+            "perception_anchor": 0.35,
             "retrieval_score": 0.0,
             "prototype_score": 0.0,
             "confusion_score": 0.0,
@@ -26,6 +28,12 @@ class LearnableFinalScorer:
             "metadata_score": 0.0,
             "malignancy_score": 0.0,
             "memory_consensus_score": 0.0,
+            "retrieval_correction": 0.12,
+            "skill_correction": 0.18,
+            "multi_source_bonus": 0.08,
+            "off_perception_penalty": 0.22,
+            "evidence_correction_raw": 0.05,
+            "evidence_correction": 0.25,
             "is_perception_top1": 0.0,
             "in_support_labels": 0.0,
             "matches_memory_consensus": 0.0,
@@ -125,7 +133,7 @@ class LearnableFinalScorer:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            "version": 2,
+            "version": 3,
             "enabled": True,
             "learning_rate": self.learning_rate,
             "margin_target": self.margin_target,
@@ -138,7 +146,8 @@ class LearnableFinalScorer:
     def load_state(self, payload: Dict[str, Any]) -> None:
         if not isinstance(payload, dict):
             return
-        if int(payload.get("version", 0) or 0) != 2:
+        version = int(payload.get("version", 0) or 0)
+        if version not in {2, 3}:
             return
         if not payload.get("enabled", False):
             return
@@ -148,7 +157,7 @@ class LearnableFinalScorer:
             self.margin_target = float(payload["margin_target"])
         weights = payload.get("weights", {}) or {}
         if weights:
-            self.weights = {
-                str(key): float(value)
-                for key, value in weights.items()
-            }
+            merged = dict(self.weights)
+            for key, value in weights.items():
+                merged[str(key)] = float(value)
+            self.weights = merged

@@ -47,9 +47,9 @@ class LearnableSkillController:
         planner_context: Dict[str, Any] | None = None,
         allowed_skills: set[str] | None = None,
     ) -> Dict[str, Any]:
-        features = self.extract_features(state)
-        rule_priors = list(rule_priors or [])
         planner_context = planner_context or {}
+        features = self.extract_features(state, planner_context=planner_context)
+        rule_priors = list(rule_priors or [])
         allowed_skills = set(allowed_skills or [])
         recommended_skills = {
             str(x).strip()
@@ -71,6 +71,11 @@ class LearnableSkillController:
             if spec.skill_id in recommended_skills:
                 extra_bias += 0.45
                 reasons.append("retrieval_recommendation")
+
+            planner_bias, planner_reasons = self._planner_extra_bias(spec.skill_id, planner_context=planner_context)
+            if abs(planner_bias) > 1e-8:
+                extra_bias += planner_bias
+                reasons.extend(planner_reasons)
 
             logit = spec.logit(features, extra_bias=extra_bias)
             probability = sigmoid(logit)
@@ -137,15 +142,25 @@ class LearnableSkillController:
         state.controller = result
         return result
 
-    def extract_features(self, state: CaseState) -> Dict[str, float]:
+    def extract_features(
+        self,
+        state: CaseState,
+        *,
+        planner_context: Dict[str, Any] | None = None,
+    ) -> Dict[str, float]:
+        planner_context = planner_context or {}
         ddx = state.perception.get("ddx_candidates", []) or []
         top_names = [str(item.get("name", "")).strip().upper() for item in ddx[:5] if str(item.get("name", "")).strip()]
         top_scores = [self._safe_float(item.get("score"), default=0.0) for item in ddx[:2]]
         top_gap = max(0.0, (top_scores[0] if top_scores else 0.0) - (top_scores[1] if len(top_scores) > 1 else 0.0))
 
-        uncertainty = state.get_uncertainty_level()
+        planner_case = planner_context.get("case_features", {}) or (state.planner.get("case_features", {}) or {})
+        planner_trace = planner_context.get("decision_trace", []) or (state.planner.get("decision_trace", []) or [])
+        planner_flags = planner_context.get("flags", {}) or (state.planner.get("flags", {}) or {})
+
+        uncertainty = str(planner_case.get("uncertainty", state.get_uncertainty_level())).lower()
         retrieval_summary = state.retrieval.get("retrieval_summary", {}) or {}
-        retrieval_confidence = str(retrieval_summary.get("retrieval_confidence", "low")).lower()
+        retrieval_confidence = str(planner_case.get("retrieval_confidence", retrieval_summary.get("retrieval_confidence", "low"))).lower()
         metadata = state.get_metadata()
         history_text = self._norm_text(
             metadata.get("history")
@@ -164,35 +179,48 @@ class LearnableSkillController:
         support_strength = retrieval_summary.get("support_strength", {}) or {}
         recommended_skills = {
             str(x).strip()
-            for x in retrieval_summary.get("recommended_skills", [])
+            for x in (planner_flags.get("recommended_skills", []) or retrieval_summary.get("recommended_skills", []))
             if str(x).strip()
         }
+        memory_recommended_skills = {
+            str(x).strip()
+            for x in (planner_flags.get("memory_recommended_skills", []) or [])
+            if str(x).strip()
+        }
+        rule_recommended_skills = {
+            str(x).strip()
+            for x in (planner_flags.get("rule_recommended_skills", []) or [])
+            if str(x).strip()
+        }
+        trace_map = self._decision_trace_map(planner_trace)
+        top_names = list(planner_case.get("top_names", top_names))
+        top_gap = float(planner_case.get("top_gap", round(top_gap, 4)))
 
         features = {
             "bias": 1.0,
             "uncertainty_low": 1.0 if uncertainty == "low" else 0.0,
             "uncertainty_medium": 1.0 if uncertainty == "medium" else 0.0,
             "uncertainty_high": 1.0 if uncertainty == "high" else 0.0,
-            "top_gap_small": 1.0 if top_gap <= 0.15 else 0.0,
+            "top_gap_small": 1.0 if bool(planner_case.get("top_gap_small", top_gap <= 0.15)) else 0.0,
             "top_gap": round(top_gap, 4),
             "top_candidate_count": min(1.0, len(top_names) / 3.0),
-            "has_malignant_candidate": 1.0 if {"MEL", "BCC", "SCC"}.intersection(top_names) else 0.0,
+            "has_malignant_candidate": 1.0 if bool(planner_case.get("has_malignant_candidate", bool({"MEL", "BCC", "SCC"}.intersection(top_names)))) else 0.0,
             "malignant_candidate_ratio": round(
                 len({"MEL", "BCC", "SCC"}.intersection(set(top_names))) / 3.0,
                 4,
             ),
-            "has_ack_scc_pair": 1.0 if {"ACK", "SCC"}.issubset(set(top_names)) else 0.0,
-            "has_bcc_scc_pair": 1.0 if {"BCC", "SCC"}.issubset(set(top_names)) else 0.0,
-            "has_bcc_sek_pair": 1.0 if {"BCC", "SEK"}.issubset(set(top_names)) else 0.0,
-            "has_mel_nev_pair": 1.0 if {"MEL", "NEV"}.issubset(set(top_names)) else 0.0,
+            "has_ack_scc_pair": 1.0 if bool(planner_case.get("has_ack_scc_pair", {"ACK", "SCC"}.issubset(set(top_names)))) else 0.0,
+            "has_bcc_scc_pair": 1.0 if bool(planner_case.get("has_bcc_scc_pair", {"BCC", "SCC"}.issubset(set(top_names)))) else 0.0,
+            "has_bcc_sek_pair": 1.0 if bool(planner_case.get("has_bcc_sek_pair", {"BCC", "SEK"}.issubset(set(top_names)))) else 0.0,
+            "has_mel_nev_pair": 1.0 if bool(planner_case.get("has_mel_nev_pair", {"MEL", "NEV"}.issubset(set(top_names)))) else 0.0,
             "retrieval_high": 1.0 if retrieval_confidence == "high" else 0.0,
             "retrieval_medium": 1.0 if retrieval_confidence == "medium" else 0.0,
             "retrieval_low": 1.0 if retrieval_confidence == "low" else 0.0,
-            "supports_top1": 1.0 if retrieval_summary.get("supports_top1", False) else 0.0,
-            "has_confusion_support": 1.0 if retrieval_summary.get("has_confusion_support", False) else 0.0,
-            "metadata_present": 1.0 if bool(metadata) else 0.0,
-            "sun_exposed_site": 1.0 if self._site_matches(site, ["face", "scalp", "ear", "neck", "nose", "temple", "cheek", "hand", "forearm", "lip"]) else 0.0,
-            "strong_invasive_history": 1.0 if any(token in history_text for token in ["bleed", "bleeding", "rapid growth", "pain", "hurt", "ulcer", "ulcerated"]) else 0.0,
+            "supports_top1": 1.0 if bool(planner_case.get("supports_top1", retrieval_summary.get("supports_top1", False))) else 0.0,
+            "has_confusion_support": 1.0 if bool(planner_case.get("has_confusion_support", retrieval_summary.get("has_confusion_support", False))) else 0.0,
+            "metadata_present": 1.0 if bool(planner_case.get("metadata_present", bool(metadata))) else 0.0,
+            "sun_exposed_site": 1.0 if bool(planner_case.get("sun_exposed_site", self._site_matches(site, ["face", "scalp", "ear", "neck", "nose", "temple", "cheek", "hand", "forearm", "lip"]))) else 0.0,
+            "strong_invasive_history": 1.0 if bool(planner_case.get("strong_invasive_history", any(token in history_text for token in ["bleed", "bleeding", "rapid growth", "pain", "hurt", "ulcer", "ulcerated"]))) else 0.0,
             "num_visual_cues": min(1.0, len(visual_cues) / 6.0),
             "num_malignant_cues": min(1.0, len(malignant_cues) / 4.0),
             "num_suspicious_cues": min(1.0, len(suspicious_cues) / 4.0),
@@ -203,11 +231,29 @@ class LearnableSkillController:
             "retrieval_recommends_bcc_scc": 1.0 if "bcc_scc_specialist_skill" in recommended_skills else 0.0,
             "retrieval_recommends_bcc_sek": 1.0 if "bcc_sek_specialist_skill" in recommended_skills else 0.0,
             "retrieval_recommends_mel_nev": 1.0 if "mel_nev_specialist_skill" in recommended_skills else 0.0,
+            "planner_compare_selected": 1.0 if trace_map.get("compare_skill", {}).get("selected", False) else 0.0,
+            "planner_metadata_selected": 1.0 if trace_map.get("metadata_consistency_skill", {}).get("selected", False) else 0.0,
+            "planner_malignancy_selected": 1.0 if trace_map.get("malignancy_risk_skill", {}).get("selected", False) else 0.0,
+            "planner_ack_scc_signal": 1.0 if trace_map.get("ack_scc_specialist_skill", {}).get("selected", False) else 0.0,
+            "planner_bcc_scc_signal": 1.0 if trace_map.get("bcc_scc_specialist_skill", {}).get("selected", False) else 0.0,
+            "planner_bcc_sek_signal": 1.0 if trace_map.get("bcc_sek_specialist_skill", {}).get("selected", False) else 0.0,
+            "planner_mel_nev_signal": 1.0 if trace_map.get("mel_nev_specialist_skill", {}).get("selected", False) else 0.0,
+            "planner_memory_signal": 1.0 if bool(memory_recommended_skills or rule_recommended_skills) else 0.0,
+            "planner_rule_density": min(1.0, len(rule_recommended_skills) / 3.0),
+            "planner_memory_density": min(1.0, len(memory_recommended_skills) / 3.0),
+            "planner_retrieval_rule_overlap": 1.0 if bool(memory_recommended_skills and rule_recommended_skills) else 0.0,
         }
         return features
 
     def update_from_case(self, state: CaseState) -> Dict[str, Any]:
-        features = self.extract_features(state)
+        features = self.extract_features(
+            state,
+            planner_context={
+                "case_features": state.planner.get("case_features", {}) or {},
+                "decision_trace": state.planner.get("decision_trace", []) or [],
+                "flags": state.planner.get("flags", {}) or {},
+            },
+        )
         targets = self._build_targets(state)
         predicted = (state.controller or {}).get("skill_scores", {})
         feedback: Dict[str, Any] = {
@@ -257,6 +303,44 @@ class LearnableSkillController:
         feedback["stop_prediction"] = round(stop_prediction, 4)
         feedback["is_correct"] = is_correct
         return feedback
+
+    def _planner_extra_bias(
+        self,
+        skill_id: str,
+        *,
+        planner_context: Dict[str, Any],
+    ) -> Tuple[float, List[str]]:
+        trace_map = self._decision_trace_map(planner_context.get("decision_trace", []) or [])
+        item = trace_map.get(skill_id, {}) or {}
+        trigger = str(item.get("trigger", "")).strip()
+        if not trigger or not bool(item.get("selected", False)):
+            return 0.0, []
+
+        bias_map = {
+            "always_on_core_skill": 0.15,
+            "uncertainty_threshold": 0.08,
+            "small_top_gap": 0.1,
+            "memory_or_rule_recommended_skill": 0.12,
+            "pair_present_in_top_k": 0.14,
+            "confusion_memory_pair_match": 0.12,
+            "metadata_proxy_support": 0.1,
+            "malignant_candidate_in_top_k": 0.1,
+            "metadata_or_support_check": 0.08,
+        }
+        bias = float(bias_map.get(trigger, 0.0))
+        if bias == 0.0:
+            return 0.0, []
+        return bias, [f"planner:{trigger}"]
+
+    def _decision_trace_map(self, items: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+        mapped: Dict[str, Dict[str, Any]] = {}
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            skill = str(item.get("skill", "")).strip()
+            if skill:
+                mapped[skill] = item
+        return mapped
 
     def _estimate_stop_probability(self, features: Dict[str, float]) -> float:
         logit = 0.0
