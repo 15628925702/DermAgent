@@ -28,6 +28,17 @@ from typing import Any, Dict, List, Optional
 from agent.state import CaseState
 
 
+KNOWN_CONFUSION_PAIRS = {
+    frozenset({"ACK", "SCC"}),
+    frozenset({"MEL", "NEV"}),
+    frozenset({"BCC", "SEK"}),
+    frozenset({"BCC", "SCC"}),
+}
+
+MAX_CONFUSION_GAP = 0.15
+MAX_HARD_CASE_GAP = 0.2
+
+
 class ReflectionEngine:
     """
     基础版 reflection。
@@ -308,6 +319,12 @@ class ReflectionEngine:
     def _build_learning_signals(self, state: CaseState) -> Dict[str, Any]:
         confidence = str(state.final_decision.get("confidence", "low")).lower()
         uncertainty = state.get_uncertainty_level()
+        fallback_case = bool((state.perception or {}).get("fallback_reason"))
+        is_top1_correct = self._is_top1_correct(state)
+        true_in_top3 = self._is_true_in_top3(state)
+        confusion_info = self._extract_top2_confusion_info(state)
+        top2_gap = confusion_info.get("gap")
+        known_confusion_pair = bool(confusion_info.get("is_known_pair", False))
 
         retrieval_summary = state.retrieval.get("retrieval_summary", {}) or {}
         supports_top1 = bool(retrieval_summary.get("supports_top1", False))
@@ -325,9 +342,22 @@ class ReflectionEngine:
         )
 
         hard_case = (
-            (confidence == "low" and retrieval_confidence == "low")
-            or (uncertainty == "high" and not supports_top1)
-            or malignant_mismatch
+            not fallback_case
+            and not is_top1_correct
+            and true_in_top3
+            and (
+                malignant_mismatch
+                or (
+                    known_confusion_pair
+                    and top2_gap is not None
+                    and top2_gap <= MAX_HARD_CASE_GAP
+                )
+                or (
+                    top2_gap is not None
+                    and top2_gap <= 0.12
+                    and uncertainty in {"medium", "high"}
+                )
+            )
         )
 
         confusion_case = self._should_write_confusion(state)
@@ -335,7 +365,13 @@ class ReflectionEngine:
         needs_more_experience = (
             hard_case
             or confusion_case
-            or (retrieval_confidence == "low" and confidence == "low")
+            or (
+                not fallback_case
+                and not is_top1_correct
+                and true_in_top3
+                and retrieval_confidence == "low"
+                and confidence == "low"
+            )
         )
 
         return {
@@ -343,8 +379,12 @@ class ReflectionEngine:
             "confusion_case": confusion_case,
             "needs_more_experience": needs_more_experience,
             "low_retrieval_support": retrieval_confidence == "low",
-            "fallback_case": bool((state.perception or {}).get("fallback_reason")),
+            "fallback_case": fallback_case,
             "malignant_mismatch": malignant_mismatch,
+            "top1_correct": is_top1_correct,
+            "true_in_top3": true_in_top3,
+            "known_confusion_pair": known_confusion_pair,
+            "top2_gap": round(top2_gap, 4) if top2_gap is not None else None,
         }
 
     def _build_prototype_features(
@@ -389,6 +429,7 @@ class ReflectionEngine:
             return False
 
         return (
+            self._is_top1_correct(state)
             confidence in {"medium", "high"}
             and uncertainty in {"low", "medium"}
             and (len(visual_cues) > 0 or len(self._build_decisive_factors(state, self._get_final_label(state))) >= 2)
@@ -406,11 +447,19 @@ class ReflectionEngine:
         if (state.perception or {}).get("fallback_reason"):
             return False
 
+        confusion_info = self._extract_top2_confusion_info(state)
+        if not confusion_info.get("is_known_pair", False):
+            return False
+        gap = confusion_info.get("gap")
+        if gap is not None and gap > MAX_CONFUSION_GAP:
+            return False
+
         retrieval_summary = state.retrieval.get("retrieval_summary", {}) or {}
         selected = set(state.selected_skills)
         uncertainty = state.get_uncertainty_level()
 
         return (
+            self._is_top1_correct(state)
             retrieval_summary.get("has_confusion_support", False)
             or (
                 uncertainty in {"medium", "high"}
@@ -434,6 +483,51 @@ class ReflectionEngine:
             if value:
                 return value
         return "UNKNOWN"
+
+    def _get_true_label(self, state: CaseState) -> str:
+        return str((state.case_info or {}).get("true_label", "")).strip().upper()
+
+    def _is_top1_correct(self, state: CaseState) -> bool:
+        true_label = self._get_true_label(state)
+        final_label = self._get_final_label(state)
+        return bool(true_label) and true_label == final_label
+
+    def _is_true_in_top3(self, state: CaseState) -> bool:
+        true_label = self._get_true_label(state)
+        if not true_label:
+            return False
+
+        labels: List[str] = []
+        for item in (state.final_decision.get("top_k", []) or [])[:3]:
+            if isinstance(item, dict):
+                name = str(item.get("name", "")).strip().upper()
+            else:
+                name = str(item).strip().upper()
+            if name:
+                labels.append(name)
+        return true_label in labels
+
+    def _extract_top2_confusion_info(self, state: CaseState) -> Dict[str, Any]:
+        ddx = state.perception.get("ddx_candidates", []) or []
+        if len(ddx) < 2:
+            return {"pair": [], "gap": None, "is_known_pair": False}
+
+        first = ddx[0] if isinstance(ddx[0], dict) else {}
+        second = ddx[1] if isinstance(ddx[1], dict) else {}
+        d1 = str(first.get("name", "")).strip().upper()
+        d2 = str(second.get("name", "")).strip().upper()
+        if not d1 or not d2 or d1 == d2:
+            return {"pair": [], "gap": None, "is_known_pair": False}
+
+        s1 = self._extract_score(first)
+        s2 = self._extract_score(second)
+        gap = abs(s1 - s2) if s1 is not None and s2 is not None else None
+        pair = sorted([d1, d2])
+        return {
+            "pair": pair,
+            "gap": gap,
+            "is_known_pair": frozenset(pair) in KNOWN_CONFUSION_PAIRS,
+        }
 
     def _extract_score(self, item: Dict[str, Any]) -> Optional[float]:
         for key in ["score", "probability", "confidence"]:

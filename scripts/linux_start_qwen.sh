@@ -17,10 +17,12 @@ SERVED_MODEL_NAME="${SERVED_MODEL_NAME:-Qwen/Qwen2.5-VL-7B-Instruct}"
 HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8000}"
 API_KEY="${API_KEY:-EMPTY}"
-LOG_FILE="${LOG_FILE:-$PROJECT_DIR/qwen_vllm.log}"
+LOG_DIR="${LOG_DIR:-$PROJECT_DIR/outputs/logs}"
+LOG_FILE="${LOG_FILE:-$LOG_DIR/qwen_vllm.log}"
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-8192}"
 
 cd "$PROJECT_DIR"
+mkdir -p "$LOG_DIR"
 
 if command -v conda >/dev/null 2>&1; then
   CONDA_BASE="$(conda info --base)"
@@ -67,6 +69,7 @@ echo "[info] waiting for Qwen service on $SERVICE_URL"
 echo "[info] model source: $MODEL_NAME"
 echo "[info] served model name: $SERVED_MODEL_NAME"
 echo "[info] max model len: $MAX_MODEL_LEN"
+echo "[info] log file: $LOG_FILE"
 for i in $(seq 1 60); do
   if curl -s "$SERVICE_URL" -H "Authorization: Bearer $API_KEY" >/tmp/qwen_models.json 2>/dev/null; then
     echo "[ok] Qwen service is ready."

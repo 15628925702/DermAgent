@@ -64,15 +64,15 @@ class ExperienceWriter:
                 and confidence in {"medium", "high"}
                 and hints.get("should_write_confusion", False)
             )
-            write_hard_case = fallback_case or not is_correct
+            write_hard_case = bool(hints.get("should_write_hard_case", False))
 
         if fallback_case:
             write_prototype = False
             write_confusion = False
-            write_hard_case = True
+            write_hard_case = False
             summary["skipped_reason"] = self._join_reasons(
                 summary.get("skipped_reason"),
-                "fallback_perception_only_raw_blocked",
+                "fallback_case_skips_learning_writeback",
             )
 
         if write_prototype:
@@ -102,7 +102,7 @@ class ExperienceWriter:
         elif auto:
             summary["skipped_reason"] = self._join_reasons(
                 summary.get("skipped_reason"),
-                "hard_case_requires_failure_or_fallback",
+                "hard_case_requires_near_miss_signal",
             )
 
         state.trace(

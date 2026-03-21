@@ -11,11 +11,21 @@ from memory.schema import (
 )
 
 
+KNOWN_CONFUSION_PAIRS = {
+    frozenset({"ACK", "SCC"}),
+    frozenset({"MEL", "NEV"}),
+    frozenset({"BCC", "SEK"}),
+    frozenset({"BCC", "SCC"}),
+}
+
+MAX_CONFUSION_GAP = 0.15
+
+
 class ExperienceCompressor:
     def __init__(
         self,
         *,
-        min_cases_per_prototype: int = 1,
+        min_cases_per_prototype: int = 2,
         min_cases_per_confusion: int = 1,
         min_cases_per_rule: int = 3,
     ) -> None:
@@ -376,6 +386,12 @@ class ExperienceCompressor:
         pair = self._extract_top2_pair(item)
         if len(pair) != 2:
             return False
+        if frozenset(pair) not in KNOWN_CONFUSION_PAIRS:
+            return False
+
+        gap = self._extract_top2_gap(item)
+        if gap is not None and gap > MAX_CONFUSION_GAP:
+            return False
 
         tags = item.get("tags", {}) or {}
         retrieval_summary = item.get("retrieval_summary", {}) or {}
@@ -401,6 +417,18 @@ class ExperienceCompressor:
         if len(names) < 2:
             return []
         return sorted(names[:2])
+
+    def _extract_top2_gap(self, item: Dict[str, Any]) -> float | None:
+        ddx = item.get("perception", {}).get("ddx", []) or []
+        if len(ddx) < 2:
+            return None
+        first = ddx[0] if isinstance(ddx[0], dict) else {}
+        second = ddx[1] if isinstance(ddx[1], dict) else {}
+        score_1 = self._safe_float(first.get("score"))
+        score_2 = self._safe_float(second.get("score"))
+        if score_1 is None or score_2 is None:
+            return None
+        return abs(score_1 - score_2)
 
     def _extract_top2_pair_from_hard_case(self, item: Dict[str, Any]) -> List[str]:
         top_ddx = [str(x).strip().upper() for x in item.get("top_ddx", []) if str(x).strip()]
@@ -464,6 +492,14 @@ class ExperienceCompressor:
             if value is None or value == "":
                 return None
             return int(float(value))
+        except (TypeError, ValueError):
+            return None
+
+    def _safe_float(self, value: Any) -> float | None:
+        try:
+            if value is None or value == "":
+                return None
+            return float(value)
         except (TypeError, ValueError):
             return None
 

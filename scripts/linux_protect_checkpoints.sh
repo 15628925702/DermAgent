@@ -15,8 +15,7 @@ git config pull.rebase false
 PROTECT_PATHS=(
   "outputs/train_runs"
   "outputs/checkpoints_backup"
-  "qwen_vllm.log"
-  "train_8h.log"
+  "outputs/logs"
 )
 
 for path in "${PROTECT_PATHS[@]}"; do

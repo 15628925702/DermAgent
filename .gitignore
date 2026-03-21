@@ -4,11 +4,10 @@ data/
 data/*.zip
 
 # Local training artifacts and service logs
-outputs/checkpoints_backup/
+outputs/archive/
+outputs/logs/
 outputs/quick_compare/
 outputs/train_runs/
-qwen_vllm.log
-train_8h.log
 
 __pycache__/
 *.py[cod]
@@ -16,6 +15,8 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+outputs/test_artifacts/
+pytest-cache-files-*
 
 .DS_Store
 Thumbs.db

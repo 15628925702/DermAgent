@@ -17,6 +17,7 @@ MIN_TOP1_GAIN="${MIN_TOP1_GAIN:-0.0}"
 MIN_TOP3_GAIN="${MIN_TOP3_GAIN:-0.0}"
 MIN_MALIGNANT_RECALL_GAIN="${MIN_MALIGNANT_RECALL_GAIN:-0.0}"
 MIN_CONFUSION_GAIN="${MIN_CONFUSION_GAIN:-0.0}"
+START_QWEN="${START_QWEN:-1}"
 
 cd "$PROJECT_DIR"
 
@@ -57,8 +58,18 @@ run_review() {
   bash scripts/linux_review_run.sh "$PROJECT_DIR"
 }
 
+start_qwen_if_needed() {
+  if [[ "$START_QWEN" != "1" ]]; then
+    echo "[info] skip Qwen startup because START_QWEN=$START_QWEN"
+    return
+  fi
+  echo "[stage] ensure local Qwen service"
+  CONDA_ENV_NAME="$CONDA_ENV_NAME" bash scripts/linux_start_qwen.sh "$PROJECT_DIR"
+}
+
 case "$STAGE" in
   smoke)
+    start_qwen_if_needed
     echo "[stage] smoke train"
     python scripts/train_server.py \
       --dataset-root "$DATASET_ROOT" \
@@ -70,6 +81,7 @@ case "$STAGE" in
     run_review
     ;;
   overnight)
+    start_qwen_if_needed
     echo "[stage] overnight train"
     python scripts/train_server.py \
       --dataset-root "$DATASET_ROOT" \
