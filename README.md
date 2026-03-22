@@ -21,3 +21,5 @@ Generated artifacts should go under `outputs/`, especially:
 - `outputs/archive/`
 - `outputs/logs/`
 - `outputs/test_artifacts/`
+
+可训练但没完全固定的 版本
