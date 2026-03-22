@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 
 from agent.controller import LearnableSkillController, TargetLearner
+from agent.evidence_calibrator import LearnableEvidenceCalibrator
 from agent.final_scorer import LearnableFinalScorer
 from agent.rule_scorer import LearnableRuleScorer
 from memory.retriever import LearnableRetrievalScorer
@@ -36,6 +37,7 @@ class LearningConfig:
     final_scorer_learning_rate: float = 0.01
     rule_scorer_learning_rate: float = 0.05
     retrieval_scorer_learning_rate: float = 0.03
+    evidence_calibrator_learning_rate: float = 0.02
 
     # 优化器设置
     use_adam: bool = False
@@ -57,6 +59,7 @@ class LearningConfig:
             "final_scorer_learning_rate": self.final_scorer_learning_rate,
             "rule_scorer_learning_rate": self.rule_scorer_learning_rate,
             "retrieval_scorer_learning_rate": self.retrieval_scorer_learning_rate,
+            "evidence_calibrator_learning_rate": self.evidence_calibrator_learning_rate,
             "max_epochs": self.max_epochs,
             "early_stopping_patience": self.early_stopping_patience,
             "validation_interval": self.validation_interval,
@@ -96,6 +99,7 @@ class WeightsManager:
             learning_config.final_scorer_learning_rate = learning.getfloat('final_scorer_learning_rate', 0.01)
             learning_config.rule_scorer_learning_rate = learning.getfloat('rule_scorer_learning_rate', 0.05)
             learning_config.retrieval_scorer_learning_rate = learning.getfloat('retrieval_scorer_learning_rate', 0.03)
+            learning_config.evidence_calibrator_learning_rate = learning.getfloat('evidence_calibrator_learning_rate', 0.02)
 
         if config.has_section('global'):
             global_section = config['global']
@@ -211,6 +215,7 @@ class WeightsManager:
             "final_scorer": LearnableFinalScorer(learning_rate=self.config.final_scorer_learning_rate, use_adam=self.config.use_adam),
             "rule_scorer": LearnableRuleScorer(learning_rate=self.config.rule_scorer_learning_rate, use_adam=self.config.use_adam),
             "retrieval_scorer": LearnableRetrievalScorer(learning_rate=self.config.retrieval_scorer_learning_rate, use_adam=self.config.use_adam),
+            "evidence_calibrator": LearnableEvidenceCalibrator(learning_rate=self.config.evidence_calibrator_learning_rate, use_adam=self.config.use_adam),
         }
 
         # 加载baseline权重

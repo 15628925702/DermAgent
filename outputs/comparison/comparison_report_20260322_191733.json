@@ -1,0 +1,1079 @@
+{
+  "timestamp": "2026-03-22T19:17:33.411397",
+  "test_count": 20,
+  "agent_results": {
+    "success": true,
+    "metrics": {
+      "accuracy_top1": 0.75,
+      "malignant_recall": 0.9090909090909091
+    },
+    "per_case": [
+      {
+        "case_id": "PAT_1516_1765_530.png",
+        "true_label": "NEV",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "SCC"
+        ],
+        "confidence": "low",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "compare_skill",
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1359,
+        "error": null
+      },
+      {
+        "case_id": "PAT_46_881_939.png",
+        "true_label": "BCC",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "SCC",
+          "NEV"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "compare_skill",
+          "uncertainty_assessment_skill",
+          "bcc_scc_specialist_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1359,
+        "error": null
+      },
+      {
+        "case_id": "PAT_1545_1867_547.png",
+        "true_label": "ACK",
+        "predicted_label": "ACK",
+        "top3": [
+          "ACK",
+          "SCC",
+          "NEV"
+        ],
+        "confidence": "low",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "compare_skill",
+          "metadata_consistency_skill",
+          "ack_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2315,
+        "error": null
+      },
+      {
+        "case_id": "PAT_1989_4061_934.png",
+        "true_label": "ACK",
+        "predicted_label": "ACK",
+        "top3": [
+          "ACK",
+          "SCC",
+          "NEV"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "compare_skill",
+          "metadata_consistency_skill",
+          "ack_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2315,
+        "error": null
+      },
+      {
+        "case_id": "PAT_684_1302_588.png",
+        "true_label": "BCC",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "SCC",
+          "NEV"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "compare_skill",
+          "uncertainty_assessment_skill",
+          "bcc_scc_specialist_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1359,
+        "error": null
+      },
+      {
+        "case_id": "PAT_1549_1882_230.png",
+        "true_label": "SEK",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "SCC",
+          "BCC"
+        ],
+        "confidence": "low",
+        "is_top1_correct": false,
+        "is_top3_correct": false,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "compare_skill",
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1359,
+        "error": null
+      },
+      {
+        "case_id": "PAT_778_1471_835.png",
+        "true_label": "BCC",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "SCC",
+          "NEV"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "bcc_scc_specialist_skill",
+          "compare_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2315,
+        "error": null
+      },
+      {
+        "case_id": "PAT_117_179_983.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "top3": [
+          "SCC",
+          "BCC",
+          "NEV"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": false,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "bcc_scc_specialist_skill",
+          "compare_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2315,
+        "error": null
+      },
+      {
+        "case_id": "PAT_1995_4080_695.png",
+        "true_label": "ACK",
+        "predicted_label": "ACK",
+        "top3": [
+          "ACK",
+          "SCC",
+          "NEV"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "compare_skill",
+          "metadata_consistency_skill",
+          "ack_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2315,
+        "error": null
+      },
+      {
+        "case_id": "PAT_705_4015_413.png",
+        "true_label": "ACK",
+        "predicted_label": "ACK",
+        "top3": [
+          "ACK",
+          "SCC",
+          "NEV"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "compare_skill",
+          "metadata_consistency_skill",
+          "ack_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2315,
+        "error": null
+      },
+      {
+        "case_id": "PAT_2140_4726_141.png",
+        "true_label": "ACK",
+        "predicted_label": "ACK",
+        "top3": [
+          "ACK",
+          "SCC",
+          "BCC"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "compare_skill",
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "ack_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1359,
+        "error": null
+      },
+      {
+        "case_id": "PAT_967_1827_247.png",
+        "true_label": "BCC",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "SCC",
+          "NEV"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "bcc_scc_specialist_skill",
+          "compare_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2315,
+        "error": null
+      },
+      {
+        "case_id": "PAT_2088_4524_465.png",
+        "true_label": "NEV",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "SCC"
+        ],
+        "confidence": "low",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "compare_skill",
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1359,
+        "error": null
+      },
+      {
+        "case_id": "PAT_636_1204_521.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "top3": [
+          "SCC",
+          "BCC",
+          "NEV"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": false,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "compare_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2315,
+        "error": null
+      },
+      {
+        "case_id": "PAT_38_54_234.png",
+        "true_label": "BCC",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "SCC"
+        ],
+        "confidence": "low",
+        "is_top1_correct": false,
+        "is_top3_correct": false,
+        "is_malignant_case": true,
+        "malignant_recalled": false,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "compare_skill",
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1359,
+        "error": null
+      },
+      {
+        "case_id": "PAT_741_1401_619.png",
+        "true_label": "BCC",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "SCC",
+          "NEV"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "compare_skill",
+          "metadata_consistency_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2315,
+        "error": null
+      },
+      {
+        "case_id": "PAT_380_1540_959.png",
+        "true_label": "SCC",
+        "predicted_label": "SCC",
+        "top3": [
+          "SCC",
+          "BCC",
+          "ACK"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "compare_skill",
+          "bcc_scc_specialist_skill",
+          "metadata_consistency_skill",
+          "ack_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1359,
+        "error": null
+      },
+      {
+        "case_id": "PAT_1783_3414_120.png",
+        "true_label": "SEK",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "SCC",
+          "NEV"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": false,
+        "is_top3_correct": false,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "compare_skill",
+          "uncertainty_assessment_skill",
+          "bcc_scc_specialist_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1359,
+        "error": null
+      },
+      {
+        "case_id": "PAT_759_1538_566.png",
+        "true_label": "BCC",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "SCC",
+          "NEV"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "bcc_scc_specialist_skill",
+          "compare_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2315,
+        "error": null
+      },
+      {
+        "case_id": "PAT_821_1547_77.png",
+        "true_label": "BCC",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "SCC",
+          "NEV"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:NotFoundError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:NotFoundError",
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "compare_skill",
+          "metadata_consistency_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2315,
+        "error": null
+      }
+    ],
+    "total_cases": 20,
+    "valid_cases": 20,
+    "errors": 0,
+    "bank_stats": {
+      "total": 0,
+      "raw_case": 0,
+      "prototype": 0,
+      "confusion": 0,
+      "rule": 0,
+      "hard_case": 0,
+      "unknown": 0
+    },
+    "model_info": {
+      "perception_model": "gpt-4o",
+      "report_model": "gpt-4o",
+      "base_url": "http://127.0.0.1:8000/v1"
+    },
+    "model_usage": {
+      "model_success_cases": 0,
+      "perception_model_success_cases": 0,
+      "report_model_success_cases": 0,
+      "perception_fallback_cases": 20,
+      "report_fallback_cases": 20
+    }
+  },
+  "qwen_direct_results": {
+    "success": true,
+    "metrics": {
+      "accuracy_top1": 0.1,
+      "malignant_recall": 1.0
+    },
+    "per_case": [
+      {
+        "case_id": "PAT_1516_1765_530.png",
+        "true_label": "NEV",
+        "predicted_label": "NEV",
+        "confidence": 0.9,
+        "is_correct": true,
+        "raw_text": "{\n  \"diagnosis\": \"NEV\",\n  \"top_k\": [\"NEV\", \"MEL\", \"SEK\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion appears as a brown macule on the arm, which is characteristic of a nevus (common mole). The lack of irregular borders, asymmetry, or color variation suggests it is benign rather than melanoma. The size and location are also consistent with a nevus.\"\n}",
+        "raw_response": {
+          "diagnosis": "NEV",
+          "top_k": [
+            "NEV",
+            "MEL",
+            "SEK"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion appears as a brown macule on the arm, which is characteristic of a nevus (common mole). The lack of irregular borders, asymmetry, or color variation suggests it is benign rather than melanoma. The size and location are also consistent with a nevus."
+        },
+        "reasoning": "The lesion appears as a brown macule on the arm, which is characteristic of a nevus (common mole). The lack of irregular borders, asymmetry, or color variation suggests it is benign rather than melanoma. The size and location are also consistent with a nevus.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_46_881_939.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"BCC\", \"ACK\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion is erythematous, elevated, and has an irregular border, which is consistent with the clinical features of squamous cell carcinoma (SCC). The history of growth, change, and bleeding further supports this diagnosis.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "BCC",
+            "ACK"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion is erythematous, elevated, and has an irregular border, which is consistent with the clinical features of squamous cell carcinoma (SCC). The history of growth, change, and bleeding further supports this diagnosis."
+        },
+        "reasoning": "The lesion is erythematous, elevated, and has an irregular border, which is consistent with the clinical features of squamous cell carcinoma (SCC). The history of growth, change, and bleeding further supports this diagnosis.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_1545_1867_547.png",
+        "true_label": "ACK",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as an irregular, slightly raised area with a scaly surface, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The presence of itching (pruritus) also supports this diagnosis. However, a definitive diagnosis requires histopathological confirmation.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as an irregular, slightly raised area with a scaly surface, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The presence of itching (pruritus) also supports this diagnosis. However, a definitive diagnosis requires histopathological confirmation."
+        },
+        "reasoning": "The lesion appears as an irregular, slightly raised area with a scaly surface, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The presence of itching (pruritus) also supports this diagnosis. However, a definitive diagnosis requires histopathological confirmation.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_1989_4061_934.png",
+        "true_label": "ACK",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a scaly, erythematous patch on the hand, which is consistent with squamous cell carcinoma (SCC). The presence of scaling and erythema suggests an infiltrative growth pattern often seen in SCC. However, basal cell carcinoma (BCC) cannot be ruled out without histopathological confirmation.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a scaly, erythematous patch on the hand, which is consistent with squamous cell carcinoma (SCC). The presence of scaling and erythema suggests an infiltrative growth pattern often seen in SCC. However, basal cell carcinoma (BCC) cannot be ruled out without histopathological confirmation."
+        },
+        "reasoning": "The lesion appears as a scaly, erythematous patch on the hand, which is consistent with squamous cell carcinoma (SCC). The presence of scaling and erythema suggests an infiltrative growth pattern often seen in SCC. However, basal cell carcinoma (BCC) cannot be ruled out without histopathological confirmation.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_684_1302_588.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.9,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion is elevated, irregular in shape, and has a central area of erythema, which is consistent with the clinical features of squamous cell carcinoma (SCC). The history of growth and bleeding also supports this diagnosis. While basal cell carcinoma (BCC) can have similar features, the location on the forearm and the rapid progression suggest SCC as the primary differential.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion is elevated, irregular in shape, and has a central area of erythema, which is consistent with the clinical features of squamous cell carcinoma (SCC). The history of growth and bleeding also supports this diagnosis. While basal cell carcinoma (BCC) can have similar features, the location on the forearm and the rapid progression suggest SCC as the primary differential."
+        },
+        "reasoning": "The lesion is elevated, irregular in shape, and has a central area of erythema, which is consistent with the clinical features of squamous cell carcinoma (SCC). The history of growth and bleeding also supports this diagnosis. While basal cell carcinoma (BCC) can have similar features, the location on the forearm and the rapid progression suggest SCC as the primary differential.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_1549_1882_230.png",
+        "true_label": "SEK",
+        "predicted_label": "NEV",
+        "confidence": 0.33,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"NEV\",\n  \"top_k\": [\"NEV\", \"SEK\"],\n  \"confidence\": \"low\",\n  \"reasoning\": \"The lesion appears as a dark area on the chest, which is consistent with a nevus. However, the clinical history of itch and elevation suggests it might also be seborrheic keratosis.\"\n}",
+        "raw_response": {
+          "diagnosis": "NEV",
+          "top_k": [
+            "NEV",
+            "SEK"
+          ],
+          "confidence": "low",
+          "reasoning": "The lesion appears as a dark area on the chest, which is consistent with a nevus. However, the clinical history of itch and elevation suggests it might also be seborrheic keratosis."
+        },
+        "reasoning": "The lesion appears as a dark area on the chest, which is consistent with a nevus. However, the clinical history of itch and elevation suggests it might also be seborrheic keratosis.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_778_1471_835.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion shows features consistent with squamous cell carcinoma (SCC), including growth, change, bleeding, and elevation. The clinical history supports the diagnosis as well.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion shows features consistent with squamous cell carcinoma (SCC), including growth, change, bleeding, and elevation. The clinical history supports the diagnosis as well."
+        },
+        "reasoning": "The lesion shows features consistent with squamous cell carcinoma (SCC), including growth, change, bleeding, and elevation. The clinical history supports the diagnosis as well.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_117_179_983.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion is elevated, ulcerated, and has a crusty appearance, which is consistent with squamous cell carcinoma (SCC). The history of itch, growth, pain, and bleeding also supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without biopsy.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion is elevated, ulcerated, and has a crusty appearance, which is consistent with squamous cell carcinoma (SCC). The history of itch, growth, pain, and bleeding also supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without biopsy."
+        },
+        "reasoning": "The lesion is elevated, ulcerated, and has a crusty appearance, which is consistent with squamous cell carcinoma (SCC). The history of itch, growth, pain, and bleeding also supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without biopsy.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_1995_4080_695.png",
+        "true_label": "ACK",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a raised, scaly, erythematous area on the forearm, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The patient's age and history of change in the lesion also support this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without histopathological confirmation.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a raised, scaly, erythematous area on the forearm, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The patient's age and history of change in the lesion also support this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without histopathological confirmation."
+        },
+        "reasoning": "The lesion appears as a raised, scaly, erythematous area on the forearm, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The patient's age and history of change in the lesion also support this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without histopathological confirmation.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_705_4015_413.png",
+        "true_label": "ACK",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a scaly, erythematous patch on the forearm, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The growth pattern suggests malignancy, and the location and appearance are typical for SCC. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without histopathological confirmation.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a scaly, erythematous patch on the forearm, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The growth pattern suggests malignancy, and the location and appearance are typical for SCC. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without histopathological confirmation."
+        },
+        "reasoning": "The lesion appears as a scaly, erythematous patch on the forearm, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The growth pattern suggests malignancy, and the location and appearance are typical for SCC. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without histopathological confirmation.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_2140_4726_141.png",
+        "true_label": "ACK",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as an elevated, slightly erythematous area on the neck, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The itching and elevation suggest a potential malignancy. However, further histopathological examination is required for definitive diagnosis.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as an elevated, slightly erythematous area on the neck, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The itching and elevation suggest a potential malignancy. However, further histopathological examination is required for definitive diagnosis."
+        },
+        "reasoning": "The lesion appears as an elevated, slightly erythematous area on the neck, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The itching and elevation suggest a potential malignancy. However, further histopathological examination is required for definitive diagnosis.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_967_1827_247.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion is elevated, ulcerated, and has a crusty appearance, which is consistent with squamous cell carcinoma (SCC). The clinical history of itch and bleeding also supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without further biopsy.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion is elevated, ulcerated, and has a crusty appearance, which is consistent with squamous cell carcinoma (SCC). The clinical history of itch and bleeding also supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without further biopsy."
+        },
+        "reasoning": "The lesion is elevated, ulcerated, and has a crusty appearance, which is consistent with squamous cell carcinoma (SCC). The clinical history of itch and bleeding also supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without further biopsy.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_2088_4524_465.png",
+        "true_label": "NEV",
+        "predicted_label": "BCC",
+        "confidence": 0.9,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"BCC\",\n  \"top_k\": [\"BCC\", \"SCC\", \"ACK\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion appears as a small, raised, and slightly irregular nodule on the chest, which is characteristic of basal cell carcinoma (BCC). The lack of pigmentation and the presence of a central depression suggest a superficial spreading type of BCC. The age of the patient is also a factor, as BCC is more common in older individuals, but it can occur at any age.\"\n}",
+        "raw_response": {
+          "diagnosis": "BCC",
+          "top_k": [
+            "BCC",
+            "SCC",
+            "ACK"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion appears as a small, raised, and slightly irregular nodule on the chest, which is characteristic of basal cell carcinoma (BCC). The lack of pigmentation and the presence of a central depression suggest a superficial spreading type of BCC. The age of the patient is also a factor, as BCC is more common in older individuals, but it can occur at any age."
+        },
+        "reasoning": "The lesion appears as a small, raised, and slightly irregular nodule on the chest, which is characteristic of basal cell carcinoma (BCC). The lack of pigmentation and the presence of a central depression suggest a superficial spreading type of BCC. The age of the patient is also a factor, as BCC is more common in older individuals, but it can occur at any age.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_636_1204_521.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.9,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"BCC\", \"ACK\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion exhibits features consistent with squamous cell carcinoma (SCC), including an elevated, irregular surface, ulceration, and a central keratin plug, which are common in SCC lesions. The patient's history of itching, growth, pain, change, bleeding, and elevation further supports this diagnosis.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "BCC",
+            "ACK"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion exhibits features consistent with squamous cell carcinoma (SCC), including an elevated, irregular surface, ulceration, and a central keratin plug, which are common in SCC lesions. The patient's history of itching, growth, pain, change, bleeding, and elevation further supports this diagnosis."
+        },
+        "reasoning": "The lesion exhibits features consistent with squamous cell carcinoma (SCC), including an elevated, irregular surface, ulceration, and a central keratin plug, which are common in SCC lesions. The patient's history of itching, growth, pain, change, bleeding, and elevation further supports this diagnosis.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_38_54_234.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a small, raised, erythematous area with a slightly irregular border, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The itch history also suggests a potential malignancy. However, further histopathological examination is required for definitive diagnosis.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a small, raised, erythematous area with a slightly irregular border, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The itch history also suggests a potential malignancy. However, further histopathological examination is required for definitive diagnosis."
+        },
+        "reasoning": "The lesion appears as a small, raised, erythematous area with a slightly irregular border, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The itch history also suggests a potential malignancy. However, further histopathological examination is required for definitive diagnosis.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_741_1401_619.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears elevated and slightly erythematous, which is consistent with squamous cell carcinoma (SCC). The history of itching and elevation supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without biopsy.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears elevated and slightly erythematous, which is consistent with squamous cell carcinoma (SCC). The history of itching and elevation supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without biopsy."
+        },
+        "reasoning": "The lesion appears elevated and slightly erythematous, which is consistent with squamous cell carcinoma (SCC). The history of itching and elevation supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without biopsy.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_380_1540_959.png",
+        "true_label": "SCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": true,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as an erythematous plaque on the nose, which is a common location for squamous cell carcinoma (SCC). The presence of scaling and crusting is also suggestive of SCC. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on this image alone.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as an erythematous plaque on the nose, which is a common location for squamous cell carcinoma (SCC). The presence of scaling and crusting is also suggestive of SCC. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on this image alone."
+        },
+        "reasoning": "The lesion appears as an erythematous plaque on the nose, which is a common location for squamous cell carcinoma (SCC). The presence of scaling and crusting is also suggestive of SCC. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on this image alone.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_1783_3414_120.png",
+        "true_label": "SEK",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a slightly elevated, irregularly shaped area on the scalp, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The lack of clear borders and the presence of keratin pearls suggest the possibility of an actinic keratosis (ACK) or basal cell carcinoma (BCC), but the overall morphology leans towards SCC due to the elevation and irregularity.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a slightly elevated, irregularly shaped area on the scalp, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The lack of clear borders and the presence of keratin pearls suggest the possibility of an actinic keratosis (ACK) or basal cell carcinoma (BCC), but the overall morphology leans towards SCC due to the elevation and irregularity."
+        },
+        "reasoning": "The lesion appears as a slightly elevated, irregularly shaped area on the scalp, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The lack of clear borders and the presence of keratin pearls suggest the possibility of an actinic keratosis (ACK) or basal cell carcinoma (BCC), but the overall morphology leans towards SCC due to the elevation and irregularity.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_759_1538_566.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion is erythematous, elevated, and ulcerated with bleeding, which is consistent with squamous cell carcinoma (SCC). The clinical history of itch, growth, and bleeding further supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on the image alone.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion is erythematous, elevated, and ulcerated with bleeding, which is consistent with squamous cell carcinoma (SCC). The clinical history of itch, growth, and bleeding further supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on the image alone."
+        },
+        "reasoning": "The lesion is erythematous, elevated, and ulcerated with bleeding, which is consistent with squamous cell carcinoma (SCC). The clinical history of itch, growth, and bleeding further supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on the image alone.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_821_1547_77.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as an elevated, slightly erythematous area on the nose, which is consistent with squamous cell carcinoma (SCC). The clinical history of itching and elevation supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without further examination.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as an elevated, slightly erythematous area on the nose, which is consistent with squamous cell carcinoma (SCC). The clinical history of itching and elevation supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without further examination."
+        },
+        "reasoning": "The lesion appears as an elevated, slightly erythematous area on the nose, which is consistent with squamous cell carcinoma (SCC). The clinical history of itching and elevation supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without further examination.",
+        "error": null
+      }
+    ],
+    "total_cases": 20,
+    "valid_cases": 20,
+    "errors": 0,
+    "model_info": {
+      "direct_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+      "base_url": "http://127.0.0.1:8000/v1"
+    }
+  },
+  "comparison": {
+    "accuracy_improvement": {
+      "agent": 0.75,
+      "qwen_direct": 0.1,
+      "improvement_percentage": 650.0,
+      "absolute_improvement": 0.65
+    },
+    "malignant_recall_improvement": {
+      "agent": 0.9090909090909091,
+      "qwen_direct": 1.0,
+      "improvement_percentage": -9.090909090909093,
+      "absolute_improvement": -0.09090909090909094
+    },
+    "agent_efficiency": {
+      "total_cases": 20,
+      "errors": 0,
+      "error_rate": 0.0
+    },
+    "qwen_efficiency": {
+      "total_cases": 20,
+      "errors": 0,
+      "error_rate": 0.0
+    },
+    "sample_alignment": {
+      "requested_cases": 20,
+      "agent_total_cases": 20,
+      "qwen_total_cases": 20,
+      "agent_matches_requested_order": true,
+      "qwen_matches_requested_order": true,
+      "fully_aligned": true
+    },
+    "model_info": {
+      "agent": {
+        "perception_model": "gpt-4o",
+        "report_model": "gpt-4o",
+        "base_url": "http://127.0.0.1:8000/v1"
+      },
+      "qwen_direct": {
+        "direct_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+        "base_url": "http://127.0.0.1:8000/v1"
+      }
+    },
+    "model_usage": {
+      "agent": {
+        "model_success_cases": 0,
+        "perception_model_success_cases": 0,
+        "report_model_success_cases": 0,
+        "perception_fallback_cases": 20,
+        "report_fallback_cases": 20
+      }
+    },
+    "conclusion": "✅ Agent框架在准确率上优于直接Qwen（+65.0%）"
+  },
+  "duration_seconds": 39.530302
+}

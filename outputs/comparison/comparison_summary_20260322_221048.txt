@@ -1,0 +1,43 @@
+============================================================
+Agent+Qwen vs 直接Qwen 对比报告
+============================================================
+
+生成时间: 2026-03-22T22:10:48.019118
+测试集规模: 100 案例
+实验耗时: 509.3 秒
+
+📊 核心指标对比
+------------------------------------------------------------
+Top1准确率:
+  - Agent+Qwen: 0.2900
+  - 直接Qwen:   0.1515
+  - 改进:       +91.4%
+
+恶性症状召回率:
+  - Agent+Qwen: 0.7333
+  - 直接Qwen:   0.7500
+  - 改进:       -2.2%
+
+错误率:
+  - Agent+Qwen: 0.0000
+  - 直接Qwen:   0.0100
+
+样本对齐:
+  - 请求样本数: 100
+  - Agent样本数: 100
+  - Qwen样本数:  100
+  - 完全对齐:    True
+
+模型调用诊断:
+  - Agent perception model: Qwen/Qwen2.5-VL-7B-Instruct
+  - Agent report model:     Qwen/Qwen2.5-VL-7B-Instruct
+  - Direct Qwen model:      Qwen/Qwen2.5-VL-7B-Instruct
+  - Agent模型完整成功case数: 99
+  - perception成功case数:   99
+  - report成功case数:       100
+  - perception fallback数:  1
+  - report fallback数:      0
+
+🎯 结论
+------------------------------------------------------------
+✅ Agent框架在准确率上优于直接Qwen（+13.8%）

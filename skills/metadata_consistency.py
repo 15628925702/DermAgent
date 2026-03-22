@@ -91,6 +91,15 @@ class MetadataConsistencySkill(BaseSkill):
                         penalized.append(disease)
                         rationale.append(f"Younger age weakly penalizes {disease}.")
 
+            if age <= 18:
+                for disease in ["NEV", "SEK"]:
+                    if disease in top_names and disease not in supported:
+                        supported.append(disease)
+                        rationale.append(f"Pediatric age weakly supports {disease}.")
+                if "SCC" in top_names and not has_invasive_signal and "SCC" not in penalized:
+                    penalized.append("SCC")
+                    rationale.append("Pediatric age without invasive signals penalizes SCC.")
+
         if site:
             sun_exposed_keywords = [
                 "face",

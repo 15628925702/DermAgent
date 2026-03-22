@@ -4,6 +4,7 @@ from typing import Any, Dict
 
 from agent.aggregator import DecisionAggregator
 from agent.controller import LearnableSkillController
+from agent.evidence_calibrator import LearnableEvidenceCalibrator
 from agent.final_scorer import LearnableFinalScorer
 from agent.planner import ExperienceSkillPlanner
 from agent.reflection import ReflectionEngine
@@ -48,6 +49,8 @@ def run_agent(
     use_rule_memory: bool = True,
     enable_rule_compression: bool = True,
     update_rule_scorer: bool | None = None,
+    perception_model: str | None = None,
+    report_model: str | None = None,
 ) -> Dict[str, Any]:
     if bank is None:
         bank = ExperienceBank()
@@ -63,6 +66,7 @@ def run_agent(
     final_scorer = learning_components.get("final_scorer")
     rule_scorer = learning_components.get("rule_scorer")
     retrieval_scorer = learning_components.get("retrieval_scorer")
+    evidence_calibrator = learning_components.get("evidence_calibrator")
 
     # 如果需要，使用学习组件
     if use_controller and controller is None:
@@ -85,20 +89,8 @@ def run_agent(
         "update_online": update_online,
         "use_rule_memory": use_rule_memory,
         "enable_rule_compression": enable_rule_compression,
-    }
-    state.trace("config", "success", "Runtime flags initialized", payload=runtime_flags)
-    runtime_flags = {
-        "use_retrieval": use_retrieval,
-        "use_specialist": use_specialist,
-        "use_reflection": use_reflection,
-        "use_controller": use_controller,
-        "use_compare": use_compare,
-        "use_malignancy": use_malignancy,
-        "use_metadata_consistency": use_metadata_consistency,
-        "use_final_scorer": use_final_scorer,
-        "update_online": update_online,
-        "use_rule_memory": use_rule_memory,
-        "enable_rule_compression": enable_rule_compression,
+        "perception_model": perception_model or "",
+        "report_model": report_model or "",
     }
     state.trace("config", "success", "Runtime flags initialized", payload=runtime_flags)
 
@@ -119,7 +111,17 @@ def run_agent(
                     "mel_nev_specialist_skill",
                 ]
             )
-        registry = build_skill_registry(bank, skill_index=skill_index, reranker=reranker, retrieval_scorer=retrieval_scorer, config={"disable_skills": disable_skills})
+        registry = build_skill_registry(
+            bank,
+            skill_index=skill_index,
+            reranker=reranker,
+            retrieval_scorer=retrieval_scorer,
+            config={
+                "disable_skills": disable_skills,
+                "perception_model": perception_model,
+                "report_model": report_model,
+            },
+        )
         state.trace("registry", "success", "Skill registry built")
     except Exception as e:
         state.trace("registry", "failed", f"Failed to build registry: {e}")
@@ -165,7 +167,10 @@ def run_agent(
         return _export_state(state, error=f"Router execution failed: {e}", runtime_flags=runtime_flags)
 
     try:
-        aggregator = DecisionAggregator(final_scorer=final_scorer if use_controller and use_final_scorer else None)
+        aggregator = DecisionAggregator(
+            final_scorer=final_scorer if use_controller and use_final_scorer else None,
+            evidence_calibrator=evidence_calibrator,
+        )
         aggregator.aggregate(state)
     except Exception as e:
         state.trace("aggregator", "failed", f"Aggregator failed: {e}")
@@ -263,6 +268,25 @@ def run_agent(
             state.trace("final_scorer", "failed", f"Final scorer update failed: {e}")
     elif use_controller and use_final_scorer:
         state.trace("final_scorer", "skipped", "Final scorer update skipped because online updates are disabled")
+
+    if evidence_calibrator is not None and update_online:
+        try:
+            calibrator_feedback = evidence_calibrator.update_from_case(state)
+            state.controller["evidence_calibrator_feedback"] = calibrator_feedback
+            state.trace(
+                "evidence_calibrator",
+                "success",
+                "Evidence calibration updated",
+                payload={
+                    "updated": calibrator_feedback.get("updated"),
+                    "true_label": calibrator_feedback.get("true_label"),
+                    "predicted_label": calibrator_feedback.get("predicted_label"),
+                },
+            )
+        except Exception as e:
+            state.trace("evidence_calibrator", "failed", f"Evidence calibration update failed: {e}")
+    elif evidence_calibrator is not None:
+        state.trace("evidence_calibrator", "skipped", "Evidence calibration update skipped because online updates are disabled")
 
     effective_rule_update = update_online if update_rule_scorer is None else bool(update_rule_scorer)
 

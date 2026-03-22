@@ -8,6 +8,9 @@ from agent.state import CaseState
 
 
 class ExperienceSkillPlanner:
+    LEARNED_SPECIALIST_THRESHOLD = 0.95
+    LEARNED_METADATA_THRESHOLD = 0.92
+
     SPECIALIST_CONFIGS = [
         {
             "pair": ("ACK", "SCC"),
@@ -140,6 +143,7 @@ class ExperienceSkillPlanner:
 
         if self._is_enabled("metadata_consistency_skill") and self._should_add_metadata_skill(
             case_features=case_features,
+            state=state,
         ):
             selected.append("metadata_consistency_skill")
             routing_reasons.append({
@@ -187,6 +191,7 @@ class ExperienceSkillPlanner:
                     continue
                 specialist_selected, specialist_reason = self._should_add_pair_specialist(
                     target_pair=target_pair,
+                    skill_name=skill_name,
                     case_features=case_features,
                     confusion_pairs=confusion_pairs,
                     recommended_skills=recommended_skills,
@@ -263,7 +268,7 @@ class ExperienceSkillPlanner:
             if self.planning_mode == "learnable_hybrid":
                 mandatory_rule_skills = [
                     skill_name for skill_name in rule_selected
-                    if self._is_enabled(skill_name) and (skill_name == "malignancy_risk_skill" or skill_name.endswith("_specialist_skill"))
+                    if self._is_enabled(skill_name) and skill_name == "malignancy_risk_skill"
                 ]
                 final_selected = list(dict.fromkeys(final_selected + mandatory_rule_skills))
 
@@ -312,11 +317,17 @@ class ExperienceSkillPlanner:
         retrieval_summary = state.retrieval.get("retrieval_summary", {}) or {}
         site = self._norm_text(metadata.get("location") or metadata.get("site") or metadata.get("anatomical_site"))
         history = self._norm_text(metadata.get("history") or metadata.get("clinical_history") or metadata.get("past_history"))
+        age = self._safe_float(metadata.get("age"))
         malignant_cues = [
             str(x).strip().lower()
             for x in ((state.perception.get("risk_cues", {}) or {}).get("malignant_cues", []) or [])
             if str(x).strip()
         ]
+        malignant_count = len({"MEL", "BCC", "SCC"}.intersection(set(top_names)))
+        top1_uncertain = (
+            str((state.perception.get("uncertainty", {}) or {}).get("level", "high")).lower() in {"medium", "high"}
+            or top_gap <= 0.15
+        )
 
         return {
             "top_names": top_names,
@@ -325,15 +336,21 @@ class ExperienceSkillPlanner:
             "top_gap_small": top_gap <= 0.15,
             "uncertainty": str((state.perception.get("uncertainty", {}) or {}).get("level", "high")).lower(),
             "retrieval_confidence": str(retrieval_summary.get("retrieval_confidence", "low")).lower(),
+            "high_confidence": str(retrieval_summary.get("retrieval_confidence", "low")).lower() == "high" and top_gap >= 0.28,
+            "low_confidence": str(retrieval_summary.get("retrieval_confidence", "low")).lower() == "low" or top_gap <= 0.15,
+            "top1_uncertain": top1_uncertain,
             "supports_top1": bool(retrieval_summary.get("supports_top1", False)),
             "has_confusion_support": bool(retrieval_summary.get("has_confusion_support", False)),
             "metadata_present": bool(metadata),
             "metadata_keys": list(metadata.keys()),
             "has_malignant_candidate": bool({"MEL", "BCC", "SCC"}.intersection(top_names)),
+            "multiple_malignant_candidates": malignant_count >= 2,
             "has_ack_scc_pair": {"ACK", "SCC"}.issubset(set(top_names)),
             "has_bcc_scc_pair": {"BCC", "SCC"}.issubset(set(top_names)),
             "has_bcc_sek_pair": {"BCC", "SEK"}.issubset(set(top_names)),
             "has_mel_nev_pair": {"MEL", "NEV"}.issubset(set(top_names)),
+            "age_match": self._age_match_score(age=age, top_names=top_names),
+            "site_match": self._site_match_score(site=site, top_names=top_names),
             "sun_exposed_site": self._site_matches(site, ["face", "scalp", "ear", "neck", "nose", "temple", "cheek", "hand", "forearm", "lip"]),
             "strong_invasive_history": any(token in history for token in ["bleed", "bleeding", "rapid growth", "pain", "hurt", "ulcer", "ulcerated"]),
             "has_malignant_cues": bool(malignant_cues),
@@ -367,6 +384,7 @@ class ExperienceSkillPlanner:
     def _should_add_pair_specialist(
         self,
         target_pair: tuple[str, str],
+        skill_name: str,
         case_features: Dict[str, Any],
         confusion_pairs: List[tuple[str, ...]],
         recommended_skills: List[str],
@@ -374,10 +392,27 @@ class ExperienceSkillPlanner:
         allow_metadata_proxy: bool = False,
     ) -> tuple[bool, str]:
         pair_set = set(target_pair)
-        specialist_name = self._specialist_name_for_pair(pair_set)
+        specialist_name = skill_name or self._specialist_name_for_pair(pair_set)
         top_names = list(case_features["top_names"])
+        ambiguous_context = (
+            str(case_features.get("uncertainty", "high")) in {"medium", "high"}
+            or bool(case_features.get("top_gap_small", False))
+            or bool(case_features.get("has_confusion_support", False))
+        )
+        learned_score = self._learned_gate_score(
+            skill_name=specialist_name,
+            case_features=case_features,
+            recommended_skills=recommended_skills,
+            state=state,
+        )
         if pair_set.issubset(set(top_names)):
-            return True, "pair_present_in_top_k"
+            if learned_score >= self.LEARNED_SPECIALIST_THRESHOLD:
+                return True, "learned_specialist_score"
+            if ambiguous_context:
+                return True, "pair_present_in_top_k"
+            if specialist_name in recommended_skills:
+                return True, "memory_or_rule_recommended_skill"
+            return False, "pair_present_but_not_ambiguous_enough"
         for pair in confusion_pairs:
             if set(pair) == pair_set:
                 return True, "confusion_memory_pair_match"
@@ -399,9 +434,18 @@ class ExperienceSkillPlanner:
     def _should_add_metadata_skill(
         self,
         case_features: Dict[str, Any],
+        state: CaseState,
     ) -> bool:
         if not bool(case_features["metadata_present"]):
             return False
+        learned_score = self._learned_gate_score(
+            skill_name="metadata_consistency_skill",
+            case_features=case_features,
+            recommended_skills=[],
+            state=state,
+        )
+        if learned_score >= self.LEARNED_METADATA_THRESHOLD:
+            return True
         if str(case_features["uncertainty"]) in {"medium", "high"}:
             return True
         if str(case_features["retrieval_confidence"]) == "low" or not bool(case_features["supports_top1"]):
@@ -435,6 +479,71 @@ class ExperienceSkillPlanner:
                 return 0.0
             return float(value)
         except (TypeError, ValueError):
+            return 0.0
+
+    def _age_match_score(self, *, age: float, top_names: List[str]) -> float:
+        if age <= 0:
+            return 0.0
+        if age <= 18 and {"NEV", "SEK"}.intersection(top_names):
+            return 1.0
+        if age <= 30 and "NEV" in top_names:
+            return 1.0
+        if age >= 55 and {"ACK", "BCC", "MEL", "SCC"}.intersection(top_names):
+            return 1.0
+        return 0.0
+
+    def _site_match_score(self, *, site: str, top_names: List[str]) -> float:
+        if not site:
+            return 0.0
+        if self._site_matches(site, ["face", "scalp", "ear", "neck", "nose", "temple", "cheek", "hand", "forearm", "lip"]) and {"ACK", "BCC", "SCC"}.intersection(top_names):
+            return 1.0
+        if self._site_matches(site, ["trunk", "back", "chest", "abdomen"]) and "NEV" in top_names:
+            return 1.0
+        if self._site_matches(site, ["leg", "foot", "toe"]) and "MEL" in top_names:
+            return 1.0
+        return 0.0
+
+    def _learned_gate_score(
+        self,
+        *,
+        skill_name: str,
+        case_features: Dict[str, Any],
+        recommended_skills: List[str],
+        state: CaseState,
+    ) -> float:
+        if self.controller is None:
+            return 0.0
+        target_learner = getattr(self.controller, "target_learner", None)
+        if target_learner is None:
+            return 0.0
+
+        features = {
+            "uncertainty_medium": 1.0 if str(case_features.get("uncertainty", "")).lower() == "medium" else 0.0,
+            "uncertainty_high": 1.0 if str(case_features.get("uncertainty", "")).lower() == "high" else 0.0,
+            "top_gap_small": 1.0 if bool(case_features.get("top_gap_small", False)) else 0.0,
+            "top1_uncertain": 1.0 if bool(case_features.get("top1_uncertain", False)) else 0.0,
+            "high_confidence": 1.0 if bool(case_features.get("high_confidence", False)) else 0.0,
+            "low_confidence": 1.0 if bool(case_features.get("low_confidence", False)) else 0.0,
+            "metadata_present": 1.0 if bool(case_features.get("metadata_present", False)) else 0.0,
+            "retrieval_low": 1.0 if str(case_features.get("retrieval_confidence", "")).lower() == "low" else 0.0,
+            "supports_top1": 1.0 if bool(case_features.get("supports_top1", False)) else 0.0,
+            "age_match": float(case_features.get("age_match", 0.0) or 0.0),
+            "site_match": float(case_features.get("site_match", 0.0) or 0.0),
+            "has_malignant_candidate": 1.0 if bool(case_features.get("has_malignant_candidate", False)) else 0.0,
+            "multiple_malignant_candidates": 1.0 if bool(case_features.get("multiple_malignant_candidates", False)) else 0.0,
+            "has_confusion_support": 1.0 if bool(case_features.get("has_confusion_support", False)) else 0.0,
+            "has_ack_scc_pair": 1.0 if bool(case_features.get("has_ack_scc_pair", False)) else 0.0,
+            "has_bcc_scc_pair": 1.0 if bool(case_features.get("has_bcc_scc_pair", False)) else 0.0,
+            "has_bcc_sek_pair": 1.0 if bool(case_features.get("has_bcc_sek_pair", False)) else 0.0,
+            "has_mel_nev_pair": 1.0 if bool(case_features.get("has_mel_nev_pair", False)) else 0.0,
+            "retrieval_recommends_ack_scc": 1.0 if "ack_scc_specialist_skill" in recommended_skills else 0.0,
+            "retrieval_recommends_bcc_scc": 1.0 if "bcc_scc_specialist_skill" in recommended_skills else 0.0,
+            "retrieval_recommends_bcc_sek": 1.0 if "bcc_sek_specialist_skill" in recommended_skills else 0.0,
+            "retrieval_recommends_mel_nev": 1.0 if "mel_nev_specialist_skill" in recommended_skills else 0.0,
+        }
+        try:
+            return float(target_learner.predict_target(skill_name, features, state))
+        except Exception:
             return 0.0
 
     def _site_matches(self, site: str, keywords: List[str]) -> bool:

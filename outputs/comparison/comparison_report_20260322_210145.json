@@ -1,0 +1,237 @@
+{
+  "timestamp": "2026-03-22T21:01:45.817654",
+  "test_count": 3,
+  "agent_results": {
+    "success": true,
+    "metrics": {
+      "accuracy_top1": 1.0,
+      "malignant_recall": 1.0
+    },
+    "per_case": [
+      {
+        "case_id": "PAT_1516_1765_530.png",
+        "true_label": "NEV",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "SCC"
+        ],
+        "confidence": "low",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:APIConnectionError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:APIConnectionError",
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "compare_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "rules_only",
+        "stop_probability": null,
+        "error": null
+      },
+      {
+        "case_id": "PAT_46_881_939.png",
+        "true_label": "BCC",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "SCC",
+          "NEV"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:APIConnectionError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:APIConnectionError",
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "compare_skill",
+          "metadata_consistency_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "rules_only",
+        "stop_probability": null,
+        "error": null
+      },
+      {
+        "case_id": "PAT_1545_1867_547.png",
+        "true_label": "ACK",
+        "predicted_label": "ACK",
+        "top3": [
+          "ACK",
+          "SCC",
+          "NEV"
+        ],
+        "confidence": "low",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": false,
+        "perception_fallback_reason": "api_error:APIConnectionError",
+        "report_used_model": false,
+        "report_generation_mode": "fallback",
+        "report_fallback_reason": "api_error:APIConnectionError",
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "compare_skill",
+          "metadata_consistency_skill",
+          "ack_scc_specialist_skill"
+        ],
+        "planner_mode": "rules_only",
+        "stop_probability": null,
+        "error": null
+      }
+    ],
+    "total_cases": 3,
+    "valid_cases": 3,
+    "errors": 0,
+    "bank_stats": {
+      "total": 0,
+      "raw_case": 0,
+      "prototype": 0,
+      "confusion": 0,
+      "rule": 0,
+      "hard_case": 0,
+      "unknown": 0
+    },
+    "model_info": {
+      "perception_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+      "report_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+      "base_url": "http://127.0.0.1:8000/v1",
+      "controller_enabled": false,
+      "checkpoint_loaded": false,
+      "checkpoint_path": null
+    },
+    "model_usage": {
+      "model_success_cases": 0,
+      "perception_model_success_cases": 0,
+      "report_model_success_cases": 0,
+      "perception_fallback_cases": 3,
+      "report_fallback_cases": 3
+    },
+    "runtime_flags": {
+      "use_retrieval": true,
+      "use_specialist": true,
+      "use_controller": false,
+      "update_online": false
+    }
+  },
+  "qwen_direct_results": {
+    "success": true,
+    "metrics": {
+      "accuracy_top1": 0.0,
+      "malignant_recall": 0.0
+    },
+    "per_case": [
+      {
+        "case_id": "PAT_1516_1765_530.png",
+        "true_label": "NEV",
+        "predicted_label": "UNKNOWN",
+        "confidence": 0.0,
+        "is_correct": false,
+        "raw_text": "",
+        "raw_response": {},
+        "reasoning": "",
+        "error": "Connection error."
+      },
+      {
+        "case_id": "PAT_46_881_939.png",
+        "true_label": "BCC",
+        "predicted_label": "UNKNOWN",
+        "confidence": 0.0,
+        "is_correct": false,
+        "raw_text": "",
+        "raw_response": {},
+        "reasoning": "",
+        "error": "Connection error."
+      },
+      {
+        "case_id": "PAT_1545_1867_547.png",
+        "true_label": "ACK",
+        "predicted_label": "UNKNOWN",
+        "confidence": 0.0,
+        "is_correct": false,
+        "raw_text": "",
+        "raw_response": {},
+        "reasoning": "",
+        "error": "Connection error."
+      }
+    ],
+    "total_cases": 3,
+    "valid_cases": 0,
+    "errors": 3,
+    "model_info": {
+      "direct_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+      "base_url": "http://127.0.0.1:8000/v1"
+    }
+  },
+  "comparison": {
+    "accuracy_improvement": {
+      "agent": 1.0,
+      "qwen_direct": 0.0,
+      "improvement_percentage": 100.0,
+      "absolute_improvement": 1.0
+    },
+    "malignant_recall_improvement": {
+      "agent": 1.0,
+      "qwen_direct": 0.0,
+      "improvement_percentage": 100.0,
+      "absolute_improvement": 1.0
+    },
+    "agent_efficiency": {
+      "total_cases": 3,
+      "errors": 0,
+      "error_rate": 0.0
+    },
+    "qwen_efficiency": {
+      "total_cases": 3,
+      "errors": 3,
+      "error_rate": 1.0
+    },
+    "sample_alignment": {
+      "requested_cases": 3,
+      "agent_total_cases": 3,
+      "qwen_total_cases": 3,
+      "agent_matches_requested_order": true,
+      "qwen_matches_requested_order": true,
+      "fully_aligned": true
+    },
+    "model_info": {
+      "agent": {
+        "perception_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+        "report_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+        "base_url": "http://127.0.0.1:8000/v1",
+        "controller_enabled": false,
+        "checkpoint_loaded": false,
+        "checkpoint_path": null
+      },
+      "qwen_direct": {
+        "direct_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+        "base_url": "http://127.0.0.1:8000/v1"
+      }
+    },
+    "model_usage": {
+      "agent": {
+        "model_success_cases": 0,
+        "perception_model_success_cases": 0,
+        "report_model_success_cases": 0,
+        "perception_fallback_cases": 3,
+        "report_fallback_cases": 3
+      }
+    },
+    "conclusion": "✅ Agent框架全面优于直接Qwen（平均绝对提升 100.0%）"
+  },
+  "duration_seconds": 12.561439
+}

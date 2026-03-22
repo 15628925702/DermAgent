@@ -79,6 +79,9 @@ def run_evaluation(
     update_online: bool = True,
     use_rule_memory: bool = True,
     enable_rule_compression: bool = True,
+    use_final_scorer: bool = True,
+    perception_model: str | None = None,
+    report_model: str | None = None,
 ) -> Dict[str, Any]:
     all_cases = load_pad_ufes20_cases(dataset_root=dataset_root, limit=limit)
     resolved_split_path = split_json
@@ -136,9 +139,12 @@ def run_evaluation(
             use_specialist=use_specialist,
             use_reflection=use_reflection,
             use_controller=use_controller,
+            use_final_scorer=use_final_scorer,
             update_online=update_online,
             use_rule_memory=use_rule_memory,
             enable_rule_compression=enable_rule_compression,
+            perception_model=perception_model,
+            report_model=report_model,
         )
         true_label = _norm_label(case.get("label"))
         final_decision = result.get("final_decision", {}) or {}
@@ -201,9 +207,12 @@ def run_evaluation(
             "use_specialist": use_specialist,
             "use_reflection": use_reflection,
             "use_controller": use_controller,
+            "use_final_scorer": use_final_scorer,
             "update_online": update_online,
             "use_rule_memory": use_rule_memory,
             "enable_rule_compression": enable_rule_compression,
+            "perception_model": perception_model or "",
+            "report_model": report_model or "",
         },
         "split": {
             "name": split_name,
@@ -264,11 +273,14 @@ def main() -> None:
     parser.add_argument("--disable-controller", action="store_true")
     parser.add_argument("--disable-rule-memory", action="store_true")
     parser.add_argument("--disable-rule-compression", action="store_true")
+    parser.add_argument("--disable-final-scorer", action="store_true")
     parser.add_argument("--controller-state-in", default=None)
     parser.add_argument("--controller-state-out", default=None)
     parser.add_argument("--bank-state-in", default=None)
     parser.add_argument("--bank-state-out", default=None)
     parser.add_argument("--freeze-learning", action="store_true")
+    parser.add_argument("--perception-model", default=None)
+    parser.add_argument("--report-model", default=None)
     parser.add_argument("--output", default=None)
     args = parser.parse_args()
 
@@ -281,6 +293,7 @@ def main() -> None:
         use_specialist=not args.disable_specialist,
         use_reflection=not args.disable_reflection,
         use_controller=not args.disable_controller,
+        use_final_scorer=not args.disable_final_scorer,
         controller_state_in=args.controller_state_in,
         controller_state_out=args.controller_state_out,
         bank_state_in=args.bank_state_in,
@@ -288,6 +301,8 @@ def main() -> None:
         update_online=not args.freeze_learning,
         use_rule_memory=not args.disable_rule_memory,
         enable_rule_compression=not args.disable_rule_compression,
+        perception_model=args.perception_model,
+        report_model=args.report_model,
     )
 
     text = json.dumps(result, ensure_ascii=False, indent=2)

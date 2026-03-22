@@ -1,0 +1,1063 @@
+{
+  "timestamp": "2026-03-22T21:17:01.674170",
+  "test_count": 20,
+  "agent_results": {
+    "success": true,
+    "metrics": {
+      "accuracy_top1": 0.5,
+      "malignant_recall": 0.8181818181818182
+    },
+    "per_case": [
+      {
+        "case_id": "PAT_1516_1765_530.png",
+        "true_label": "NEV",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "SEK",
+          "BCC"
+        ],
+        "confidence": "high",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.3619,
+        "error": null
+      },
+      {
+        "case_id": "PAT_46_881_939.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "top3": [
+          "SCC",
+          "NEV",
+          "BCC"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": false,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1557,
+        "error": null
+      },
+      {
+        "case_id": "PAT_1545_1867_547.png",
+        "true_label": "ACK",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "SCC",
+          "BCC"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": false,
+        "is_top3_correct": false,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2385,
+        "error": null
+      },
+      {
+        "case_id": "PAT_1989_4061_934.png",
+        "true_label": "ACK",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "BCC",
+          "SEK"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": false,
+        "is_top3_correct": false,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.3131,
+        "error": null
+      },
+      {
+        "case_id": "PAT_684_1302_588.png",
+        "true_label": "BCC",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "NEV",
+          "SCC"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2451,
+        "error": null
+      },
+      {
+        "case_id": "PAT_1549_1882_230.png",
+        "true_label": "SEK",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "SEK",
+          "ACK"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": false,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.5069,
+        "error": null
+      },
+      {
+        "case_id": "PAT_778_1471_835.png",
+        "true_label": "BCC",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "NEV",
+          "SCC"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "bcc_scc_specialist_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1412,
+        "error": null
+      },
+      {
+        "case_id": "PAT_117_179_983.png",
+        "true_label": "BCC",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "NEV",
+          "SCC"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2366,
+        "error": null
+      },
+      {
+        "case_id": "PAT_1995_4080_695.png",
+        "true_label": "ACK",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "NEV",
+          "SCC"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": false,
+        "is_top3_correct": false,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2385,
+        "error": null
+      },
+      {
+        "case_id": "PAT_705_4015_413.png",
+        "true_label": "ACK",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "BCC",
+          "SCC"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": false,
+        "is_top3_correct": false,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.3348,
+        "error": null
+      },
+      {
+        "case_id": "PAT_2140_4726_141.png",
+        "true_label": "ACK",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "BCC",
+          "SEK"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": false,
+        "is_top3_correct": false,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2134,
+        "error": null
+      },
+      {
+        "case_id": "PAT_967_1827_247.png",
+        "true_label": "BCC",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "NEV",
+          "SCC"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2136,
+        "error": null
+      },
+      {
+        "case_id": "PAT_2088_4524_465.png",
+        "true_label": "NEV",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "SEK",
+          "ACK"
+        ],
+        "confidence": "high",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.5001,
+        "error": null
+      },
+      {
+        "case_id": "PAT_636_1204_521.png",
+        "true_label": "BCC",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "NEV",
+          "SCC"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2812,
+        "error": null
+      },
+      {
+        "case_id": "PAT_38_54_234.png",
+        "true_label": "BCC",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "BCC",
+          "SCC"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": false,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": false,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.3909,
+        "error": null
+      },
+      {
+        "case_id": "PAT_741_1401_619.png",
+        "true_label": "BCC",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "NEV",
+          "SCC"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "bcc_scc_specialist_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1378,
+        "error": null
+      },
+      {
+        "case_id": "PAT_380_1540_959.png",
+        "true_label": "SCC",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "BCC",
+          "SCC"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": false,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": false,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2385,
+        "error": null
+      },
+      {
+        "case_id": "PAT_1783_3414_120.png",
+        "true_label": "SEK",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "NEV",
+          "SEK"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": false,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2094,
+        "error": null
+      },
+      {
+        "case_id": "PAT_759_1538_566.png",
+        "true_label": "BCC",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "NEV",
+          "SCC"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2499,
+        "error": null
+      },
+      {
+        "case_id": "PAT_821_1547_77.png",
+        "true_label": "BCC",
+        "predicted_label": "BCC",
+        "top3": [
+          "BCC",
+          "SCC",
+          "NEV"
+        ],
+        "confidence": "medium",
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "perception_used_model": true,
+        "perception_fallback_reason": null,
+        "report_used_model": true,
+        "report_generation_mode": "gpt",
+        "report_fallback_reason": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1289,
+        "error": null
+      }
+    ],
+    "total_cases": 20,
+    "valid_cases": 20,
+    "errors": 0,
+    "bank_stats": {
+      "total": 5,
+      "raw_case": 4,
+      "prototype": 1,
+      "confusion": 0,
+      "rule": 0,
+      "hard_case": 0,
+      "unknown": 0
+    },
+    "model_info": {
+      "perception_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+      "report_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+      "base_url": "http://127.0.0.1:8000/v1",
+      "controller_enabled": true,
+      "checkpoint_loaded": true,
+      "checkpoint_path": "outputs/checkpoints/learned_controller_best.json"
+    },
+    "model_usage": {
+      "model_success_cases": 20,
+      "perception_model_success_cases": 20,
+      "report_model_success_cases": 20,
+      "perception_fallback_cases": 0,
+      "report_fallback_cases": 0
+    },
+    "runtime_flags": {
+      "use_retrieval": true,
+      "use_specialist": true,
+      "use_controller": true,
+      "update_online": false
+    }
+  },
+  "qwen_direct_results": {
+    "success": true,
+    "metrics": {
+      "accuracy_top1": 0.15,
+      "malignant_recall": 0.6363636363636364
+    },
+    "per_case": [
+      {
+        "case_id": "PAT_1516_1765_530.png",
+        "true_label": "NEV",
+        "predicted_label": "NEV",
+        "confidence": 0.66,
+        "is_correct": true,
+        "raw_text": "{\n  \"diagnosis\": \"NEV\",\n  \"top_k\": [\"NEV\", \"MEL\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a well-circumscribed, brownish patch on the arm, which is consistent with a nevus. The size and shape suggest it could be a common or junctional nevus. However, further evaluation is needed for definitive diagnosis.\"\n}",
+        "raw_response": {
+          "diagnosis": "NEV",
+          "top_k": [
+            "NEV",
+            "MEL"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a well-circumscribed, brownish patch on the arm, which is consistent with a nevus. The size and shape suggest it could be a common or junctional nevus. However, further evaluation is needed for definitive diagnosis."
+        },
+        "reasoning": "The lesion appears as a well-circumscribed, brownish patch on the arm, which is consistent with a nevus. The size and shape suggest it could be a common or junctional nevus. However, further evaluation is needed for definitive diagnosis.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_46_881_939.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.9,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"BCC\", \"NEV\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion is erythematous, elevated, and ulcerated, which are common features of squamous cell carcinoma (SCC). The rapid growth and change in appearance also support this diagnosis. While basal cell carcinoma (BCC) can have similar features, the location on the neck and the clinical history suggest SCC as a more likely cause.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "BCC",
+            "NEV"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion is erythematous, elevated, and ulcerated, which are common features of squamous cell carcinoma (SCC). The rapid growth and change in appearance also support this diagnosis. While basal cell carcinoma (BCC) can have similar features, the location on the neck and the clinical history suggest SCC as a more likely cause."
+        },
+        "reasoning": "The lesion is erythematous, elevated, and ulcerated, which are common features of squamous cell carcinoma (SCC). The rapid growth and change in appearance also support this diagnosis. While basal cell carcinoma (BCC) can have similar features, the location on the neck and the clinical history suggest SCC as a more likely cause.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_1545_1867_547.png",
+        "true_label": "ACK",
+        "predicted_label": "NEV",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"NEV\",\n  \"top_k\": [\"NEV\", \"SEK\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a slightly raised, irregularly shaped area with a slightly darker coloration, which is consistent with a nevus. The patient's age and location on the face also support this diagnosis. However, the possibility of seborrheic keratosis cannot be ruled out due to the similar clinical presentation.\"\n}",
+        "raw_response": {
+          "diagnosis": "NEV",
+          "top_k": [
+            "NEV",
+            "SEK"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a slightly raised, irregularly shaped area with a slightly darker coloration, which is consistent with a nevus. The patient's age and location on the face also support this diagnosis. However, the possibility of seborrheic keratosis cannot be ruled out due to the similar clinical presentation."
+        },
+        "reasoning": "The lesion appears as a slightly raised, irregularly shaped area with a slightly darker coloration, which is consistent with a nevus. The patient's age and location on the face also support this diagnosis. However, the possibility of seborrheic keratosis cannot be ruled out due to the similar clinical presentation.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_1989_4061_934.png",
+        "true_label": "ACK",
+        "predicted_label": "NEV",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"NEV\",\n  \"top_k\": [\"NEV\", \"BCC\", \"SEK\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a small, slightly raised, brownish patch on the hand, which is a common location for nevi. The patient's age and the presence of itching suggest it could be a seborrheic keratosis, but the morphology leans more towards a nevus.\"\n}",
+        "raw_response": {
+          "diagnosis": "NEV",
+          "top_k": [
+            "NEV",
+            "BCC",
+            "SEK"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a small, slightly raised, brownish patch on the hand, which is a common location for nevi. The patient's age and the presence of itching suggest it could be a seborrheic keratosis, but the morphology leans more towards a nevus."
+        },
+        "reasoning": "The lesion appears as a small, slightly raised, brownish patch on the hand, which is a common location for nevi. The patient's age and the presence of itching suggest it could be a seborrheic keratosis, but the morphology leans more towards a nevus.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_684_1302_588.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"NEV\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion is elevated, ulcerated, and has a central crust, which is consistent with squamous cell carcinoma (SCC). The presence of pigmentation and the location on the forearm also suggest a nevus (NEV) as a potential benign alternative, but the clinical history of itch, growth, and bleeding leans towards malignancy.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "NEV"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion is elevated, ulcerated, and has a central crust, which is consistent with squamous cell carcinoma (SCC). The presence of pigmentation and the location on the forearm also suggest a nevus (NEV) as a potential benign alternative, but the clinical history of itch, growth, and bleeding leans towards malignancy."
+        },
+        "reasoning": "The lesion is elevated, ulcerated, and has a central crust, which is consistent with squamous cell carcinoma (SCC). The presence of pigmentation and the location on the forearm also suggest a nevus (NEV) as a potential benign alternative, but the clinical history of itch, growth, and bleeding leans towards malignancy.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_1549_1882_230.png",
+        "true_label": "SEK",
+        "predicted_label": "SEK",
+        "confidence": 0.9,
+        "is_correct": true,
+        "raw_text": "{\n  \"diagnosis\": \"SEK\",\n  \"top_k\": [\"SEK\", \"NEV\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion appears as a small, slightly elevated area on the chest, which is consistent with seborrheic keratosis. The clinical history of itching also aligns with this diagnosis. There is no evidence of malignancy such as irregular borders or asymmetry that would suggest SCC or BCC.\"\n}",
+        "raw_response": {
+          "diagnosis": "SEK",
+          "top_k": [
+            "SEK",
+            "NEV"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion appears as a small, slightly elevated area on the chest, which is consistent with seborrheic keratosis. The clinical history of itching also aligns with this diagnosis. There is no evidence of malignancy such as irregular borders or asymmetry that would suggest SCC or BCC."
+        },
+        "reasoning": "The lesion appears as a small, slightly elevated area on the chest, which is consistent with seborrheic keratosis. The clinical history of itching also aligns with this diagnosis. There is no evidence of malignancy such as irregular borders or asymmetry that would suggest SCC or BCC.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_778_1471_835.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.9,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"NEV\", \"BCC\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion exhibits characteristics of an SCC (squamous cell carcinoma), including growth, change, bleeding, and elevation. The location on the face in an older adult also supports this diagnosis. While nevi and basal cell carcinomas can occur on the face, the clinical history strongly suggests SCC.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "NEV",
+            "BCC"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion exhibits characteristics of an SCC (squamous cell carcinoma), including growth, change, bleeding, and elevation. The location on the face in an older adult also supports this diagnosis. While nevi and basal cell carcinomas can occur on the face, the clinical history strongly suggests SCC."
+        },
+        "reasoning": "The lesion exhibits characteristics of an SCC (squamous cell carcinoma), including growth, change, bleeding, and elevation. The location on the face in an older adult also supports this diagnosis. While nevi and basal cell carcinomas can occur on the face, the clinical history strongly suggests SCC.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_117_179_983.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.9,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"BCC\", \"NEV\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion is elevated, ulcerated, and has a crusty surface, which is consistent with squamous cell carcinoma (SCC). The history of growth, pain, and bleeding further supports this diagnosis. Benign lesions like basal cell carcinoma (BCC) or seborrheic keratosis (SEK) are less likely given the clinical presentation.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "BCC",
+            "NEV"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion is elevated, ulcerated, and has a crusty surface, which is consistent with squamous cell carcinoma (SCC). The history of growth, pain, and bleeding further supports this diagnosis. Benign lesions like basal cell carcinoma (BCC) or seborrheic keratosis (SEK) are less likely given the clinical presentation."
+        },
+        "reasoning": "The lesion is elevated, ulcerated, and has a crusty surface, which is consistent with squamous cell carcinoma (SCC). The history of growth, pain, and bleeding further supports this diagnosis. Benign lesions like basal cell carcinoma (BCC) or seborrheic keratosis (SEK) are less likely given the clinical presentation.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_1995_4080_695.png",
+        "true_label": "ACK",
+        "predicted_label": "SEK",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SEK\",\n  \"top_k\": [\"SEK\", \"NEV\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a slightly raised, erythematous area with some scaling, which is consistent with seborrheic keratosis. The clinical history of itch and change in appearance supports this diagnosis. However, a nevus cannot be ruled out due to the location and age of the patient.\"\n}",
+        "raw_response": {
+          "diagnosis": "SEK",
+          "top_k": [
+            "SEK",
+            "NEV"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a slightly raised, erythematous area with some scaling, which is consistent with seborrheic keratosis. The clinical history of itch and change in appearance supports this diagnosis. However, a nevus cannot be ruled out due to the location and age of the patient."
+        },
+        "reasoning": "The lesion appears as a slightly raised, erythematous area with some scaling, which is consistent with seborrheic keratosis. The clinical history of itch and change in appearance supports this diagnosis. However, a nevus cannot be ruled out due to the location and age of the patient.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_705_4015_413.png",
+        "true_label": "ACK",
+        "predicted_label": "SEK",
+        "confidence": 0.9,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SEK\",\n  \"top_k\": [\"SEK\", \"NEV\", \"BCC\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion appears as a slightly raised, irregularly shaped area with a slightly elevated border and a slightly uneven surface texture, which is consistent with seborrheic keratosis. The clinical history of growth also supports this diagnosis.\"\n}",
+        "raw_response": {
+          "diagnosis": "SEK",
+          "top_k": [
+            "SEK",
+            "NEV",
+            "BCC"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion appears as a slightly raised, irregularly shaped area with a slightly elevated border and a slightly uneven surface texture, which is consistent with seborrheic keratosis. The clinical history of growth also supports this diagnosis."
+        },
+        "reasoning": "The lesion appears as a slightly raised, irregularly shaped area with a slightly elevated border and a slightly uneven surface texture, which is consistent with seborrheic keratosis. The clinical history of growth also supports this diagnosis.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_2140_4726_141.png",
+        "true_label": "ACK",
+        "predicted_label": "SEK",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SEK\",\n  \"top_k\": [\"SEK\", \"BCC\", \"NEV\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a slightly elevated, erythematous area on the neck, which is consistent with seborrheic keratosis. The clinical history of itching also aligns with this diagnosis. However, the possibility of basal cell carcinoma (BCC) cannot be ruled out due to the location and slight elevation, warranting further evaluation.\"\n}",
+        "raw_response": {
+          "diagnosis": "SEK",
+          "top_k": [
+            "SEK",
+            "BCC",
+            "NEV"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a slightly elevated, erythematous area on the neck, which is consistent with seborrheic keratosis. The clinical history of itching also aligns with this diagnosis. However, the possibility of basal cell carcinoma (BCC) cannot be ruled out due to the location and slight elevation, warranting further evaluation."
+        },
+        "reasoning": "The lesion appears as a slightly elevated, erythematous area on the neck, which is consistent with seborrheic keratosis. The clinical history of itching also aligns with this diagnosis. However, the possibility of basal cell carcinoma (BCC) cannot be ruled out due to the location and slight elevation, warranting further evaluation.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_967_1827_247.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.9,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"BCC\", \"NEV\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion is elevated, ulcerated, and has a crusty appearance, which is consistent with squamous cell carcinoma (SCC). The location on the nose and the clinical history of itch and bleeding further support this diagnosis. Basal cell carcinoma (BCC) and nevus (NEV) are less likely given the clinical presentation.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "BCC",
+            "NEV"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion is elevated, ulcerated, and has a crusty appearance, which is consistent with squamous cell carcinoma (SCC). The location on the nose and the clinical history of itch and bleeding further support this diagnosis. Basal cell carcinoma (BCC) and nevus (NEV) are less likely given the clinical presentation."
+        },
+        "reasoning": "The lesion is elevated, ulcerated, and has a crusty appearance, which is consistent with squamous cell carcinoma (SCC). The location on the nose and the clinical history of itch and bleeding further support this diagnosis. Basal cell carcinoma (BCC) and nevus (NEV) are less likely given the clinical presentation.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_2088_4524_465.png",
+        "true_label": "NEV",
+        "predicted_label": "NEV",
+        "confidence": 0.66,
+        "is_correct": true,
+        "raw_text": "{\n  \"diagnosis\": \"NEV\",\n  \"top_k\": [\"NEV\", \"SEK\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a small, dark spot on the chest, which is a common location for nevi. The size and color suggest it could also be a seborrheic keratosis, but given the age of the patient (9 years old), a nevus is more likely.\"\n}",
+        "raw_response": {
+          "diagnosis": "NEV",
+          "top_k": [
+            "NEV",
+            "SEK"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a small, dark spot on the chest, which is a common location for nevi. The size and color suggest it could also be a seborrheic keratosis, but given the age of the patient (9 years old), a nevus is more likely."
+        },
+        "reasoning": "The lesion appears as a small, dark spot on the chest, which is a common location for nevi. The size and color suggest it could also be a seborrheic keratosis, but given the age of the patient (9 years old), a nevus is more likely.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_636_1204_521.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.9,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"BCC\", \"NEV\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion appears elevated, ulcerated, and has a crusty appearance, which is consistent with squamous cell carcinoma (SCC). The patient's age and the clinical history of growth, pain, bleeding, and change in size are also concerning for malignancy. Benign lesions such as seborrheic keratosis (SEK) can sometimes have similar features but are less likely given the clinical history. Basal cell carcinoma (BCC) could also be considered but typically presents differently. The differential diagnosis includes SCC, BCC, and possibly a nevus (NEV), but the clinical presentation leans towards SCC due to the ulceration and crusting.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "BCC",
+            "NEV"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion appears elevated, ulcerated, and has a crusty appearance, which is consistent with squamous cell carcinoma (SCC). The patient's age and the clinical history of growth, pain, bleeding, and change in size are also concerning for malignancy. Benign lesions such as seborrheic keratosis (SEK) can sometimes have similar features but are less likely given the clinical history. Basal cell carcinoma (BCC) could also be considered but typically presents differently. The differential diagnosis includes SCC, BCC, and possibly a nevus (NEV), but the clinical presentation leans towards SCC due to the ulceration and crusting."
+        },
+        "reasoning": "The lesion appears elevated, ulcerated, and has a crusty appearance, which is consistent with squamous cell carcinoma (SCC). The patient's age and the clinical history of growth, pain, bleeding, and change in size are also concerning for malignancy. Benign lesions such as seborrheic keratosis (SEK) can sometimes have similar features but are less likely given the clinical history. Basal cell carcinoma (BCC) could also be considered but typically presents differently. The differential diagnosis includes SCC, BCC, and possibly a nevus (NEV), but the clinical presentation leans towards SCC due to the ulceration and crusting.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_38_54_234.png",
+        "true_label": "BCC",
+        "predicted_label": "NEV",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"NEV\",\n  \"top_k\": [\"NEV\", \"BCC\", \"SEK\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a slightly elevated, red-brown patch on the thigh, which is a common location for nevi. The itch suggests irritation, possibly due to rubbing or scratching, which can occur with benign lesions like seborrheic keratosis (SEK). However, the central area's color and texture could also suggest a basal cell carcinoma (BCC) or squamous cell carcinoma (SCC), warranting further evaluation.\"\n}",
+        "raw_response": {
+          "diagnosis": "NEV",
+          "top_k": [
+            "NEV",
+            "BCC",
+            "SEK"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a slightly elevated, red-brown patch on the thigh, which is a common location for nevi. The itch suggests irritation, possibly due to rubbing or scratching, which can occur with benign lesions like seborrheic keratosis (SEK). However, the central area's color and texture could also suggest a basal cell carcinoma (BCC) or squamous cell carcinoma (SCC), warranting further evaluation."
+        },
+        "reasoning": "The lesion appears as a slightly elevated, red-brown patch on the thigh, which is a common location for nevi. The itch suggests irritation, possibly due to rubbing or scratching, which can occur with benign lesions like seborrheic keratosis (SEK). However, the central area's color and texture could also suggest a basal cell carcinoma (BCC) or squamous cell carcinoma (SCC), warranting further evaluation.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_741_1401_619.png",
+        "true_label": "BCC",
+        "predicted_label": "SEK",
+        "confidence": 0.9,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SEK\",\n  \"top_k\": [\"SEK\", \"NEV\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion appears as a slightly elevated, reddish area on the face, which is consistent with seborrheic keratosis. The clinical history of itching and elevation supports this diagnosis. While nevi can also present similarly, the age of the patient and the location on the face favor seborrheic keratosis over other lesions.\"\n}",
+        "raw_response": {
+          "diagnosis": "SEK",
+          "top_k": [
+            "SEK",
+            "NEV"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion appears as a slightly elevated, reddish area on the face, which is consistent with seborrheic keratosis. The clinical history of itching and elevation supports this diagnosis. While nevi can also present similarly, the age of the patient and the location on the face favor seborrheic keratosis over other lesions."
+        },
+        "reasoning": "The lesion appears as a slightly elevated, reddish area on the face, which is consistent with seborrheic keratosis. The clinical history of itching and elevation supports this diagnosis. While nevi can also present similarly, the age of the patient and the location on the face favor seborrheic keratosis over other lesions.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_380_1540_959.png",
+        "true_label": "SCC",
+        "predicted_label": "NEV",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"NEV\",\n  \"top_k\": [\"NEV\", \"BCC\", \"SCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a slightly elevated, pinkish area on the nose, which is a common location for nevi. The patient's age and itch history suggest a possibility of a benign lesion such as a nevus. However, the slight elevation and color variation could also indicate a basal cell carcinoma (BCC) or squamous cell carcinoma (SCC), warranting further evaluation.\"\n}",
+        "raw_response": {
+          "diagnosis": "NEV",
+          "top_k": [
+            "NEV",
+            "BCC",
+            "SCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a slightly elevated, pinkish area on the nose, which is a common location for nevi. The patient's age and itch history suggest a possibility of a benign lesion such as a nevus. However, the slight elevation and color variation could also indicate a basal cell carcinoma (BCC) or squamous cell carcinoma (SCC), warranting further evaluation."
+        },
+        "reasoning": "The lesion appears as a slightly elevated, pinkish area on the nose, which is a common location for nevi. The patient's age and itch history suggest a possibility of a benign lesion such as a nevus. However, the slight elevation and color variation could also indicate a basal cell carcinoma (BCC) or squamous cell carcinoma (SCC), warranting further evaluation.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_1783_3414_120.png",
+        "true_label": "SEK",
+        "predicted_label": "NEV",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"NEV\",\n  \"top_k\": [\"NEV\", \"BCC\", \"SEK\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a small, slightly elevated, brownish patch on the scalp, which is consistent with a nevus. The age of the patient and the location on the scalp also support this diagnosis. However, given the slight elevation, there's a possibility it could be a seborrheic keratosis or basal cell carcinoma, hence the inclusion in the top_k.\"\n}",
+        "raw_response": {
+          "diagnosis": "NEV",
+          "top_k": [
+            "NEV",
+            "BCC",
+            "SEK"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a small, slightly elevated, brownish patch on the scalp, which is consistent with a nevus. The age of the patient and the location on the scalp also support this diagnosis. However, given the slight elevation, there's a possibility it could be a seborrheic keratosis or basal cell carcinoma, hence the inclusion in the top_k."
+        },
+        "reasoning": "The lesion appears as a small, slightly elevated, brownish patch on the scalp, which is consistent with a nevus. The age of the patient and the location on the scalp also support this diagnosis. However, given the slight elevation, there's a possibility it could be a seborrheic keratosis or basal cell carcinoma, hence the inclusion in the top_k.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_759_1538_566.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.9,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"NEV\", \"BCC\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion is elevated, ulcerated, and has a history of growth and bleeding, which are concerning features for SCC. The location on the nose in an older male patient also increases the risk of SCC. However, benign lesions such as NEV or SEK cannot be ruled out without histopathological confirmation.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "NEV",
+            "BCC"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion is elevated, ulcerated, and has a history of growth and bleeding, which are concerning features for SCC. The location on the nose in an older male patient also increases the risk of SCC. However, benign lesions such as NEV or SEK cannot be ruled out without histopathological confirmation."
+        },
+        "reasoning": "The lesion is elevated, ulcerated, and has a history of growth and bleeding, which are concerning features for SCC. The location on the nose in an older male patient also increases the risk of SCC. However, benign lesions such as NEV or SEK cannot be ruled out without histopathological confirmation.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_821_1547_77.png",
+        "true_label": "BCC",
+        "predicted_label": "NEV",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"NEV\",\n  \"top_k\": [\"NEV\", \"BCC\", \"SEK\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a slightly elevated, pinkish area on the nose, which is a common location for benign nevi. The itching suggests it could be a seborrheic keratosis (SEK), but the clinical history and appearance are more suggestive of a nevus.\"\n}",
+        "raw_response": {
+          "diagnosis": "NEV",
+          "top_k": [
+            "NEV",
+            "BCC",
+            "SEK"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a slightly elevated, pinkish area on the nose, which is a common location for benign nevi. The itching suggests it could be a seborrheic keratosis (SEK), but the clinical history and appearance are more suggestive of a nevus."
+        },
+        "reasoning": "The lesion appears as a slightly elevated, pinkish area on the nose, which is a common location for benign nevi. The itching suggests it could be a seborrheic keratosis (SEK), but the clinical history and appearance are more suggestive of a nevus.",
+        "error": null
+      }
+    ],
+    "total_cases": 20,
+    "valid_cases": 20,
+    "errors": 0,
+    "model_info": {
+      "direct_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+      "base_url": "http://127.0.0.1:8000/v1"
+    }
+  },
+  "comparison": {
+    "accuracy_improvement": {
+      "agent": 0.5,
+      "qwen_direct": 0.15,
+      "improvement_percentage": 233.33333333333334,
+      "absolute_improvement": 0.35
+    },
+    "malignant_recall_improvement": {
+      "agent": 0.8181818181818182,
+      "qwen_direct": 0.6363636363636364,
+      "improvement_percentage": 28.57142857142858,
+      "absolute_improvement": 0.18181818181818188
+    },
+    "agent_efficiency": {
+      "total_cases": 20,
+      "errors": 0,
+      "error_rate": 0.0
+    },
+    "qwen_efficiency": {
+      "total_cases": 20,
+      "errors": 0,
+      "error_rate": 0.0
+    },
+    "sample_alignment": {
+      "requested_cases": 20,
+      "agent_total_cases": 20,
+      "qwen_total_cases": 20,
+      "agent_matches_requested_order": true,
+      "qwen_matches_requested_order": true,
+      "fully_aligned": true
+    },
+    "model_info": {
+      "agent": {
+        "perception_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+        "report_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+        "base_url": "http://127.0.0.1:8000/v1",
+        "controller_enabled": true,
+        "checkpoint_loaded": true,
+        "checkpoint_path": "outputs/checkpoints/learned_controller_best.json"
+      },
+      "qwen_direct": {
+        "direct_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+        "base_url": "http://127.0.0.1:8000/v1"
+      }
+    },
+    "model_usage": {
+      "agent": {
+        "model_success_cases": 20,
+        "perception_model_success_cases": 20,
+        "report_model_success_cases": 20,
+        "perception_fallback_cases": 0,
+        "report_fallback_cases": 0
+      }
+    },
+    "conclusion": "✅ Agent框架全面优于直接Qwen（平均绝对提升 26.6%）"
+  },
+  "duration_seconds": 110.733319
+}

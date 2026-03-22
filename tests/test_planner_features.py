@@ -97,3 +97,48 @@ def test_planner_can_trigger_ack_scc_specialist_from_metadata_proxy():
     assert "ack_scc_specialist_skill" in result["selected_skills"]
     specialist_items = [item for item in result["decision_trace"] if item["skill"] == "ack_scc_specialist_skill"]
     assert specialist_items and specialist_items[0]["trigger"] == "metadata_proxy_support"
+
+
+def test_planner_does_not_trigger_specialist_for_low_uncertainty_large_gap_pair():
+    state = create_case_state(
+        {
+            "file": "planner3.png",
+            "metadata": {"age": 8, "site": "arm"},
+            "text": "",
+        }
+    )
+    state.perception = {
+        "ddx_candidates": [
+            {"name": "SCC", "score": 0.62},
+            {"name": "ACK", "score": 0.28},
+            {"name": "BCC", "score": 0.10},
+        ],
+        "uncertainty": {"level": "low"},
+        "risk_cues": {"malignant_cues": ["border irregularity"]},
+    }
+    state.retrieval = {
+        "confusion_hits": [],
+        "rule_hits": [],
+        "retrieval_summary": {
+            "retrieval_confidence": "low",
+            "supports_top1": False,
+            "has_confusion_support": False,
+            "memory_recommended_skills": [],
+            "recommended_skills": [],
+        },
+    }
+
+    planner = ExperienceSkillPlanner(
+        use_specialist=True,
+        planning_mode="rules_only",
+        enabled_skills={
+            "uncertainty_assessment_skill",
+            "metadata_consistency_skill",
+            "ack_scc_specialist_skill",
+            "bcc_scc_specialist_skill",
+        },
+    )
+    result = planner.plan(state)
+
+    assert "ack_scc_specialist_skill" not in result["selected_skills"]
+    assert "bcc_scc_specialist_skill" not in result["selected_skills"]

@@ -65,6 +65,8 @@ def build_skill_registry(
 
     disable_skills = set(config.get("disable_skills", []))
     debug = bool(config.get("debug", False))
+    perception_model = str(config.get("perception_model", "")).strip() or None
+    report_model = str(config.get("report_model", "")).strip() or None
 
     # =========================
     # 依赖构建
@@ -75,7 +77,7 @@ def build_skill_registry(
     # Skill 实例化
     # =========================
     registry: Dict[str, Any] = {
-        "perception_skill": PerceptionSkill(),
+        "perception_skill": PerceptionSkill(model=perception_model or "gpt-4o"),
         "retrieval_skill": RetrievalSkill(retriever),
         "uncertainty_assessment_skill": UncertaintyAssessmentSkill(),
         "compare_skill": CompareSkill(),
@@ -85,7 +87,7 @@ def build_skill_registry(
         "bcc_scc_specialist_skill": BccSccSpecialistSkill(),
         "bcc_sek_specialist_skill": BccSekSpecialistSkill(),
         "mel_nev_specialist_skill": MelNevSpecialistSkill(),
-        "report_skill": ReportSkill(),
+        "report_skill": ReportSkill(model=report_model or "gpt-4o"),
     }
 
     # =========================
@@ -106,6 +108,8 @@ def build_skill_registry(
             "disabled_skills": list(disable_skills),
             "skill_index_enabled": skill_index is not None,
             "reranker_enabled": reranker is not None,
+            "perception_model": perception_model or "gpt-4o",
+            "report_model": report_model or "gpt-4o",
         }
 
     return registry

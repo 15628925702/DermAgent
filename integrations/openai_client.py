@@ -202,11 +202,11 @@ Analyze this dermatology image and produce STRICT JSON with exactly this schema:
 
 {{
   "ddx_candidates": [
-    {{"name": "SCC", "score": 0.62}},
-    {{"name": "ACK", "score": 0.28}},
-    {{"name": "BCC", "score": 0.10}}
+    {{"name": "LABEL_A", "score": 0.45}},
+    {{"name": "LABEL_B", "score": 0.33}},
+    {{"name": "LABEL_C", "score": 0.22}}
   ],
-  "most_likely": {{"name": "SCC", "score": 0.62}},
+  "most_likely": {{"name": "LABEL_A", "score": 0.45}},
   "visual_cues": [
     "free-text cue 1",
     "free-text cue 2"
@@ -227,11 +227,14 @@ Analyze this dermatology image and produce STRICT JSON with exactly this schema:
 Rules:
 1. Use ONLY these diagnosis labels when relevant:
 MEL, NEV, SCC, BCC, ACK, SEK.
-2. ddx_candidates must contain 1 to 5 items.
-3. Scores must be floats between 0 and 1, roughly descending.
-4. uncertainty.level must be one of: low, medium, high.
-5. visual_cues should be short, concrete dermatology phrases.
-6. Do not include any text outside JSON.
+2. LABEL_A/LABEL_B/LABEL_C above are placeholders only. Do NOT copy them literally.
+3. ddx_candidates must contain 1 to 5 items.
+4. Scores must be floats between 0 and 1, roughly descending.
+5. uncertainty.level must be one of: low, medium, high.
+6. visual_cues should be short, concrete dermatology phrases.
+7. Do not over-call malignant labels by default. If benign labels like NEV or SEK are plausible, include them.
+8. Age and site should calibrate the ranking. Young patients and low-risk metadata should reduce confidence in keratinocyte cancers unless clear malignant cues are present.
+9. Do not include any text outside JSON.
 
 Clinical metadata:
 - age: {age}
@@ -252,8 +255,8 @@ Create a concise dermatology report from the structured agent outputs below.
 
 Return STRICT JSON with exactly this schema:
 {{
-  "diagnosis": "SCC",
-  "top_k": ["SCC", "ACK", "BCC"],
+  "diagnosis": "LABEL_A",
+  "top_k": ["LABEL_A", "LABEL_B", "LABEL_C"],
   "reasoning": "Short evidence-based reasoning.",
   "evidence": [
     "Visual cue 1",
@@ -264,11 +267,12 @@ Return STRICT JSON with exactly this schema:
 }}
 
 Rules:
-1. Use diagnosis labels grounded in the supplied evidence.
-2. Keep reasoning concise.
-3. evidence must be a short list of concrete points.
-4. Do not invent image findings beyond the provided cues.
-5. Do not include markdown or any extra text outside JSON.
+1. LABEL_A/LABEL_B/LABEL_C above are placeholders only. Use actual labels from the supplied evidence.
+2. Use diagnosis labels grounded in the supplied evidence.
+3. Keep reasoning concise.
+4. evidence must be a short list of concrete points.
+5. Do not invent image findings beyond the provided cues.
+6. Do not include markdown or any extra text outside JSON.
 
 Final decision:
 {json.dumps(final_decision, ensure_ascii=False)}
@@ -289,17 +293,20 @@ Directly diagnose this skin lesion from the image and metadata.
 
 Return STRICT JSON with exactly this schema:
 {{
-  "diagnosis": "SCC",
-  "top_k": ["SCC", "ACK", "BCC"],
+  "diagnosis": "LABEL_A",
+  "top_k": ["LABEL_A", "LABEL_B", "LABEL_C"],
   "confidence": "medium",
   "reasoning": "Short evidence-based explanation."
 }}
 
 Rules:
 1. Use ONLY these labels: MEL, NEV, SCC, BCC, ACK, SEK.
-2. confidence must be one of: low, medium, high.
-3. top_k should contain 1 to 3 labels.
-4. Do not include markdown or any extra text outside JSON.
+2. LABEL_A/LABEL_B/LABEL_C above are placeholders only. Do NOT copy them literally.
+3. confidence must be one of: low, medium, high.
+4. top_k should contain 1 to 3 labels.
+5. Do not assume SCC/ACK/BCC by default. If benign labels like NEV or SEK are plausible, include them.
+6. Age and site should calibrate the diagnosis rather than be ignored.
+7. Do not include markdown or any extra text outside JSON.
 
 Metadata:
 {json.dumps(metadata, ensure_ascii=False, indent=2)}

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
 
+from agent.evidence_calibrator import LearnableEvidenceCalibrator
 from agent.final_scorer import LearnableFinalScorer
 from agent.state import CaseState
 
@@ -9,8 +10,13 @@ from agent.state import CaseState
 class DecisionAggregator:
     MALIGNANT_LABELS = {"MEL", "BCC", "SCC"}
 
-    def __init__(self, final_scorer: LearnableFinalScorer | None = None) -> None:
+    def __init__(
+        self,
+        final_scorer: LearnableFinalScorer | None = None,
+        evidence_calibrator: LearnableEvidenceCalibrator | None = None,
+    ) -> None:
         self.final_scorer = final_scorer
+        self.evidence_calibrator = evidence_calibrator
 
     def aggregate(self, state: CaseState) -> Dict[str, Any]:
         candidate_scores: Dict[str, float] = {}
@@ -76,6 +82,8 @@ class DecisionAggregator:
                 "num_evidence_items": len(evidence_log),
                 "memory_consensus_label": (state.retrieval.get("retrieval_summary", {}) or {}).get("memory_consensus_label", ""),
                 "uses_learnable_final_scorer": self.final_scorer is not None,
+                "uses_evidence_calibrator": self.evidence_calibrator is not None,
+                "evidence_calibrator_weights": self.evidence_calibrator.to_dict().get("weights", {}) if self.evidence_calibrator is not None else {},
                 "safety_override": safety_override,
                 "conservative_top_k": conservative_top_k,
             },
@@ -222,6 +230,7 @@ class DecisionAggregator:
         candidate_features: Dict[str, Dict[str, float]],
         evidence_log: List[Dict[str, Any]],
     ) -> None:
+        specialist_totals: Dict[str, float] = {}
         for key, output in (state.skill_outputs or {}).items():
             if not str(key).endswith("_specialist_skill"):
                 continue
@@ -239,13 +248,37 @@ class DecisionAggregator:
             weight = self._extract_skill_weight(output, default=1.2)
             if key == "ack_scc_specialist_skill" and recommendation == "ACK" and bool(output.get("used_ack_proxy")):
                 gap = self._safe_float(output.get("gap"))
-                weight = max(weight, 1.05 if gap >= 0.6 else 0.92)
-            self._apply_feature(candidate_scores, candidate_features, recommendation, "specialist_score", weight)
+                weight = max(
+                    weight,
+                    self._calibration_weight("ack_proxy_gap_high_floor", 1.05)
+                    if gap >= 0.6
+                    else self._calibration_weight("ack_proxy_gap_low_floor", 0.92),
+                )
+            weight *= self._calibration_weight("specialist_support_scale", 1.0)
+            existing_total = specialist_totals.get(recommendation, 0.0)
+            adjusted_weight = weight
+            if existing_total > 0.0:
+                adjusted_weight *= self._calibration_weight("specialist_repeat_decay", 0.35)
+            max_total = (
+                self._calibration_weight("specialist_malignant_cap", 1.0)
+                if recommendation in self.MALIGNANT_LABELS
+                else self._calibration_weight("specialist_benign_cap", 1.15)
+            )
+            remaining_budget = max(0.0, max_total - existing_total)
+            applied_weight = min(adjusted_weight, remaining_budget)
+            if applied_weight <= 0.0:
+                continue
+
+            specialist_totals[recommendation] = existing_total + applied_weight
+            self._apply_feature(candidate_scores, candidate_features, recommendation, "specialist_score", applied_weight)
+            detail = "specialist_recommendation"
+            if existing_total > 0.0 or abs(applied_weight - weight) > 1e-8:
+                detail = "specialist_recommendation_diminished"
             evidence_log.append({
                 "source": key,
                 "label": recommendation,
-                "weight": round(weight, 4),
-                "detail": "specialist_recommendation",
+                "weight": round(applied_weight, 4),
+                "detail": detail,
             })
 
     def _add_metadata_consistency_evidence(
@@ -264,7 +297,7 @@ class DecisionAggregator:
             name = self._norm_label(label)
             if not name:
                 continue
-            weight = 0.35
+            weight = self._calibration_weight("metadata_support_weight", 0.35)
             if name == "BCC" and any(
                 token in rationale_text
                 for token in [
@@ -273,7 +306,7 @@ class DecisionAggregator:
                     "fallback metadata pattern strongly supports bcc",
                 ]
             ):
-                weight = 0.55
+                weight += self._calibration_weight("metadata_bcc_bonus", 0.20)
             self._apply_feature(candidate_scores, candidate_features, name, "metadata_score", weight)
             evidence_log.append({
                 "source": "metadata_consistency_skill",
@@ -286,11 +319,12 @@ class DecisionAggregator:
             name = self._norm_label(label)
             if not name:
                 continue
-            self._apply_feature(candidate_scores, candidate_features, name, "metadata_score", -0.25)
+            penalty = self._calibration_weight("metadata_penalty_weight", 0.25)
+            self._apply_feature(candidate_scores, candidate_features, name, "metadata_score", -penalty)
             evidence_log.append({
                 "source": "metadata_consistency_skill",
                 "label": name,
-                "weight": -0.25,
+                "weight": round(-penalty, 4),
                 "detail": "metadata_penalized",
             })
 
@@ -368,8 +402,8 @@ class DecisionAggregator:
             )
             skill_correction = (
                 0.16 * self._safe_float(features.get("compare_score"))
-                + 0.20 * self._safe_float(features.get("specialist_score"))
-                + 0.10 * self._safe_float(features.get("metadata_score"))
+                + self._calibration_weight("skill_correction_specialist", 0.20) * self._safe_float(features.get("specialist_score"))
+                + self._calibration_weight("skill_correction_metadata", 0.10) * self._safe_float(features.get("metadata_score"))
                 + 0.12 * self._safe_float(features.get("malignancy_score"))
             )
             positive_support_sources = self._count_positive_support_sources(features)
@@ -736,3 +770,8 @@ class DecisionAggregator:
             return float(value)
         except (TypeError, ValueError):
             return 0.0
+
+    def _calibration_weight(self, name: str, default: float) -> float:
+        if self.evidence_calibrator is None:
+            return float(default)
+        return self.evidence_calibrator.get_weight(name, default)

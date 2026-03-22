@@ -74,7 +74,6 @@ class TargetLearner:
 
         elif skill_id == "compare_skill":
             # 条件累加
-            uncertainty = self.get_uncertainty_level(state)
             conditions = [
                 features.get("uncertainty_medium", 0.0) * self.condition_weights["compare_uncertainty_medium"],
                 features.get("uncertainty_high", 0.0) * self.condition_weights["compare_uncertainty_high"],
@@ -427,6 +426,7 @@ class LearnableSkillController:
             or metadata.get("site")
             or metadata.get("anatomical_site")
         )
+        age = self._safe_float(metadata.get("age"), default=-1.0)
         risk_cues = state.perception.get("risk_cues", {}) or {}
         malignant_cues = risk_cues.get("malignant_cues", []) or []
         suspicious_cues = risk_cues.get("suspicious_cues", []) or []
@@ -450,6 +450,23 @@ class LearnableSkillController:
         trace_map = self._decision_trace_map(planner_trace)
         top_names = list(planner_case.get("top_names", top_names))
         top_gap = float(planner_case.get("top_gap", round(top_gap, 4)))
+        malignant_count = len({"MEL", "BCC", "SCC"}.intersection(set(top_names)))
+        top1_uncertain = (
+            str(uncertainty) in {"medium", "high"}
+            or bool(planner_case.get("top_gap_small", top_gap <= 0.15))
+        )
+        age_match = self._age_match_score(age=age, top_names=top_names)
+        site_match = self._site_match_score(site=site, top_names=top_names)
+        high_confidence = (
+            retrieval_confidence == "high"
+            and bool(planner_case.get("supports_top1", retrieval_summary.get("supports_top1", False)))
+            and top_gap >= 0.28
+        )
+        low_confidence = (
+            retrieval_confidence == "low"
+            or str(uncertainty) == "high"
+            or bool(planner_case.get("top_gap_small", top_gap <= 0.15))
+        )
 
         features = {
             "bias": 1.0,
@@ -461,9 +478,10 @@ class LearnableSkillController:
             "top_candidate_count": min(1.0, len(top_names) / 3.0),
             "has_malignant_candidate": 1.0 if bool(planner_case.get("has_malignant_candidate", bool({"MEL", "BCC", "SCC"}.intersection(top_names)))) else 0.0,
             "malignant_candidate_ratio": round(
-                len({"MEL", "BCC", "SCC"}.intersection(set(top_names))) / 3.0,
+                malignant_count / 3.0,
                 4,
             ),
+            "multiple_malignant_candidates": 1.0 if malignant_count >= 2 else 0.0,
             "has_ack_scc_pair": 1.0 if bool(planner_case.get("has_ack_scc_pair", {"ACK", "SCC"}.issubset(set(top_names)))) else 0.0,
             "has_bcc_scc_pair": 1.0 if bool(planner_case.get("has_bcc_scc_pair", {"BCC", "SCC"}.issubset(set(top_names)))) else 0.0,
             "has_bcc_sek_pair": 1.0 if bool(planner_case.get("has_bcc_sek_pair", {"BCC", "SEK"}.issubset(set(top_names)))) else 0.0,
@@ -471,9 +489,14 @@ class LearnableSkillController:
             "retrieval_high": 1.0 if retrieval_confidence == "high" else 0.0,
             "retrieval_medium": 1.0 if retrieval_confidence == "medium" else 0.0,
             "retrieval_low": 1.0 if retrieval_confidence == "low" else 0.0,
+            "high_confidence": 1.0 if high_confidence else 0.0,
+            "low_confidence": 1.0 if low_confidence else 0.0,
+            "top1_uncertain": 1.0 if top1_uncertain else 0.0,
             "supports_top1": 1.0 if bool(planner_case.get("supports_top1", retrieval_summary.get("supports_top1", False))) else 0.0,
             "has_confusion_support": 1.0 if bool(planner_case.get("has_confusion_support", retrieval_summary.get("has_confusion_support", False))) else 0.0,
             "metadata_present": 1.0 if bool(planner_case.get("metadata_present", bool(metadata))) else 0.0,
+            "age_match": round(age_match, 4),
+            "site_match": round(site_match, 4),
             "sun_exposed_site": 1.0 if bool(planner_case.get("sun_exposed_site", self._site_matches(site, ["face", "scalp", "ear", "neck", "nose", "temple", "cheek", "hand", "forearm", "lip"]))) else 0.0,
             "strong_invasive_history": 1.0 if bool(planner_case.get("strong_invasive_history", any(token in history_text for token in ["bleed", "bleeding", "rapid growth", "pain", "hurt", "ulcer", "ulcerated"]))) else 0.0,
             "num_visual_cues": min(1.0, len(visual_cues) / 6.0),
@@ -659,6 +682,11 @@ class LearnableSkillController:
         # 应用决策支持调整（保持原有逻辑）
         skill_outputs = state.skill_outputs or {}
         true_label = str((state.case_info or {}).get("true_label", "")).strip().upper()
+        final_label = str(
+            (state.final_decision or {}).get("final_label")
+            or (state.final_decision or {}).get("diagnosis")
+            or ""
+        ).strip().upper()
 
         targets["compare_skill"] = self._decision_support_target(
             output=skill_outputs.get("compare_skill", {}) or {},
@@ -819,6 +847,28 @@ class LearnableSkillController:
             return float(value)
         except (TypeError, ValueError):
             return default
+
+    def _age_match_score(self, *, age: float, top_names: List[str]) -> float:
+        if age < 0:
+            return 0.0
+        if age <= 18 and {"NEV", "SEK"}.intersection(top_names):
+            return 1.0
+        if age <= 30 and "NEV" in top_names:
+            return 1.0
+        if age >= 55 and {"ACK", "BCC", "MEL", "SCC"}.intersection(top_names):
+            return 1.0
+        return 0.0
+
+    def _site_match_score(self, *, site: str, top_names: List[str]) -> float:
+        if not site:
+            return 0.0
+        if self._site_matches(site, ["face", "scalp", "ear", "neck", "nose", "temple", "cheek", "hand", "forearm", "lip"]) and {"ACK", "BCC", "SCC"}.intersection(top_names):
+            return 1.0
+        if self._site_matches(site, ["trunk", "back", "chest", "abdomen"]) and "NEV" in top_names:
+            return 1.0
+        if self._site_matches(site, ["leg", "foot", "toe"]) and "MEL" in top_names:
+            return 1.0
+        return 0.0
 
     def _norm_text(self, value: Any) -> str:
         if value is None:

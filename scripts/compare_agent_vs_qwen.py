@@ -19,11 +19,35 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from evaluation.run_eval import load_pad_ufes20_cases, run_evaluation
+from agent.controller import LearnableSkillController
+from agent.final_scorer import LearnableFinalScorer
+from agent.rule_scorer import LearnableRuleScorer
+from agent.run_agent import run_agent
+from evaluation.run_eval import load_pad_ufes20_cases
+from integrations.openai_client import OpenAICompatClient
+from memory.controller_store import load_controller_checkpoint
+from memory.experience_bank import ExperienceBank
+from memory.experience_reranker import UtilityAwareExperienceReranker
+from memory.skill_index import build_default_skill_index
 
 
 VALID_LABELS = {"MEL", "BCC", "SCC", "NEV", "ACK", "SEK"}
 MALIGNANT_LABELS = {"MEL", "BCC", "SCC"}
+
+
+def _norm_label(value: Any) -> str:
+    if value is None:
+        return ""
+    return str(value).strip().upper()
+
+
+def _extract_top_k_labels(final_decision: Dict[str, Any], top_n: int) -> List[str]:
+    labels: List[str] = []
+    for item in (final_decision or {}).get("top_k", [])[:top_n]:
+        label = _norm_label(item.get("name")) if isinstance(item, dict) else _norm_label(item)
+        if label:
+            labels.append(label)
+    return labels
 
 
 class QwenDirectInference:
@@ -228,11 +252,45 @@ class QwenDirectInference:
 class ComparisonFramework:
     """对比框架"""
 
-    def __init__(self, test_limit: int = 100):
+    def __init__(
+        self,
+        test_limit: int = 100,
+        *,
+        controller_checkpoint: str | None = None,
+        bank_state_in: str | None = None,
+        online_learning: bool = False,
+        use_retrieval: bool = True,
+        use_specialist: bool = True,
+        use_controller: bool | None = None,
+    ):
         self.test_limit = test_limit
+        self.controller_checkpoint = controller_checkpoint
+        self.bank_state_in = bank_state_in
+        self.online_learning = bool(online_learning)
+        self.use_retrieval = bool(use_retrieval)
+        self.use_specialist = bool(use_specialist)
+        self.use_controller = bool(controller_checkpoint) if use_controller is None else bool(use_controller)
         self.results_dir = Path("outputs/comparison")
         self.results_dir.mkdir(parents=True, exist_ok=True)
         self.qwen_direct = QwenDirectInference()
+        self.direct_model = self._resolve_direct_model_name()
+        self.agent_perception_model = self.direct_model
+        self.agent_report_model = self.direct_model
+        self.agent_base_url = self._resolve_base_url()
+
+    def _resolve_direct_model_name(self) -> str:
+        if self.qwen_direct.available:
+            model_name = str(getattr(self.qwen_direct.client, "model", "")).strip()
+            if model_name:
+                return model_name
+        return OpenAICompatClient().model
+
+    def _resolve_base_url(self) -> str:
+        if self.qwen_direct.available:
+            base_url = str(getattr(self.qwen_direct.client, "base_url", "")).strip()
+            if base_url:
+                return base_url
+        return OpenAICompatClient().base_url
 
     def run_full_comparison(self) -> Dict[str, Any]:
         """运行完整对比实验"""
@@ -275,25 +333,159 @@ class ComparisonFramework:
         print("  启动Agent评估流程...")
 
         try:
-            result = run_evaluation(
-                dataset_root="data/pad_ufes_20",
-                limit=self.test_limit,
-                split_name="test",
-                use_retrieval=True,
-                use_specialist=True,
-                use_reflection=True,
-                use_controller=True,
-            )
+            bank = ExperienceBank.from_json(self.bank_state_in) if self.bank_state_in else ExperienceBank()
+            checkpoint_loaded = False
+            if self.controller_checkpoint:
+                skill_index, controller_payload, final_scorer_payload, rule_scorer_payload = load_controller_checkpoint(self.controller_checkpoint)
+                checkpoint_loaded = True
+            else:
+                skill_index = build_default_skill_index()
+                controller_payload = {}
+                final_scorer_payload = {}
+                rule_scorer_payload = {}
+            reranker = UtilityAwareExperienceReranker()
+            controller = LearnableSkillController(skill_index) if self.use_controller else None
+            final_scorer = LearnableFinalScorer() if self.use_controller else None
+            rule_scorer = LearnableRuleScorer() if self.use_controller else None
+            if controller is not None and controller_payload:
+                controller.load_state(controller_payload)
+            if final_scorer is not None and final_scorer_payload:
+                final_scorer.load_state(final_scorer_payload)
+            if rule_scorer is not None and rule_scorer_payload:
+                rule_scorer.load_state(rule_scorer_payload)
 
-            agent_metrics = result.get("metrics", {})
-            per_case_results = result.get("per_case", [])
+            correct_top1 = 0
+            malignant_total = 0
+            malignant_hit = 0
+            errors = 0
+            perception_fallback_cases = 0
+            report_fallback_cases = 0
+            perception_model_success_cases = 0
+            report_model_success_cases = 0
+            model_success_cases = 0
+            per_case_results: List[Dict[str, Any]] = []
+
+            for i, case in enumerate(cases):
+                if i % 10 == 0:
+                    print(f"  Agent推理进度: {i}/{len(cases)}")
+
+                result = run_agent(
+                    case=case,
+                    bank=bank,
+                    skill_index=skill_index,
+                    reranker=reranker,
+                    learning_components={
+                        "controller": controller,
+                        "final_scorer": final_scorer,
+                        "rule_scorer": rule_scorer,
+                    } if self.use_controller else {},
+                    use_retrieval=self.use_retrieval,
+                    use_specialist=self.use_specialist,
+                    use_reflection=False,
+                    use_controller=self.use_controller,
+                    use_final_scorer=self.use_controller,
+                    update_online=self.online_learning,
+                    use_rule_memory=True,
+                    enable_rule_compression=True,
+                    perception_model=self.agent_perception_model,
+                    report_model=self.agent_report_model,
+                )
+
+                true_label = _norm_label(case.get("label"))
+                final_decision = result.get("final_decision", {}) or {}
+                pred_label = _norm_label(final_decision.get("final_label") or final_decision.get("diagnosis"))
+                top3 = _extract_top_k_labels(final_decision, top_n=3)
+                has_error = result.get("error") is not None
+                perception = result.get("perception", {}) or {}
+                report = result.get("report", {}) or {}
+                perception_fallback = bool(perception.get("fallback_reason"))
+                report_generation_mode = str(report.get("generation_mode", "")).strip().lower()
+                report_fallback = report_generation_mode == "fallback"
+
+                if perception_fallback:
+                    perception_fallback_cases += 1
+                else:
+                    perception_model_success_cases += 1
+
+                if report_fallback:
+                    report_fallback_cases += 1
+                elif report_generation_mode == "gpt":
+                    report_model_success_cases += 1
+
+                if (not perception_fallback) and report_generation_mode == "gpt":
+                    model_success_cases += 1
+
+                if has_error:
+                    errors += 1
+
+                is_top1_correct = pred_label == true_label
+                if not has_error:
+                    correct_top1 += int(is_top1_correct)
+
+                is_malignant_true = true_label in MALIGNANT_LABELS
+                is_malignant_pred = pred_label in MALIGNANT_LABELS
+                if is_malignant_true and not has_error:
+                    malignant_total += 1
+                    if is_malignant_pred:
+                        malignant_hit += 1
+
+                per_case_results.append(
+                    {
+                        "case_id": case.get("file", f"case_{i}"),
+                        "true_label": true_label,
+                        "predicted_label": pred_label,
+                        "top3": top3,
+                        "confidence": final_decision.get("confidence", "low"),
+                        "is_top1_correct": is_top1_correct if not has_error else False,
+                        "is_top3_correct": true_label in top3 if not has_error else False,
+                        "is_malignant_case": is_malignant_true,
+                        "malignant_recalled": is_malignant_true and is_malignant_pred and not has_error,
+                        "perception_used_model": not perception_fallback,
+                        "perception_fallback_reason": perception.get("fallback_reason"),
+                        "report_used_model": report_generation_mode == "gpt",
+                        "report_generation_mode": report_generation_mode or "unknown",
+                        "report_fallback_reason": report.get("fallback_reason"),
+                        "selected_skills": result.get("selected_skills", []),
+                        "planner_mode": (result.get("planner", {}) or {}).get("planning_mode"),
+                        "stop_probability": (result.get("planner", {}) or {}).get("stop_probability"),
+                        "error": result.get("error"),
+                    }
+                )
+
+            total_valid = len(cases) - errors
 
             return {
                 "success": True,
-                "metrics": agent_metrics,
+                "metrics": {
+                    "accuracy_top1": correct_top1 / total_valid if total_valid > 0 else 0.0,
+                    "malignant_recall": malignant_hit / malignant_total if malignant_total > 0 else 0.0,
+                },
                 "per_case": per_case_results,
-                "total_cases": result.get("num_cases", 0),
-                "errors": result.get("counts", {}).get("errors", 0),
+                "total_cases": len(cases),
+                "valid_cases": total_valid,
+                "errors": errors,
+                "bank_stats": bank.stats(),
+                "model_info": {
+                    "perception_model": self.agent_perception_model,
+                    "report_model": self.agent_report_model,
+                    "base_url": self.agent_base_url,
+                    "controller_enabled": self.use_controller,
+                    "checkpoint_loaded": checkpoint_loaded,
+                    "checkpoint_path": self.controller_checkpoint,
+                },
+                "model_usage": {
+                    "model_success_cases": model_success_cases,
+                    "perception_model_success_cases": perception_model_success_cases,
+                    "report_model_success_cases": report_model_success_cases,
+                    "perception_fallback_cases": perception_fallback_cases,
+                    "report_fallback_cases": report_fallback_cases,
+                },
+                "runtime_flags": {
+                    "use_retrieval": self.use_retrieval,
+                    "use_specialist": self.use_specialist,
+                    "use_controller": self.use_controller,
+                    "update_online": self.online_learning,
+                },
             }
 
         except Exception as e:
@@ -368,6 +560,10 @@ class ComparisonFramework:
                 "total_cases": len(cases),
                 "valid_cases": total_valid,
                 "errors": errors,
+                "model_info": {
+                    "direct_model": self.direct_model,
+                    "base_url": self.agent_base_url,
+                },
             }
 
         except Exception as e:
@@ -405,6 +601,23 @@ class ComparisonFramework:
 
         agent_recall = float(agent_metrics.get("malignant_recall", 0.0))
         qwen_recall = float(qwen_metrics.get("malignant_recall", 0.0))
+        agent_case_ids = [str(item.get("case_id", "")).strip() for item in agent_results.get("per_case", [])]
+        qwen_case_ids = [str(item.get("case_id", "")).strip() for item in qwen_results.get("per_case", [])]
+        requested_case_ids = [str(case.get("file", "")).strip() for case in cases]
+
+        sample_alignment = {
+            "requested_cases": len(cases),
+            "agent_total_cases": agent_results.get("total_cases", 0),
+            "qwen_total_cases": qwen_results.get("total_cases", 0),
+            "agent_matches_requested_order": agent_case_ids == requested_case_ids,
+            "qwen_matches_requested_order": qwen_case_ids == requested_case_ids,
+        }
+        sample_alignment["fully_aligned"] = (
+            sample_alignment["agent_total_cases"] == sample_alignment["requested_cases"]
+            and sample_alignment["qwen_total_cases"] == sample_alignment["requested_cases"]
+            and sample_alignment["agent_matches_requested_order"]
+            and sample_alignment["qwen_matches_requested_order"]
+        )
 
         comparison = {
             "accuracy_improvement": {
@@ -430,6 +643,14 @@ class ComparisonFramework:
                 "errors": qwen_results.get("errors", 0),
                 "error_rate": qwen_results.get("errors", 0)
                 / max(qwen_results.get("total_cases", 1), 1),
+            },
+            "sample_alignment": sample_alignment,
+            "model_info": {
+                "agent": agent_results.get("model_info", {}),
+                "qwen_direct": qwen_results.get("model_info", {}),
+            },
+            "model_usage": {
+                "agent": agent_results.get("model_usage", {}),
             },
             "conclusion": self._generate_conclusion(
                 agent_acc, qwen_acc, agent_recall, qwen_recall
@@ -537,6 +758,27 @@ class ComparisonFramework:
             f.write(f"  - Agent+Qwen: {agent_eff.get('error_rate', 0):.4f}\n")
             f.write(f"  - 直接Qwen:   {qwen_eff.get('error_rate', 0):.4f}\n\n")
 
+            alignment = comparison.get("sample_alignment", {})
+            f.write("样本对齐:\n")
+            f.write(f"  - 请求样本数: {alignment.get('requested_cases', 0)}\n")
+            f.write(f"  - Agent样本数: {alignment.get('agent_total_cases', 0)}\n")
+            f.write(f"  - Qwen样本数:  {alignment.get('qwen_total_cases', 0)}\n")
+            f.write(f"  - 完全对齐:    {alignment.get('fully_aligned', False)}\n\n")
+
+            model_info = comparison.get("model_info", {})
+            agent_model = model_info.get("agent", {})
+            qwen_model = model_info.get("qwen_direct", {})
+            agent_usage = comparison.get("model_usage", {}).get("agent", {})
+            f.write("模型调用诊断:\n")
+            f.write(f"  - Agent perception model: {agent_model.get('perception_model', 'unknown')}\n")
+            f.write(f"  - Agent report model:     {agent_model.get('report_model', 'unknown')}\n")
+            f.write(f"  - Direct Qwen model:      {qwen_model.get('direct_model', 'unknown')}\n")
+            f.write(f"  - Agent模型完整成功case数: {agent_usage.get('model_success_cases', 0)}\n")
+            f.write(f"  - perception成功case数:   {agent_usage.get('perception_model_success_cases', 0)}\n")
+            f.write(f"  - report成功case数:       {agent_usage.get('report_model_success_cases', 0)}\n")
+            f.write(f"  - perception fallback数:  {agent_usage.get('perception_fallback_cases', 0)}\n")
+            f.write(f"  - report fallback数:      {agent_usage.get('report_fallback_cases', 0)}\n\n")
+
             f.write("🎯 结论\n")
             f.write("-" * 60 + "\n")
             f.write(comparison.get("conclusion", "") + "\n")
@@ -565,6 +807,27 @@ class ComparisonFramework:
         print(f"  Agent+Qwen: {agent_eff.get('error_rate', 0):.4f}")
         print(f"  直接Qwen:   {qwen_eff.get('error_rate', 0):.4f}")
 
+        alignment = comparison.get("sample_alignment", {})
+        print("\n🧪 样本对齐:")
+        print(f"  请求样本数: {alignment.get('requested_cases', 0)}")
+        print(f"  Agent样本数: {alignment.get('agent_total_cases', 0)}")
+        print(f"  直接Qwen样本数: {alignment.get('qwen_total_cases', 0)}")
+        print(f"  完全对齐: {alignment.get('fully_aligned', False)}")
+
+        model_info = comparison.get("model_info", {})
+        agent_model = model_info.get("agent", {})
+        qwen_model = model_info.get("qwen_direct", {})
+        agent_usage = comparison.get("model_usage", {}).get("agent", {})
+        print("\n🧠 模型调用诊断:")
+        print(f"  Agent perception model: {agent_model.get('perception_model', 'unknown')}")
+        print(f"  Agent report model:     {agent_model.get('report_model', 'unknown')}")
+        print(f"  Direct Qwen model:      {qwen_model.get('direct_model', 'unknown')}")
+        print(f"  Agent模型完整成功case数: {agent_usage.get('model_success_cases', 0)}")
+        print(f"  perception成功case数:   {agent_usage.get('perception_model_success_cases', 0)}")
+        print(f"  report成功case数:       {agent_usage.get('report_model_success_cases', 0)}")
+        print(f"  perception fallback数:  {agent_usage.get('perception_fallback_cases', 0)}")
+        print(f"  report fallback数:      {agent_usage.get('report_fallback_cases', 0)}")
+
         print(f"\n✅ 结论: {comparison.get('conclusion', '')}")
         print("=" * 60 + "\n")
 
@@ -572,9 +835,30 @@ class ComparisonFramework:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Agent vs 直接Qwen对比实验")
     parser.add_argument("--test-limit", type=int, default=100, help="测试集大小")
+    parser.add_argument("--controller-checkpoint", default=None, help="冻结评估时加载训练好的controller/final_scorer/rule_scorer checkpoint")
+    parser.add_argument("--bank-state-in", default=None, help="可选经验库checkpoint")
+    parser.add_argument("--online-learning", action="store_true", help="在compare过程中允许在线学习；默认关闭以保证冻结benchmark")
+    parser.add_argument("--disable-retrieval", action="store_true", help="关闭retrieval")
+    parser.add_argument("--disable-specialist", action="store_true", help="关闭specialist")
+    parser.add_argument("--enable-controller", action="store_true", help="即使没有checkpoint也启用controller")
+    parser.add_argument("--disable-controller", action="store_true", help="强制关闭controller")
     args = parser.parse_args()
 
-    framework = ComparisonFramework(test_limit=args.test_limit)
+    use_controller = None
+    if args.enable_controller:
+        use_controller = True
+    if args.disable_controller:
+        use_controller = False
+
+    framework = ComparisonFramework(
+        test_limit=args.test_limit,
+        controller_checkpoint=args.controller_checkpoint,
+        bank_state_in=args.bank_state_in,
+        online_learning=args.online_learning,
+        use_retrieval=not args.disable_retrieval,
+        use_specialist=not args.disable_specialist,
+        use_controller=use_controller,
+    )
     framework.run_full_comparison()
 
     print("✅ 对比实验完成！")

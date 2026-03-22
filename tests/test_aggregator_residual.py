@@ -67,3 +67,26 @@ def test_aggregator_allows_close_case_to_flip_with_consistent_support():
     nev_correction = debug["NEV"].get("evidence_correction", 0.0)
     mel_correction = debug["MEL"].get("evidence_correction", 0.0)
     assert nev_correction > mel_correction
+
+
+def test_aggregator_dampens_duplicate_specialist_support_for_same_label():
+    state = create_case_state({"file": "case3.png", "metadata": {}, "text": ""})
+    state.perception = {
+        "ddx_candidates": [
+            {"name": "SCC", "score": 0.62},
+            {"name": "ACK", "score": 0.28},
+            {"name": "BCC", "score": 0.10},
+        ],
+        "uncertainty": {"level": "low"},
+    }
+    state.retrieval = {"retrieval_summary": {"retrieval_confidence": "low"}}
+    state.skill_outputs = {
+        "ack_scc_specialist_skill": {"recommendation": "SCC", "confidence": 0.75},
+        "bcc_scc_specialist_skill": {"recommendation": "SCC", "confidence": 0.75},
+    }
+
+    result = DecisionAggregator().aggregate(state)
+
+    specialist_score = result["aggregator_debug"]["candidate_features"]["SCC"]["specialist_score"]
+    assert specialist_score < 1.5
+    assert specialist_score <= 1.0

@@ -1,0 +1,1147 @@
+{
+  "format_version": 1,
+  "items": [
+    {
+      "experience_type": "raw_case",
+      "case_id": "PAT_2088_4524_465.png",
+      "metadata": {
+        "age": 9,
+        "sex": "",
+        "location": "CHEST",
+        "site": "CHEST",
+        "clinical_history": "",
+        "patient_id": "PAT_2088",
+        "lesion_id": "4524"
+      },
+      "perception": {
+        "ddx": [
+          {
+            "name": "NEV",
+            "score": 0.75
+          },
+          {
+            "name": "SEK",
+            "score": 0.15
+          },
+          {
+            "name": "ACK",
+            "score": 0.05
+          }
+        ],
+        "uncertainty": {
+          "level": "low"
+        },
+        "visual_cues": [
+          "small, well-circumscribed lesion",
+          "uniform brown coloration"
+        ]
+      },
+      "final_decision": {
+        "diagnosis": "NEV",
+        "final_label": "NEV",
+        "top_k": [
+          {
+            "name": "NEV",
+            "score": 1.4821
+          },
+          {
+            "name": "SEK",
+            "score": 0.3043
+          },
+          {
+            "name": "ACK",
+            "score": 0.0105
+          }
+        ],
+        "confidence": "medium",
+        "risk_summary": {
+          "risk_level": "unknown",
+          "suspicious_malignancy": false,
+          "rationale": ""
+        },
+        "evidence_summary": {
+          "top_candidates": [
+            {
+              "name": "NEV",
+              "score": 1.4821
+            },
+            {
+              "name": "SEK",
+              "score": 0.3043
+            },
+            {
+              "name": "ACK",
+              "score": 0.0105
+            }
+          ],
+          "used_sources": [
+            "perception",
+            "compare_skill",
+            "metadata_consistency_skill"
+          ],
+          "selected_skills": [
+            "uncertainty_assessment_skill",
+            "metadata_consistency_skill",
+            "compare_skill"
+          ],
+          "retrieval_support_labels": [],
+          "prototype_votes": {},
+          "confusion_votes": {},
+          "memory_consensus_label": "",
+          "supports_top1": false,
+          "evidence_log": [
+            {
+              "source": "perception",
+              "label": "NEV",
+              "weight": 0.75,
+              "detail": "ddx_rank=1"
+            },
+            {
+              "source": "perception",
+              "label": "SEK",
+              "weight": 0.15,
+              "detail": "ddx_rank=2"
+            },
+            {
+              "source": "perception",
+              "label": "ACK",
+              "weight": 0.05,
+              "detail": "ddx_rank=3"
+            },
+            {
+              "source": "compare_skill",
+              "label": "NEV",
+              "weight": 0.75,
+              "detail": "winner_from_compare_skill"
+            },
+            {
+              "source": "metadata_consistency_skill",
+              "label": "NEV",
+              "weight": 0.35,
+              "detail": "metadata_supported"
+            },
+            {
+              "source": "metadata_consistency_skill",
+              "label": "SEK",
+              "weight": 0.35,
+              "detail": "metadata_supported"
+            },
+            {
+              "source": "metadata_consistency_skill",
+              "label": "ACK",
+              "weight": -0.25,
+              "detail": "metadata_penalized"
+            }
+          ]
+        },
+        "aggregator_debug": {
+          "candidate_scores": {
+            "NEV": 1.4821,
+            "SEK": 0.3043,
+            "ACK": 0.0105
+          },
+          "candidate_base_scores": {
+            "NEV": 1.85,
+            "SEK": 0.5,
+            "ACK": -0.2
+          },
+          "candidate_features": {
+            "NEV": {
+              "base_total": 0.945,
+              "bias": 1.0,
+              "compare_score": 0.75,
+              "evidence_correction": 0.195,
+              "evidence_correction_raw": 0.195,
+              "is_perception_top1": 1.0,
+              "metadata_score": 0.35,
+              "multi_source_bonus": 0.04,
+              "perception_anchor": 0.75,
+              "perception_score": 0.75,
+              "raw_total": 1.85,
+              "retrieval_confidence_low": 1.0,
+              "skill_correction": 0.155
+            },
+            "SEK": {
+              "base_total": 0.185,
+              "bias": 1.0,
+              "evidence_correction": 0.035,
+              "evidence_correction_raw": 0.035,
+              "metadata_score": 0.35,
+              "perception_anchor": 0.15,
+              "perception_score": 0.15,
+              "raw_total": 0.5,
+              "retrieval_confidence_low": 1.0,
+              "skill_correction": 0.035
+            },
+            "ACK": {
+              "base_total": 0.025,
+              "bias": 1.0,
+              "evidence_correction": -0.025,
+              "evidence_correction_raw": -0.025,
+              "metadata_score": -0.25,
+              "perception_anchor": 0.05,
+              "perception_score": 0.05,
+              "raw_total": -0.2,
+              "retrieval_confidence_low": 1.0,
+              "skill_correction": -0.025
+            }
+          },
+          "num_evidence_items": 7,
+          "memory_consensus_label": "",
+          "uses_learnable_final_scorer": true,
+          "safety_override": {
+            "applied": false,
+            "risk_level": "unknown",
+            "reason": "low_risk_no_override",
+            "top_label_before": "NEV",
+            "top_label_after": "NEV",
+            "selected_malignant_label": "",
+            "preferred_label": "",
+            "specialist_label": ""
+          },
+          "conservative_top_k": [
+            {
+              "name": "NEV",
+              "score": 1.4821
+            },
+            {
+              "name": "SEK",
+              "score": 0.3043
+            },
+            {
+              "name": "ACK",
+              "score": 0.0105
+            }
+          ]
+        }
+      },
+      "selected_skills": [
+        "uncertainty_assessment_skill",
+        "metadata_consistency_skill",
+        "compare_skill"
+      ],
+      "retrieval_summary": {
+        "num_raw_case_hits": 0,
+        "num_prototype_hits": 0,
+        "num_confusion_hits": 0
+      },
+      "tags": {
+        "uncertainty_level": "low",
+        "fallback_reason": null
+      }
+    },
+    {
+      "experience_type": "raw_case",
+      "case_id": "PAT_684_1302_588.png",
+      "metadata": {
+        "age": 79,
+        "sex": "MALE",
+        "location": "FOREARM",
+        "site": "FOREARM",
+        "clinical_history": "itch; grew; bleed; elevation",
+        "patient_id": "PAT_684",
+        "lesion_id": "1302"
+      },
+      "perception": {
+        "ddx": [
+          {
+            "name": "BCC",
+            "score": 0.65
+          },
+          {
+            "name": "NEV",
+            "score": 0.25
+          },
+          {
+            "name": "SCC",
+            "score": 0.1
+          }
+        ],
+        "uncertainty": {
+          "level": "medium"
+        },
+        "visual_cues": [
+          "asymmetry",
+          "irregular border",
+          "uneven color"
+        ]
+      },
+      "final_decision": {
+        "diagnosis": "BCC",
+        "final_label": "BCC",
+        "top_k": [
+          {
+            "name": "BCC",
+            "score": 1.5705
+          },
+          {
+            "name": "NEV",
+            "score": 0.6663
+          },
+          {
+            "name": "SCC",
+            "score": 0.225
+          },
+          {
+            "name": "ACK",
+            "score": 0.0157
+          }
+        ],
+        "confidence": "medium",
+        "risk_summary": {
+          "risk_level": "unknown",
+          "suspicious_malignancy": false,
+          "rationale": ""
+        },
+        "evidence_summary": {
+          "top_candidates": [
+            {
+              "name": "BCC",
+              "score": 1.5705
+            },
+            {
+              "name": "NEV",
+              "score": 0.6663
+            },
+            {
+              "name": "SCC",
+              "score": 0.225
+            }
+          ],
+          "used_sources": [
+            "perception",
+            "retrieval",
+            "compare_skill",
+            "bcc_scc_specialist_skill",
+            "metadata_consistency_skill",
+            "memory_consensus"
+          ],
+          "selected_skills": [
+            "uncertainty_assessment_skill",
+            "metadata_consistency_skill",
+            "bcc_scc_specialist_skill",
+            "compare_skill"
+          ],
+          "retrieval_support_labels": [
+            "NEV"
+          ],
+          "prototype_votes": {},
+          "confusion_votes": {},
+          "memory_consensus_label": "NEV",
+          "supports_top1": false,
+          "evidence_log": [
+            {
+              "source": "perception",
+              "label": "BCC",
+              "weight": 0.65,
+              "detail": "ddx_rank=1"
+            },
+            {
+              "source": "perception",
+              "label": "NEV",
+              "weight": 0.25,
+              "detail": "ddx_rank=2"
+            },
+            {
+              "source": "perception",
+              "label": "SCC",
+              "weight": 0.1,
+              "detail": "ddx_rank=3"
+            },
+            {
+              "source": "retrieval",
+              "label": "NEV",
+              "weight": 0.55,
+              "detail": "support_labels confidence=medium"
+            },
+            {
+              "source": "compare_skill",
+              "label": "BCC",
+              "weight": 0.55,
+              "detail": "winner_from_compare_skill"
+            },
+            {
+              "source": "bcc_scc_specialist_skill",
+              "label": "BCC",
+              "weight": 0.75,
+              "detail": "specialist_recommendation"
+            },
+            {
+              "source": "metadata_consistency_skill",
+              "label": "BCC",
+              "weight": 0.35,
+              "detail": "metadata_supported"
+            },
+            {
+              "source": "metadata_consistency_skill",
+              "label": "SCC",
+              "weight": 0.35,
+              "detail": "metadata_supported"
+            },
+            {
+              "source": "metadata_consistency_skill",
+              "label": "ACK",
+              "weight": 0.35,
+              "detail": "metadata_supported"
+            },
+            {
+              "source": "metadata_consistency_skill",
+              "label": "NEV",
+              "weight": -0.25,
+              "detail": "metadata_penalized"
+            },
+            {
+              "source": "memory_consensus",
+              "label": "NEV",
+              "weight": 0.45,
+              "detail": "memory_consensus retrieval_confidence=medium"
+            }
+          ]
+        },
+        "aggregator_debug": {
+          "candidate_scores": {
+            "BCC": 1.5705,
+            "NEV": 0.6663,
+            "SCC": 0.225,
+            "ACK": 0.0157
+          },
+          "candidate_base_scores": {
+            "BCC": 2.3,
+            "NEV": 1.0,
+            "SCC": 0.45,
+            "ACK": 0.35
+          },
+          "candidate_features": {
+            "BCC": {
+              "base_total": 1.003,
+              "bias": 1.0,
+              "compare_score": 0.55,
+              "evidence_correction": 0.353,
+              "evidence_correction_raw": 0.353,
+              "is_perception_top1": 1.0,
+              "malignant_candidate": 1.0,
+              "metadata_score": 0.35,
+              "multi_source_bonus": 0.08,
+              "perception_anchor": 0.65,
+              "perception_score": 0.65,
+              "raw_total": 2.3,
+              "retrieval_confidence_medium": 1.0,
+              "skill_correction": 0.273,
+              "specialist_score": 0.75
+            },
+            "NEV": {
+              "base_total": 0.425,
+              "bias": 1.0,
+              "evidence_correction": 0.175,
+              "evidence_correction_raw": 0.175,
+              "in_support_labels": 1.0,
+              "matches_memory_consensus": 1.0,
+              "memory_consensus_score": 0.45,
+              "metadata_score": -0.25,
+              "multi_source_bonus": 0.04,
+              "perception_anchor": 0.25,
+              "perception_score": 0.25,
+              "raw_total": 1.0,
+              "retrieval_confidence_medium": 1.0,
+              "retrieval_correction": 0.16,
+              "retrieval_score": 0.55,
+              "skill_correction": -0.025
+            },
+            "SCC": {
+              "base_total": 0.135,
+              "bias": 1.0,
+              "evidence_correction": 0.035,
+              "evidence_correction_raw": 0.035,
+              "malignant_candidate": 1.0,
+              "metadata_score": 0.35,
+              "perception_anchor": 0.1,
+              "perception_score": 0.1,
+              "raw_total": 0.45,
+              "retrieval_confidence_medium": 1.0,
+              "skill_correction": 0.035
+            },
+            "ACK": {
+              "base_total": -0.005,
+              "bias": 1.0,
+              "evidence_correction": -0.045,
+              "evidence_correction_raw": -0.045,
+              "metadata_score": 0.35,
+              "off_perception_penalty": -0.08,
+              "perception_anchor": 0.04,
+              "raw_total": 0.35,
+              "retrieval_confidence_medium": 1.0,
+              "skill_correction": 0.035
+            }
+          },
+          "num_evidence_items": 11,
+          "memory_consensus_label": "NEV",
+          "uses_learnable_final_scorer": true,
+          "safety_override": {
+            "applied": false,
+            "risk_level": "unknown",
+            "reason": "low_risk_no_override",
+            "top_label_before": "BCC",
+            "top_label_after": "BCC",
+            "selected_malignant_label": "",
+            "preferred_label": "",
+            "specialist_label": "BCC"
+          },
+          "conservative_top_k": [
+            {
+              "name": "BCC",
+              "score": 1.5705
+            },
+            {
+              "name": "NEV",
+              "score": 0.6663
+            },
+            {
+              "name": "SCC",
+              "score": 0.225
+            },
+            {
+              "name": "ACK",
+              "score": 0.0157
+            }
+          ]
+        }
+      },
+      "selected_skills": [
+        "uncertainty_assessment_skill",
+        "metadata_consistency_skill",
+        "bcc_scc_specialist_skill",
+        "compare_skill"
+      ],
+      "retrieval_summary": {
+        "num_raw_case_hits": 1,
+        "num_prototype_hits": 0,
+        "num_confusion_hits": 0
+      },
+      "tags": {
+        "uncertainty_level": "medium",
+        "fallback_reason": null
+      }
+    },
+    {
+      "experience_type": "raw_case",
+      "case_id": "PAT_759_1538_566.png",
+      "metadata": {
+        "age": 74,
+        "sex": "MALE",
+        "location": "NOSE",
+        "site": "NOSE",
+        "clinical_history": "itch; grew; bleed; elevation",
+        "patient_id": "PAT_759",
+        "lesion_id": "1538"
+      },
+      "perception": {
+        "ddx": [
+          {
+            "name": "BCC",
+            "score": 0.65
+          },
+          {
+            "name": "NEV",
+            "score": 0.25
+          },
+          {
+            "name": "SCC",
+            "score": 0.1
+          }
+        ],
+        "uncertainty": {
+          "level": "medium"
+        },
+        "visual_cues": [
+          "asymmetry",
+          "irregular border",
+          "uneven color",
+          "elevated lesion",
+          "itching"
+        ]
+      },
+      "final_decision": {
+        "diagnosis": "BCC",
+        "final_label": "BCC",
+        "top_k": [
+          {
+            "name": "BCC",
+            "score": 1.6381
+          },
+          {
+            "name": "NEV",
+            "score": 0.3816
+          },
+          {
+            "name": "SCC",
+            "score": 0.2204
+          },
+          {
+            "name": "ACK",
+            "score": 0.013
+          }
+        ],
+        "confidence": "medium",
+        "risk_summary": {
+          "risk_level": "unknown",
+          "suspicious_malignancy": false,
+          "rationale": ""
+        },
+        "evidence_summary": {
+          "top_candidates": [
+            {
+              "name": "BCC",
+              "score": 1.6381
+            },
+            {
+              "name": "NEV",
+              "score": 0.3816
+            },
+            {
+              "name": "SCC",
+              "score": 0.2204
+            }
+          ],
+          "used_sources": [
+            "perception",
+            "retrieval",
+            "compare_skill",
+            "bcc_scc_specialist_skill",
+            "metadata_consistency_skill",
+            "memory_consensus"
+          ],
+          "selected_skills": [
+            "uncertainty_assessment_skill",
+            "metadata_consistency_skill",
+            "compare_skill",
+            "bcc_scc_specialist_skill"
+          ],
+          "retrieval_support_labels": [
+            "BCC",
+            "NEV"
+          ],
+          "prototype_votes": {},
+          "confusion_votes": {},
+          "memory_consensus_label": "BCC",
+          "supports_top1": true,
+          "evidence_log": [
+            {
+              "source": "perception",
+              "label": "BCC",
+              "weight": 0.65,
+              "detail": "ddx_rank=1"
+            },
+            {
+              "source": "perception",
+              "label": "NEV",
+              "weight": 0.25,
+              "detail": "ddx_rank=2"
+            },
+            {
+              "source": "perception",
+              "label": "SCC",
+              "weight": 0.1,
+              "detail": "ddx_rank=3"
+            },
+            {
+              "source": "retrieval",
+              "label": "BCC",
+              "weight": 0.55,
+              "detail": "support_labels confidence=medium"
+            },
+            {
+              "source": "retrieval",
+              "label": "NEV",
+              "weight": 0.47,
+              "detail": "support_labels confidence=medium"
+            },
+            {
+              "source": "compare_skill",
+              "label": "BCC",
+              "weight": 0.75,
+              "detail": "winner_from_compare_skill"
+            },
+            {
+              "source": "bcc_scc_specialist_skill",
+              "label": "BCC",
+              "weight": 0.9,
+              "detail": "specialist_recommendation"
+            },
+            {
+              "source": "metadata_consistency_skill",
+              "label": "BCC",
+              "weight": 0.35,
+              "detail": "metadata_supported"
+            },
+            {
+              "source": "metadata_consistency_skill",
+              "label": "SCC",
+              "weight": 0.35,
+              "detail": "metadata_supported"
+            },
+            {
+              "source": "metadata_consistency_skill",
+              "label": "ACK",
+              "weight": 0.35,
+              "detail": "metadata_supported"
+            },
+            {
+              "source": "metadata_consistency_skill",
+              "label": "NEV",
+              "weight": -0.25,
+              "detail": "metadata_penalized"
+            },
+            {
+              "source": "memory_consensus",
+              "label": "BCC",
+              "weight": 0.45,
+              "detail": "memory_consensus retrieval_confidence=medium"
+            }
+          ]
+        },
+        "aggregator_debug": {
+          "candidate_scores": {
+            "BCC": 1.6381,
+            "NEV": 0.3816,
+            "SCC": 0.2204,
+            "ACK": 0.013
+          },
+          "candidate_base_scores": {
+            "BCC": 3.65,
+            "NEV": 0.47,
+            "SCC": 0.45,
+            "ACK": 0.35
+          },
+          "candidate_features": {
+            "BCC": {
+              "base_total": 1.142,
+              "bias": 1.0,
+              "compare_score": 0.75,
+              "evidence_correction": 0.492,
+              "evidence_correction_raw": 0.615,
+              "in_support_labels": 1.0,
+              "is_perception_top1": 1.0,
+              "malignant_candidate": 1.0,
+              "matches_memory_consensus": 1.0,
+              "memory_consensus_score": 0.45,
+              "metadata_score": 0.35,
+              "multi_source_bonus": 0.12,
+              "perception_anchor": 0.65,
+              "perception_score": 0.65,
+              "raw_total": 3.65,
+              "retrieval_confidence_medium": 1.0,
+              "retrieval_correction": 0.16,
+              "retrieval_score": 0.55,
+              "skill_correction": 0.335,
+              "specialist_score": 0.9
+            },
+            "NEV": {
+              "base_total": 0.3002,
+              "bias": 1.0,
+              "evidence_correction": 0.0502,
+              "evidence_correction_raw": 0.0502,
+              "in_support_labels": 1.0,
+              "metadata_score": -0.25,
+              "perception_anchor": 0.25,
+              "perception_score": 0.25,
+              "raw_total": 0.47,
+              "retrieval_confidence_medium": 1.0,
+              "retrieval_correction": 0.0752,
+              "retrieval_score": 0.47,
+              "skill_correction": -0.025
+            },
+            "SCC": {
+              "base_total": 0.135,
+              "bias": 1.0,
+              "evidence_correction": 0.035,
+              "evidence_correction_raw": 0.035,
+              "malignant_candidate": 1.0,
+              "metadata_score": 0.35,
+              "perception_anchor": 0.1,
+              "perception_score": 0.1,
+              "raw_total": 0.45,
+              "retrieval_confidence_medium": 1.0,
+              "skill_correction": 0.035
+            },
+            "ACK": {
+              "base_total": -0.005,
+              "bias": 1.0,
+              "evidence_correction": -0.045,
+              "evidence_correction_raw": -0.045,
+              "metadata_score": 0.35,
+              "off_perception_penalty": -0.08,
+              "perception_anchor": 0.04,
+              "raw_total": 0.35,
+              "retrieval_confidence_medium": 1.0,
+              "skill_correction": 0.035
+            }
+          },
+          "num_evidence_items": 12,
+          "memory_consensus_label": "BCC",
+          "uses_learnable_final_scorer": true,
+          "safety_override": {
+            "applied": false,
+            "risk_level": "unknown",
+            "reason": "low_risk_no_override",
+            "top_label_before": "BCC",
+            "top_label_after": "BCC",
+            "selected_malignant_label": "",
+            "preferred_label": "",
+            "specialist_label": "BCC"
+          },
+          "conservative_top_k": [
+            {
+              "name": "BCC",
+              "score": 1.6381
+            },
+            {
+              "name": "NEV",
+              "score": 0.3816
+            },
+            {
+              "name": "SCC",
+              "score": 0.2204
+            },
+            {
+              "name": "ACK",
+              "score": 0.013
+            }
+          ]
+        }
+      },
+      "selected_skills": [
+        "uncertainty_assessment_skill",
+        "metadata_consistency_skill",
+        "compare_skill",
+        "bcc_scc_specialist_skill"
+      ],
+      "retrieval_summary": {
+        "num_raw_case_hits": 2,
+        "num_prototype_hits": 0,
+        "num_confusion_hits": 0
+      },
+      "tags": {
+        "uncertainty_level": "medium",
+        "fallback_reason": null
+      }
+    },
+    {
+      "experience_type": "raw_case",
+      "case_id": "PAT_117_179_983.png",
+      "metadata": {
+        "age": 74,
+        "sex": "FEMALE",
+        "location": "FACE",
+        "site": "FACE",
+        "clinical_history": "itch; grew; hurt; bleed; elevation",
+        "patient_id": "PAT_117",
+        "lesion_id": "179"
+      },
+      "perception": {
+        "ddx": [
+          {
+            "name": "BCC",
+            "score": 0.65
+          },
+          {
+            "name": "NEV",
+            "score": 0.2
+          },
+          {
+            "name": "SCC",
+            "score": 0.15
+          }
+        ],
+        "uncertainty": {
+          "level": "medium"
+        },
+        "visual_cues": [
+          "asymmetry",
+          "irregular border"
+        ]
+      },
+      "final_decision": {
+        "diagnosis": "BCC",
+        "final_label": "BCC",
+        "top_k": [
+          {
+            "name": "BCC",
+            "score": 1.5219
+          },
+          {
+            "name": "NEV",
+            "score": 0.364
+          },
+          {
+            "name": "SCC",
+            "score": 0.2782
+          }
+        ],
+        "confidence": "medium",
+        "risk_summary": {
+          "risk_level": "unknown",
+          "suspicious_malignancy": false,
+          "rationale": ""
+        },
+        "evidence_summary": {
+          "top_candidates": [
+            {
+              "name": "BCC",
+              "score": 1.5219
+            },
+            {
+              "name": "NEV",
+              "score": 0.364
+            },
+            {
+              "name": "SCC",
+              "score": 0.2782
+            }
+          ],
+          "used_sources": [
+            "perception",
+            "retrieval",
+            "prototype_memory",
+            "bcc_scc_specialist_skill",
+            "metadata_consistency_skill",
+            "memory_consensus"
+          ],
+          "selected_skills": [
+            "uncertainty_assessment_skill",
+            "metadata_consistency_skill",
+            "bcc_scc_specialist_skill"
+          ],
+          "retrieval_support_labels": [
+            "BCC",
+            "NEV"
+          ],
+          "prototype_votes": {
+            "BCC": 7.7613
+          },
+          "confusion_votes": {},
+          "memory_consensus_label": "BCC",
+          "supports_top1": true,
+          "evidence_log": [
+            {
+              "source": "perception",
+              "label": "BCC",
+              "weight": 0.65,
+              "detail": "ddx_rank=1"
+            },
+            {
+              "source": "perception",
+              "label": "NEV",
+              "weight": 0.2,
+              "detail": "ddx_rank=2"
+            },
+            {
+              "source": "perception",
+              "label": "SCC",
+              "weight": 0.15,
+              "detail": "ddx_rank=3"
+            },
+            {
+              "source": "retrieval",
+              "label": "BCC",
+              "weight": 0.95,
+              "detail": "support_labels confidence=high"
+            },
+            {
+              "source": "retrieval",
+              "label": "NEV",
+              "weight": 0.87,
+              "detail": "support_labels confidence=high"
+            },
+            {
+              "source": "prototype_memory",
+              "label": "BCC",
+              "weight": 1.18,
+              "detail": "prototype_vote=7.7613"
+            },
+            {
+              "source": "bcc_scc_specialist_skill",
+              "label": "BCC",
+              "weight": 0.9,
+              "detail": "specialist_recommendation"
+            },
+            {
+              "source": "metadata_consistency_skill",
+              "label": "BCC",
+              "weight": 0.35,
+              "detail": "metadata_supported"
+            },
+            {
+              "source": "metadata_consistency_skill",
+              "label": "SCC",
+              "weight": 0.35,
+              "detail": "metadata_supported"
+            },
+            {
+              "source": "metadata_consistency_skill",
+              "label": "NEV",
+              "weight": -0.25,
+              "detail": "metadata_penalized"
+            },
+            {
+              "source": "memory_consensus",
+              "label": "BCC",
+              "weight": 0.8,
+              "detail": "memory_consensus retrieval_confidence=high"
+            }
+          ]
+        },
+        "aggregator_debug": {
+          "candidate_scores": {
+            "BCC": 1.5219,
+            "NEV": 0.364,
+            "SCC": 0.2782
+          },
+          "candidate_base_scores": {
+            "BCC": 4.83,
+            "NEV": 0.82,
+            "SCC": 0.5
+          },
+          "candidate_features": {
+            "BCC": {
+              "base_total": 1.142,
+              "bias": 1.0,
+              "evidence_correction": 0.492,
+              "evidence_correction_raw": 0.7566,
+              "in_support_labels": 1.0,
+              "is_perception_top1": 1.0,
+              "malignant_candidate": 1.0,
+              "matches_memory_consensus": 1.0,
+              "memory_consensus_score": 0.8,
+              "metadata_score": 0.35,
+              "multi_source_bonus": 0.12,
+              "perception_anchor": 0.65,
+              "perception_score": 0.65,
+              "prototype_score": 1.18,
+              "raw_total": 4.83,
+              "retrieval_confidence_high": 1.0,
+              "retrieval_correction": 0.4216,
+              "retrieval_score": 0.95,
+              "skill_correction": 0.215,
+              "specialist_score": 0.9
+            },
+            "NEV": {
+              "base_total": 0.3142,
+              "bias": 1.0,
+              "evidence_correction": 0.1142,
+              "evidence_correction_raw": 0.1142,
+              "in_support_labels": 1.0,
+              "metadata_score": -0.25,
+              "perception_anchor": 0.2,
+              "perception_score": 0.2,
+              "raw_total": 0.82,
+              "retrieval_confidence_high": 1.0,
+              "retrieval_correction": 0.1392,
+              "retrieval_score": 0.87,
+              "skill_correction": -0.025
+            },
+            "SCC": {
+              "base_total": 0.185,
+              "bias": 1.0,
+              "evidence_correction": 0.035,
+              "evidence_correction_raw": 0.035,
+              "malignant_candidate": 1.0,
+              "metadata_score": 0.35,
+              "perception_anchor": 0.15,
+              "perception_score": 0.15,
+              "raw_total": 0.5,
+              "retrieval_confidence_high": 1.0,
+              "skill_correction": 0.035
+            }
+          },
+          "num_evidence_items": 11,
+          "memory_consensus_label": "BCC",
+          "uses_learnable_final_scorer": true,
+          "safety_override": {
+            "applied": false,
+            "risk_level": "unknown",
+            "reason": "low_risk_no_override",
+            "top_label_before": "BCC",
+            "top_label_after": "BCC",
+            "selected_malignant_label": "",
+            "preferred_label": "",
+            "specialist_label": "BCC"
+          },
+          "conservative_top_k": [
+            {
+              "name": "BCC",
+              "score": 1.5219
+            },
+            {
+              "name": "NEV",
+              "score": 0.364
+            },
+            {
+              "name": "SCC",
+              "score": 0.2782
+            }
+          ]
+        }
+      },
+      "selected_skills": [
+        "uncertainty_assessment_skill",
+        "metadata_consistency_skill",
+        "bcc_scc_specialist_skill"
+      ],
+      "retrieval_summary": {
+        "num_raw_case_hits": 3,
+        "num_prototype_hits": 1,
+        "num_confusion_hits": 0
+      },
+      "tags": {
+        "uncertainty_level": "medium",
+        "fallback_reason": null
+      }
+    },
+    {
+      "experience_type": "prototype",
+      "disease": "BCC",
+      "typical_cues": [
+        "asymmetry",
+        "irregular border",
+        "uneven color",
+        "elevated lesion",
+        "itching"
+      ],
+      "typical_metadata": {
+        "sex": "male",
+        "location": "forearm",
+        "site": "forearm",
+        "age_group": "older",
+        "age": 75.7,
+        "age_min": 74,
+        "age_max": 79
+      },
+      "common_confusions": [
+        "NEV",
+        "SCC"
+      ],
+      "recommended_skills": [
+        "uncertainty_assessment_skill",
+        "metadata_consistency_skill",
+        "bcc_scc_specialist_skill",
+        "compare_skill"
+      ],
+      "source_count": 3,
+      "source_case_ids": [
+        "PAT_684_1302_588.png",
+        "PAT_759_1538_566.png",
+        "PAT_117_179_983.png"
+      ],
+      "compression_level": "medium"
+    }
+  ],
+  "stats": {
+    "total": 5,
+    "raw_case": 4,
+    "prototype": 1,
+    "confusion": 0,
+    "rule": 0,
+    "hard_case": 0,
+    "unknown": 0
+  }
+}
