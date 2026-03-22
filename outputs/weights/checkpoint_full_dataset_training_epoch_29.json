@@ -1,0 +1,153 @@
+{
+  "config": {
+    "global_learning_rate": 0.02,
+    "weight_decay": 0.01,
+    "momentum": 0.8,
+    "controller_learning_rate": 0.04,
+    "final_scorer_learning_rate": 0.005,
+    "rule_scorer_learning_rate": 0.02,
+    "retrieval_scorer_learning_rate": 0.015,
+    "max_epochs": 50,
+    "early_stopping_patience": 15,
+    "validation_interval": 5,
+    "weights_version": "v1.0"
+  },
+  "components": {
+    "controller": {
+      "learning_rate": 0.04,
+      "max_skills": 4,
+      "target_learner": {
+        "learning_rate": 0.04,
+        "base_targets": {
+          "uncertainty_assessment_skill": 1.0,
+          "compare_skill": 0.5,
+          "malignancy_risk_skill": 0.4,
+          "metadata_consistency_skill": 0.6,
+          "ack_scc_specialist_skill": 0.3,
+          "bcc_scc_specialist_skill": 0.3,
+          "bcc_sek_specialist_skill": 0.3,
+          "mel_nev_specialist_skill": 0.3
+        },
+        "condition_weights": {
+          "compare_uncertainty_medium": 0.35,
+          "compare_uncertainty_high": 0.5,
+          "compare_incorrect": 0.4,
+          "compare_top_gap_small": 0.3,
+          "compare_has_multiple_candidates": 0.2,
+          "compare_high_confidence": 0.4,
+          "compare_low_confidence": -0.2,
+          "malignancy_true_malignant": 0.4,
+          "malignancy_has_malignant_candidate": 0.3,
+          "malignancy_multiple_malignant": 0.5,
+          "metadata_has_metadata": 0.3,
+          "metadata_low_confidence": 0.3,
+          "metadata_not_supports_top1": 0.2,
+          "metadata_incorrect": 0.3,
+          "metadata_age_match": 0.25,
+          "metadata_site_match": 0.2,
+          "specialist_pair_present": 0.6,
+          "specialist_retrieval_recommends": 0.4,
+          "specialist_confusion_support": 0.3,
+          "specialist_top1_uncertain": 0.35
+        }
+      },
+      "stop_weights": {
+        "bias": 0.15,
+        "has_confusion_support": -0.7,
+        "retrieval_high": 0.75,
+        "retrieval_low": -0.6,
+        "retrieval_medium": 0.2,
+        "supports_top1": 0.85,
+        "top_gap_small": -0.65,
+        "uncertainty_high": -0.75,
+        "uncertainty_low": 0.9,
+        "uncertainty_medium": 0.15
+      }
+    },
+    "final_scorer": {
+      "version": 3,
+      "enabled": true,
+      "learning_rate": 0.005,
+      "margin_target": 0.45,
+      "weights": {
+        "base_total": 0.511345,
+        "bias": 0.0,
+        "compare_score": 0.017929,
+        "confusion_score": 0.0,
+        "evidence_correction": 0.136936,
+        "evidence_correction_raw": -0.055363,
+        "in_support_labels": 0.0,
+        "is_perception_top1": 0.023261,
+        "malignancy_score": 0.0,
+        "malignant_candidate": -0.000593,
+        "matches_memory_consensus": 0.0,
+        "memory_consensus_score": 0.0,
+        "metadata_score": 0.147898,
+        "multi_source_bonus": 0.054303,
+        "off_perception_penalty": 0.126842,
+        "perception_anchor": -0.025591,
+        "perception_score": -0.422169,
+        "prototype_score": 0.0,
+        "raw_total": -0.177176,
+        "retrieval_confidence_high": 0.0,
+        "retrieval_confidence_low": 0.0,
+        "retrieval_confidence_medium": 0.0,
+        "retrieval_correction": 0.12,
+        "retrieval_score": 0.0,
+        "skill_correction": 0.193492,
+        "specialist_score": -0.020834
+      }
+    },
+    "rule_scorer": {
+      "version": 1,
+      "learning_rate": 0.02,
+      "threshold": 0.52,
+      "weights": {
+        "bias": -0.1,
+        "compression_high": 0.3,
+        "compression_medium": 0.15,
+        "has_confusion_support": 0.14,
+        "priority": 0.45,
+        "requires_all_match": 0.5,
+        "requires_any_overlap": 0.35,
+        "retrieval_high": -0.05,
+        "retrieval_low": 0.18,
+        "retrieval_medium": 0.06,
+        "source_count": 0.35,
+        "specialist_hint": 0.12,
+        "supports_top1": -0.2,
+        "uncertainty_high": 0.25,
+        "uncertainty_medium": 0.1
+      },
+      "rule_biases": {}
+    },
+    "retrieval_scorer": {
+      "learning_rate": 0.015,
+      "score_weights": {
+        "disease_exact_match": 4.0,
+        "disease_partial_match": 2.0,
+        "metadata_age_match": 1.5,
+        "metadata_site_match": 1.0,
+        "metadata_history_match": 0.8,
+        "confidence_match": 0.8,
+        "uncertainty_match": 0.6,
+        "visual_cues_overlap": 1.2,
+        "risk_cues_match": 0.7,
+        "recency_bonus": 0.3,
+        "frequency_penalty": -0.1
+      },
+      "feature_importance": {
+        "disease_match": 1.0,
+        "metadata_similarity": 0.8,
+        "confidence_alignment": 0.6,
+        "visual_similarity": 0.7,
+        "temporal_factors": 0.3
+      }
+    }
+  },
+  "metadata": {
+    "accuracy": 0.28
+  },
+  "epoch": 29,
+  "run_name": "full_dataset_training"
+}

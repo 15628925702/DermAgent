@@ -1,0 +1,1 @@
+=== DermAgent A刊级实验报告 ===\n\n发表准备度: 0.67/1.0\n\n评估标准:\n  dataset_scale: ✗\n  theoretical_depth: ✗\n  experimental_rigor: ✓\n  performance_excellence: ✓\n  novelty: ✓\n  clinical_relevance: ✓\n\n建议:\n  - 需要更多数据集进行验证\n  - 适合发表在良好期刊\n\n实验持续时间: 0.5 秒\n

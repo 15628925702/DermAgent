@@ -119,6 +119,7 @@ def main():
     parser.add_argument("--eval-interval", type=int, default=1, help="Evaluation interval")
     parser.add_argument("--save-interval", type=int, default=1, help="Checkpoint save interval")
     parser.add_argument("--data-split", type=str, default="train", help="Data split to use")
+    parser.add_argument("--config", type=str, default="config.ini", help="Configuration file path")
     parser.add_argument("--resume-from", type=str, default=None, help="Resume from checkpoint")
 
     args = parser.parse_args()
@@ -127,35 +128,61 @@ def main():
     run_dir = Path(f"outputs/train_runs/{args.run_name}")
     run_dir.mkdir(parents=True, exist_ok=True)
 
+    # 首先创建权重管理器实例来获取配置
+    from memory.weights_manager import WeightsManager
+    weights_manager_instance = WeightsManager(config_file=args.config)
+    temp_config = {
+        "learning_config": weights_manager_instance.config.to_dict()
+    }
+
     # 加载数据
     print("Loading data...")
-    all_cases = load_pad_ufes20_cases(limit=100)  # 加载更多数据用于分割
+    data_limit = temp_config.get("learning_config", {}).get("data_limit")
+    if data_limit and str(data_limit).lower() != "null":
+        limit = int(data_limit)
+    else:
+        limit = None  # 使用全数据集
+    all_cases = load_pad_ufes20_cases(limit=limit)
 
     # 简单的数据分割（实际应该使用预定义的分割）
     train_size = int(0.7 * len(all_cases))
     val_size = int(0.2 * len(all_cases))
 
-    cases = all_cases[:train_size][:args.batch_size]  # 训练集
-    eval_cases = all_cases[train_size:train_size+val_size][:20]  # 验证集
+    # 首先创建权重管理器实例来获取配置
+    from memory.weights_manager import WeightsManager
+    weights_manager_instance = WeightsManager(config_file=args.config)
+    temp_config = {
+        "learning_config": weights_manager_instance.config.to_dict()
+    }
+
+    # 使用配置中的批次大小，如果没有则使用默认值
+    batch_size = temp_config.get("learning_config", {}).get("batch_size", args.batch_size)
+    cases = all_cases[:train_size][:batch_size]  # 训练集
+    eval_cases = all_cases[train_size:train_size+val_size][:100]  # 验证集
 
     # 初始化组件
     skill_index = build_default_skill_index()
 
     if args.resume_from:
         print(f"Resuming from checkpoint: {args.resume_from}")
-        learning_components = weights_manager.initialize_components(skill_index)
-        weights_manager.load_checkpoint(learning_components, args.resume_from)
+        weights_manager_instance = weights_manager  # 使用默认配置
+        learning_components = weights_manager_instance.initialize_components(skill_index)
+        weights_manager_instance.load_checkpoint(learning_components, args.resume_from)
     else:
         print("Starting fresh training")
-        learning_components = weights_manager.initialize_components(skill_index)
+        # 使用指定的配置文件
+        from memory.weights_manager import WeightsManager
+        weights_manager_instance = WeightsManager(config_file=args.config)
+        learning_components = weights_manager_instance.initialize_components(skill_index)
 
-    # 训练配置
+    # 从权重管理器获取配置
     config = {
         "use_controller": True,
         "use_final_scorer": True,
         "use_retrieval": True,
         "use_specialist": True,
         "use_reflection": True,
+        "learning_config": weights_manager_instance.config.to_dict()
     }
 
     # 训练历史
@@ -166,14 +193,15 @@ def main():
         "best_accuracy": 0.0
     }
 
-    for epoch in range(args.epochs):
+    for epoch in range(args.epochs if args.epochs > 0 else config.get("learning_config", {}).get("max_epochs", 5)):
         print(f"\n=== Epoch {epoch + 1}/{args.epochs} ===")
 
         # 训练
         train_result = train_epoch(cases, learning_components, skill_index, epoch, config)
 
         # 定期评估
-        if epoch % args.eval_interval == 0:
+        eval_interval = config.get("learning_config", {}).get("eval_interval", args.eval_interval)
+        if epoch % eval_interval == 0:
             eval_result = evaluate_model(eval_cases, learning_components, skill_index, config)
             accuracy = eval_result["accuracy"]
             top3_accuracy = eval_result["top3_accuracy"]
@@ -203,7 +231,8 @@ def main():
                 print("  ✓ Saved best model")
 
         # 定期保存检查点
-        if epoch % args.save_interval == 0:
+        save_interval = config.get("learning_config", {}).get("save_interval", args.save_interval)
+        if epoch % save_interval == 0:
             weights_manager.save_checkpoint(
                 learning_components,
                 args.run_name,
