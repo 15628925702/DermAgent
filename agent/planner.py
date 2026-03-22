@@ -408,7 +408,7 @@ class ExperienceSkillPlanner:
         if pair_set.issubset(set(top_names)):
             if learned_score >= self.LEARNED_SPECIALIST_THRESHOLD:
                 return True, "learned_specialist_score"
-            if ambiguous_context:
+            if ambiguous_context and self._pair_in_top2(target_pair, top_names):
                 return True, "pair_present_in_top_k"
             if specialist_name in recommended_skills:
                 return True, "memory_or_rule_recommended_skill"
@@ -430,6 +430,10 @@ class ExperienceSkillPlanner:
         if pair_set == {"BCC", "SEK"}:
             return "bcc_sek_specialist_skill"
         return "mel_nev_specialist_skill"
+
+    def _pair_in_top2(self, target_pair: tuple[str, str], top_names: List[str]) -> bool:
+        top2 = {name for name in top_names[:2] if name}
+        return set(target_pair).issubset(top2)
 
     def _should_add_metadata_skill(
         self,

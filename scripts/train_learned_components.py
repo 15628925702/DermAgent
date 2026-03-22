@@ -13,6 +13,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from agent.controller import LearnableSkillController
+from agent.evidence_calibrator import LearnableEvidenceCalibrator
 from agent.final_scorer import LearnableFinalScorer
 from agent.rule_scorer import LearnableRuleScorer
 from agent.run_agent import run_agent
@@ -52,6 +53,7 @@ def _evaluate_cases(
     controller: LearnableSkillController | None,
     final_scorer: LearnableFinalScorer | None,
     rule_scorer: LearnableRuleScorer | None,
+    evidence_calibrator: LearnableEvidenceCalibrator | None,
     use_retrieval: bool,
     use_specialist: bool,
     use_controller: bool,
@@ -75,6 +77,7 @@ def _evaluate_cases(
                 "controller": controller,
                 "final_scorer": final_scorer,
                 "rule_scorer": rule_scorer,
+                "evidence_calibrator": evidence_calibrator,
             } if use_controller else None,
             use_retrieval=use_retrieval,
             use_specialist=use_specialist,
@@ -151,22 +154,26 @@ def main() -> None:
 
     bank = ExperienceBank.from_json(args.bank_state_in) if args.bank_state_in else ExperienceBank()
     if args.controller_checkpoint_in:
-        skill_index, controller_payload, final_scorer_payload, rule_scorer_payload = load_controller_checkpoint(args.controller_checkpoint_in)
+        skill_index, controller_payload, final_scorer_payload, rule_scorer_payload, evidence_calibrator_payload = load_controller_checkpoint(args.controller_checkpoint_in)
     else:
         skill_index = build_default_skill_index()
         controller_payload = {}
         final_scorer_payload = {}
         rule_scorer_payload = {}
+        evidence_calibrator_payload = {}
 
     controller = LearnableSkillController(skill_index)
     final_scorer = LearnableFinalScorer()
     rule_scorer = LearnableRuleScorer()
+    evidence_calibrator = LearnableEvidenceCalibrator()
     if controller_payload:
         controller.load_state(controller_payload)
     if final_scorer_payload:
         final_scorer.load_state(final_scorer_payload)
     if rule_scorer_payload:
         rule_scorer.load_state(rule_scorer_payload)
+    if evidence_calibrator_payload:
+        evidence_calibrator.load_state(evidence_calibrator_payload)
 
     reranker = UtilityAwareExperienceReranker()
     best_val = -1.0
@@ -190,6 +197,7 @@ def main() -> None:
                     "controller": controller,
                     "final_scorer": final_scorer,
                     "rule_scorer": rule_scorer,
+                    "evidence_calibrator": evidence_calibrator,
                 },
                 use_retrieval=use_retrieval,
                 use_specialist=use_specialist,
@@ -216,6 +224,7 @@ def main() -> None:
             controller=controller,
             final_scorer=final_scorer,
             rule_scorer=rule_scorer,
+            evidence_calibrator=evidence_calibrator,
             use_retrieval=use_retrieval,
             use_specialist=use_specialist,
             use_controller=True,
@@ -240,6 +249,7 @@ def main() -> None:
                 controller=controller,
                 final_scorer=final_scorer,
                 rule_scorer=rule_scorer,
+                evidence_calibrator=evidence_calibrator,
                 metadata={
                     "best_val_accuracy_top1": best_val,
                     "epoch": epoch + 1,
@@ -259,6 +269,7 @@ def main() -> None:
         controller=controller,
         final_scorer=final_scorer,
         rule_scorer=rule_scorer,
+        evidence_calibrator=evidence_calibrator,
         use_retrieval=use_retrieval,
         use_specialist=use_specialist,
         use_controller=True,

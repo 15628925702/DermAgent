@@ -96,6 +96,13 @@ class MetadataConsistencySkill(BaseSkill):
                     if disease in top_names and disease not in supported:
                         supported.append(disease)
                         rationale.append(f"Pediatric age weakly supports {disease}.")
+                if not has_invasive_signal and "NEV" not in supported:
+                    supported.append("NEV")
+                    rationale.append("Pediatric age without invasive signals keeps NEV as a strong benign alternative.")
+                for disease in ["BCC", "ACK"]:
+                    if disease in top_names and disease not in penalized:
+                        penalized.append(disease)
+                        rationale.append(f"Pediatric age weakly penalizes {disease}.")
                 if "SCC" in top_names and not has_invasive_signal and "SCC" not in penalized:
                     penalized.append("SCC")
                     rationale.append("Pediatric age without invasive signals penalizes SCC.")

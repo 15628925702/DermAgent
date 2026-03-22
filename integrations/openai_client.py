@@ -234,7 +234,10 @@ MEL, NEV, SCC, BCC, ACK, SEK.
 6. visual_cues should be short, concrete dermatology phrases.
 7. Do not over-call malignant labels by default. If benign labels like NEV or SEK are plausible, include them.
 8. Age and site should calibrate the ranking. Young patients and low-risk metadata should reduce confidence in keratinocyte cancers unless clear malignant cues are present.
-9. Do not include any text outside JSON.
+9. If the lesion appears low-risk, stable, symmetric, or pediatric-context-friendly, NEV and SEK should stay actively considered.
+10. If metadata is weak or non-specific, do not default to SCC. Use malignant labels only when supported by concrete visual cues.
+11. Keep the shortlist balanced. Do not force keratinocyte cancers into the top-3 unless they are visually plausible.
+12. Do not include any text outside JSON.
 
 Clinical metadata:
 - age: {age}
@@ -306,7 +309,9 @@ Rules:
 4. top_k should contain 1 to 3 labels.
 5. Do not assume SCC/ACK/BCC by default. If benign labels like NEV or SEK are plausible, include them.
 6. Age and site should calibrate the diagnosis rather than be ignored.
-7. Do not include markdown or any extra text outside JSON.
+7. In children or otherwise low-risk presentations, keep NEV/SEK active unless there are clear malignant cues.
+8. If the image is ambiguous, prefer a balanced top_k over forcing a malignant label.
+9. Do not include markdown or any extra text outside JSON.
 
 Metadata:
 {json.dumps(metadata, ensure_ascii=False, indent=2)}

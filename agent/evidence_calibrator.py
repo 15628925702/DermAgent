@@ -34,6 +34,7 @@ class LearnableEvidenceCalibrator:
         self.weights: Dict[str, float] = {
             "specialist_support_scale": 1.0,
             "specialist_repeat_decay": 0.35,
+            "specialist_overlap_decay": 0.15,
             "specialist_malignant_cap": 1.0,
             "specialist_benign_cap": 1.15,
             "ack_proxy_gap_high_floor": 1.05,
@@ -47,6 +48,7 @@ class LearnableEvidenceCalibrator:
         self.bounds: Dict[str, tuple[float, float]] = {
             "specialist_support_scale": (0.35, 1.8),
             "specialist_repeat_decay": (0.10, 0.70),
+            "specialist_overlap_decay": (0.05, 0.40),
             "specialist_malignant_cap": (0.45, 1.45),
             "specialist_benign_cap": (0.55, 1.65),
             "ack_proxy_gap_high_floor": (0.60, 1.40),
@@ -150,6 +152,7 @@ class LearnableEvidenceCalibrator:
         self._update_weight("skill_correction_metadata", 0.35 * metadata_support_signal + 0.35 * metadata_penalty_signal, feedback["weight_updates"])
         self._update_weight("specialist_support_scale", specialist_signal, feedback["weight_updates"])
         self._update_weight("specialist_repeat_decay", duplicate_signal, feedback["weight_updates"])
+        self._update_weight("specialist_overlap_decay", -0.6 * duplicate_signal, feedback["weight_updates"])
         self._update_weight("specialist_malignant_cap", malignant_cap_signal, feedback["weight_updates"])
         self._update_weight("specialist_benign_cap", 0.5 * specialist_signal, feedback["weight_updates"])
         self._update_weight("skill_correction_specialist", 0.35 * specialist_signal + 0.25 * duplicate_signal, feedback["weight_updates"])

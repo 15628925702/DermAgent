@@ -90,3 +90,25 @@ def test_aggregator_dampens_duplicate_specialist_support_for_same_label():
     specialist_score = result["aggregator_debug"]["candidate_features"]["SCC"]["specialist_score"]
     assert specialist_score < 1.5
     assert specialist_score <= 1.0
+
+
+def test_aggregator_strongly_dampens_overlapping_specialists_for_same_label():
+    state = create_case_state({"file": "case4.png", "metadata": {}, "text": ""})
+    state.perception = {
+        "ddx_candidates": [
+            {"name": "SCC", "score": 0.55},
+            {"name": "ACK", "score": 0.53},
+            {"name": "BCC", "score": 0.51},
+        ],
+        "uncertainty": {"level": "high"},
+    }
+    state.retrieval = {"retrieval_summary": {"retrieval_confidence": "low"}}
+    state.skill_outputs = {
+        "ack_scc_specialist_skill": {"recommendation": "SCC", "confidence": 0.9},
+        "bcc_scc_specialist_skill": {"recommendation": "SCC", "confidence": 0.9},
+    }
+
+    result = DecisionAggregator().aggregate(state)
+
+    specialist_score = result["aggregator_debug"]["candidate_features"]["SCC"]["specialist_score"]
+    assert specialist_score < 0.95

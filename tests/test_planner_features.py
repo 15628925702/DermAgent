@@ -142,3 +142,48 @@ def test_planner_does_not_trigger_specialist_for_low_uncertainty_large_gap_pair(
 
     assert "ack_scc_specialist_skill" not in result["selected_skills"]
     assert "bcc_scc_specialist_skill" not in result["selected_skills"]
+
+
+def test_planner_only_triggers_top2_specialist_when_multiple_pairs_overlap():
+    state = create_case_state(
+        {
+            "file": "planner4.png",
+            "metadata": {"age": 72, "site": "face", "clinical_history": "changed"},
+            "text": "",
+        }
+    )
+    state.perception = {
+        "ddx_candidates": [
+            {"name": "SCC", "score": 0.39},
+            {"name": "ACK", "score": 0.36},
+            {"name": "BCC", "score": 0.34},
+        ],
+        "uncertainty": {"level": "high"},
+        "risk_cues": {"malignant_cues": []},
+    }
+    state.retrieval = {
+        "confusion_hits": [],
+        "rule_hits": [],
+        "retrieval_summary": {
+            "retrieval_confidence": "low",
+            "supports_top1": False,
+            "has_confusion_support": False,
+            "memory_recommended_skills": [],
+            "recommended_skills": [],
+        },
+    }
+
+    planner = ExperienceSkillPlanner(
+        use_specialist=True,
+        planning_mode="rules_only",
+        enabled_skills={
+            "uncertainty_assessment_skill",
+            "compare_skill",
+            "ack_scc_specialist_skill",
+            "bcc_scc_specialist_skill",
+        },
+    )
+    result = planner.plan(state)
+
+    assert "ack_scc_specialist_skill" in result["selected_skills"]
+    assert "bcc_scc_specialist_skill" not in result["selected_skills"]

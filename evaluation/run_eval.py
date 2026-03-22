@@ -12,6 +12,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from agent.controller import LearnableSkillController
+from agent.evidence_calibrator import LearnableEvidenceCalibrator
 from agent.final_scorer import LearnableFinalScorer
 from agent.rule_scorer import LearnableRuleScorer
 from agent.run_agent import run_agent
@@ -40,8 +41,8 @@ def load_pad_ufes20_cases(dataset_root: str | Path = "data/pad_ufes_20", limit: 
 
     image_index = {path.name: str(path) for path in root.rglob("*.png")}
     cases: List[Dict[str, Any]] = []
-    with metadata_path.open("r", encoding="utf-8", newline="") as f:
-        reader = csv.DictReader(f)
+    with metadata_path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
         for row in reader:
             label = _norm_label(row.get("diagnostic"))
             img_id = str(row.get("img_id", "")).strip()
@@ -102,26 +103,43 @@ def run_evaluation(
 
     checkpoint_loaded = False
     if controller_state_in:
-        skill_index, controller_payload, final_scorer_payload, rule_scorer_payload = load_controller_checkpoint(controller_state_in)
+        (
+            skill_index,
+            controller_payload,
+            final_scorer_payload,
+            rule_scorer_payload,
+            evidence_calibrator_payload,
+        ) = load_controller_checkpoint(controller_state_in)
         checkpoint_loaded = True
     else:
         skill_index = build_default_skill_index()
         controller_payload = {}
         final_scorer_payload = {}
         rule_scorer_payload = {}
+        evidence_calibrator_payload = {}
 
     reranker = UtilityAwareExperienceReranker()
     controller = LearnableSkillController(skill_index) if use_controller else None
     final_scorer = LearnableFinalScorer() if use_controller else None
     rule_scorer = LearnableRuleScorer() if use_controller else None
+    evidence_calibrator = LearnableEvidenceCalibrator() if use_controller else None
     if controller is not None and controller_payload:
         controller.load_state(controller_payload)
     if final_scorer is not None and final_scorer_payload:
         final_scorer.load_state(final_scorer_payload)
     if rule_scorer is not None and rule_scorer_payload:
         rule_scorer.load_state(rule_scorer_payload)
+    if evidence_calibrator is not None and evidence_calibrator_payload:
+        evidence_calibrator.load_state(evidence_calibrator_payload)
 
-    total = correct_top1 = correct_top3 = malignant_total = malignant_hit = ack_scc_total = ack_scc_correct = errors = 0
+    total = 0
+    correct_top1 = 0
+    correct_top3 = 0
+    malignant_total = 0
+    malignant_hit = 0
+    ack_scc_total = 0
+    ack_scc_correct = 0
+    errors = 0
     per_case: List[Dict[str, Any]] = []
 
     for case in cases:
@@ -134,6 +152,7 @@ def run_evaluation(
                 "controller": controller,
                 "final_scorer": final_scorer,
                 "rule_scorer": rule_scorer,
+                "evidence_calibrator": evidence_calibrator,
             } if use_controller else None,
             use_retrieval=use_retrieval,
             use_specialist=use_specialist,
@@ -146,6 +165,7 @@ def run_evaluation(
             perception_model=perception_model,
             report_model=report_model,
         )
+
         true_label = _norm_label(case.get("label"))
         final_decision = result.get("final_decision", {}) or {}
         pred_label = _norm_label(final_decision.get("final_label") or final_decision.get("diagnosis"))
@@ -167,22 +187,24 @@ def run_evaluation(
             if pred_label == true_label:
                 ack_scc_correct += 1
 
-        per_case.append({
-            "case_id": case.get("file", ""),
-            "true_label": true_label,
-            "predicted_label": pred_label,
-            "top3": top3,
-            "is_top1_correct": pred_label == true_label,
-            "is_top3_correct": true_label in top3,
-            "is_malignant_case": true_label in MALIGNANT_LABELS,
-            "malignant_recalled": true_label in MALIGNANT_LABELS and pred_label in MALIGNANT_LABELS,
-            "is_ack_scc_case": true_label in ACK_SCC_LABELS,
-            "ack_scc_correct": true_label in ACK_SCC_LABELS and pred_label == true_label,
-            "error": result.get("error"),
-            "selected_skills": result.get("selected_skills", []),
-            "planner_mode": (result.get("planner", {}) or {}).get("planning_mode"),
-            "stop_probability": (result.get("planner", {}) or {}).get("stop_probability"),
-        })
+        per_case.append(
+            {
+                "case_id": case.get("file", ""),
+                "true_label": true_label,
+                "predicted_label": pred_label,
+                "top3": top3,
+                "is_top1_correct": pred_label == true_label,
+                "is_top3_correct": true_label in top3,
+                "is_malignant_case": true_label in MALIGNANT_LABELS,
+                "malignant_recalled": true_label in MALIGNANT_LABELS and pred_label in MALIGNANT_LABELS,
+                "is_ack_scc_case": true_label in ACK_SCC_LABELS,
+                "ack_scc_correct": true_label in ACK_SCC_LABELS and pred_label == true_label,
+                "error": result.get("error"),
+                "selected_skills": result.get("selected_skills", []),
+                "planner_mode": (result.get("planner", {}) or {}).get("planning_mode"),
+                "stop_probability": (result.get("planner", {}) or {}).get("stop_probability"),
+            }
+        )
 
     result = {
         "dataset_root": str(dataset_root),
@@ -225,6 +247,7 @@ def run_evaluation(
             "output_path": controller_state_out,
             "contains_final_scorer": use_controller,
             "contains_rule_scorer": use_controller,
+            "contains_evidence_calibrator": use_controller,
         },
         "bank_checkpoint": {
             "loaded": bank_loaded,
@@ -235,6 +258,7 @@ def run_evaluation(
         "skill_index": skill_index.as_dict(),
         "final_scorer": final_scorer.to_dict() if final_scorer is not None else None,
         "rule_scorer": rule_scorer.to_dict() if rule_scorer is not None else None,
+        "evidence_calibrator": evidence_calibrator.to_dict() if evidence_calibrator is not None else None,
         "per_case": per_case,
     }
     if controller_state_out:
@@ -244,6 +268,7 @@ def run_evaluation(
             controller=controller,
             final_scorer=final_scorer,
             rule_scorer=rule_scorer,
+            evidence_calibrator=evidence_calibrator,
             metadata={
                 "dataset_root": str(dataset_root),
                 "num_cases": total,

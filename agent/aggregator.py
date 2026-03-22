@@ -231,6 +231,7 @@ class DecisionAggregator:
         evidence_log: List[Dict[str, Any]],
     ) -> None:
         specialist_totals: Dict[str, float] = {}
+        specialist_pairs: Dict[str, List[set[str]]] = {}
         for key, output in (state.skill_outputs or {}).items():
             if not str(key).endswith("_specialist_skill"):
                 continue
@@ -259,6 +260,10 @@ class DecisionAggregator:
             adjusted_weight = weight
             if existing_total > 0.0:
                 adjusted_weight *= self._calibration_weight("specialist_repeat_decay", 0.35)
+            current_pair = self._specialist_pair_for_skill(key)
+            previous_pairs = specialist_pairs.get(recommendation, [])
+            if current_pair and any(current_pair.intersection(previous_pair) for previous_pair in previous_pairs):
+                adjusted_weight *= self._calibration_weight("specialist_overlap_decay", 0.15)
             max_total = (
                 self._calibration_weight("specialist_malignant_cap", 1.0)
                 if recommendation in self.MALIGNANT_LABELS
@@ -270,6 +275,8 @@ class DecisionAggregator:
                 continue
 
             specialist_totals[recommendation] = existing_total + applied_weight
+            if current_pair:
+                specialist_pairs.setdefault(recommendation, []).append(current_pair)
             self._apply_feature(candidate_scores, candidate_features, recommendation, "specialist_score", applied_weight)
             detail = "specialist_recommendation"
             if existing_total > 0.0 or abs(applied_weight - weight) > 1e-8:
@@ -734,6 +741,15 @@ class DecisionAggregator:
             if self._safe_float(features.get(name)) > 0.0:
                 count += 1
         return count
+
+    def _specialist_pair_for_skill(self, skill_name: str) -> set[str]:
+        mapping = {
+            "ack_scc_specialist_skill": {"ACK", "SCC"},
+            "bcc_scc_specialist_skill": {"BCC", "SCC"},
+            "bcc_sek_specialist_skill": {"BCC", "SEK"},
+            "mel_nev_specialist_skill": {"MEL", "NEV"},
+        }
+        return set(mapping.get(str(skill_name).strip(), set()))
 
     def _clip(self, value: float, *, lower: float, upper: float) -> float:
         return max(lower, min(upper, float(value)))
