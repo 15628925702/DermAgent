@@ -44,6 +44,7 @@ def build_skill_registry(
     bank: Optional[ExperienceBank] = None,
     skill_index: Optional[SkillIndex] = None,
     reranker: Optional[UtilityAwareExperienceReranker] = None,
+    retrieval_scorer: Optional[Any] = None,
     config: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
@@ -68,7 +69,7 @@ def build_skill_registry(
     # =========================
     # 依赖构建
     # =========================
-    retriever = ExperienceRetriever(bank, reranker=reranker)
+    retriever = ExperienceRetriever(bank, reranker=reranker, scorer=retrieval_scorer)
 
     # =========================
     # Skill 实例化

@@ -12,9 +12,21 @@ class LearnableRuleScorer:
         *,
         learning_rate: float = 0.03,
         threshold: float = 0.52,
+        use_adam: bool = True,
     ) -> None:
         self.learning_rate = learning_rate
         self.threshold = threshold
+        self.use_adam = use_adam
+
+        # Adam优化器参数
+        if use_adam:
+            self.beta1 = 0.9
+            self.beta2 = 0.999
+            self.epsilon = 1e-8
+            self.m = {}  # 一阶矩
+            self.v = {}  # 二阶矩
+            self.t = 0   # 时间步
+
         self.weights: Dict[str, float] = {
             "bias": -0.1,
             "priority": 0.45,
@@ -156,8 +168,17 @@ class LearnableRuleScorer:
             error = target - prediction
             features = info.get("features", {}) or {}
             for key, value in features.items():
-                self.weights[key] = float(self.weights.get(key, 0.0)) + self.learning_rate * error * float(value)
-            self.rule_biases[rule_name] = float(self.rule_biases.get(rule_name, 0.0)) + self.learning_rate * error
+                gradient = self.learning_rate * error * float(value)
+                if self.use_adam:
+                    self._adam_update(f"weight_{key}", gradient)
+                else:
+                    self.weights[key] = float(self.weights.get(key, 0.0)) + gradient
+
+            gradient_bias = self.learning_rate * error
+            if self.use_adam:
+                self._adam_update(f"bias_{rule_name}", gradient_bias)
+            else:
+                self.rule_biases[rule_name] = float(self.rule_biases.get(rule_name, 0.0)) + gradient_bias
             updates.append(
                 {
                     "rule_name": rule_name,
@@ -172,6 +193,33 @@ class LearnableRuleScorer:
             "is_correct": is_correct,
             "updated_rules": updates,
         }
+
+    def _adam_update(self, param_name: str, gradient: float) -> None:
+        """Adam优化器更新"""
+        self.t += 1
+
+        # 初始化矩
+        if param_name not in self.m:
+            self.m[param_name] = 0.0
+            self.v[param_name] = 0.0
+
+        # 更新一阶矩
+        self.m[param_name] = self.beta1 * self.m[param_name] + (1 - self.beta1) * gradient
+        # 更新二阶矩
+        self.v[param_name] = self.beta2 * self.v[param_name] + (1 - self.beta2) * gradient**2
+
+        # 偏差校正
+        m_hat = self.m[param_name] / (1 - self.beta1**self.t)
+        v_hat = self.v[param_name] / (1 - self.beta2**self.t)
+
+        # 更新参数
+        if param_name.startswith("weight_"):
+            weight_name = param_name[len("weight_"):]
+            if weight_name in self.weights:
+                self.weights[weight_name] += self.learning_rate * m_hat / (v_hat**0.5 + self.epsilon)
+        elif param_name.startswith("bias_"):
+            rule_name = param_name[len("bias_"):]
+            self.rule_biases[rule_name] = float(self.rule_biases.get(rule_name, 0.0)) + self.learning_rate * m_hat / (v_hat**0.5 + self.epsilon)
 
     def to_dict(self) -> Dict[str, Any]:
         return {

@@ -11,9 +11,21 @@ class LearnableFinalScorer:
         *,
         learning_rate: float = 0.01,
         margin_target: float = 0.45,
+        use_adam: bool = True,
     ) -> None:
         self.learning_rate = learning_rate
         self.margin_target = margin_target
+        self.use_adam = use_adam
+
+        # Adam优化器参数
+        if use_adam:
+            self.beta1 = 0.9
+            self.beta2 = 0.999
+            self.epsilon = 1e-8
+            self.m = {}  # 一阶矩
+            self.v = {}  # 二阶矩
+            self.t = 0   # 时间步
+
         self.weights: Dict[str, float] = {
             "bias": 0.0,
             "base_total": 1.0,
@@ -116,7 +128,11 @@ class LearnableFinalScorer:
             )
             if abs(delta) <= 1e-8:
                 continue
-            self.weights[key] = float(self.weights.get(key, 0.0)) + delta
+
+            if self.use_adam:
+                self._adam_update(key, delta)
+            else:
+                self.weights[key] = float(self.weights.get(key, 0.0)) + delta
             updates[key] = round(delta, 6)
 
         return {
@@ -130,6 +146,27 @@ class LearnableFinalScorer:
             "error": round(error, 4),
             "weight_updates": updates,
         }
+
+    def _adam_update(self, param_name: str, gradient: float) -> None:
+        """Adam优化器更新"""
+        self.t += 1
+
+        # 初始化矩
+        if param_name not in self.m:
+            self.m[param_name] = 0.0
+            self.v[param_name] = 0.0
+
+        # 更新一阶矩
+        self.m[param_name] = self.beta1 * self.m[param_name] + (1 - self.beta1) * gradient
+        # 更新二阶矩
+        self.v[param_name] = self.beta2 * self.v[param_name] + (1 - self.beta2) * gradient**2
+
+        # 偏差校正
+        m_hat = self.m[param_name] / (1 - self.beta1**self.t)
+        v_hat = self.v[param_name] / (1 - self.beta2**self.t)
+
+        # 更新参数
+        self.weights[param_name] = float(self.weights.get(param_name, 0.0)) + self.learning_rate * m_hat / (v_hat**0.5 + self.epsilon)
 
     def to_dict(self) -> Dict[str, Any]:
         return {

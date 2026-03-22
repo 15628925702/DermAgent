@@ -16,6 +16,7 @@ from memory.experience_bank import ExperienceBank
 from memory.experience_reranker import UtilityAwareExperienceReranker
 from memory.skill_index import SkillIndex, build_default_skill_index
 from memory.writer import ExperienceWriter
+from memory.weights_manager import weights_manager
 
 
 USE_RETRIEVAL = True
@@ -33,9 +34,7 @@ def run_agent(
     bank: ExperienceBank | None = None,
     skill_index: SkillIndex | None = None,
     reranker: UtilityAwareExperienceReranker | None = None,
-    controller: LearnableSkillController | None = None,
-    final_scorer: LearnableFinalScorer | None = None,
-    rule_scorer: LearnableRuleScorer | None = None,
+    learning_components: Dict[str, Any] | None = None,
     *,
     use_retrieval: bool = USE_RETRIEVAL,
     use_specialist: bool = USE_SPECIALIST,
@@ -54,14 +53,40 @@ def run_agent(
         bank = ExperienceBank()
     if skill_index is None:
         skill_index = build_default_skill_index()
+
+    # 初始化学习组件
+    if learning_components is None:
+        learning_components = weights_manager.initialize_components(skill_index)
+
+    # 提取各个组件
+    controller = learning_components.get("controller")
+    final_scorer = learning_components.get("final_scorer")
+    rule_scorer = learning_components.get("rule_scorer")
+    retrieval_scorer = learning_components.get("retrieval_scorer")
+
+    # 如果需要，使用学习组件
     if use_controller and controller is None:
-        controller = LearnableSkillController(skill_index)
+        controller = learning_components.get("controller")
     if use_controller and use_final_scorer and final_scorer is None:
-        final_scorer = LearnableFinalScorer()
+        final_scorer = learning_components.get("final_scorer")
     if use_controller and rule_scorer is None:
-        rule_scorer = LearnableRuleScorer()
+        rule_scorer = learning_components.get("rule_scorer")
 
     state = create_case_state(case)
+    runtime_flags = {
+        "use_retrieval": use_retrieval,
+        "use_specialist": use_specialist,
+        "use_reflection": use_reflection,
+        "use_controller": use_controller,
+        "use_compare": use_compare,
+        "use_malignancy": use_malignancy,
+        "use_metadata_consistency": use_metadata_consistency,
+        "use_final_scorer": use_final_scorer,
+        "update_online": update_online,
+        "use_rule_memory": use_rule_memory,
+        "enable_rule_compression": enable_rule_compression,
+    }
+    state.trace("config", "success", "Runtime flags initialized", payload=runtime_flags)
     runtime_flags = {
         "use_retrieval": use_retrieval,
         "use_specialist": use_specialist,
@@ -94,7 +119,7 @@ def run_agent(
                     "mel_nev_specialist_skill",
                 ]
             )
-        registry = build_skill_registry(bank, skill_index=skill_index, reranker=reranker, config={"disable_skills": disable_skills})
+        registry = build_skill_registry(bank, skill_index=skill_index, reranker=reranker, retrieval_scorer=retrieval_scorer, config={"disable_skills": disable_skills})
         state.trace("registry", "success", "Skill registry built")
     except Exception as e:
         state.trace("registry", "failed", f"Failed to build registry: {e}")
@@ -186,6 +211,17 @@ def run_agent(
             )
         except Exception as e:
             state.trace("compression", "failed", f"Experience compression failed: {e}")
+
+        # 更新检索器的学习参数
+        try:
+            if retrieval_scorer:
+                # 从检索结果中提取有用性反馈
+                retrieved_cases = state.retrieval.get("raw_case_hits", []) or []
+                was_helpful = _evaluate_retrieval_helpfulness(state)
+                retrieval_scorer.update_from_feedback(retrieved_cases, was_helpful)
+                state.trace("retriever_update", "success", "Retriever parameters updated from feedback")
+        except Exception as e:
+            state.trace("retriever_update", "failed", f"Retriever update failed: {e}")
     else:
         state.trace("writeback", "skipped", "Writeback skipped because online updates are disabled or reflection is off")
         state.trace("compression", "skipped", "Compression skipped because online updates are disabled or reflection is off")
@@ -315,3 +351,26 @@ def _strip_rule_memory_from_state(state: Any) -> None:
     retrieval["rule_hits"] = []
     retrieval["retrieval_summary"] = summary
     state.retrieval = retrieval
+
+
+def _evaluate_retrieval_helpfulness(state: Any) -> bool:
+    """评估检索结果是否有帮助"""
+    retrieval_summary = state.retrieval.get("retrieval_summary", {}) or {}
+
+    # 如果检索提供了技能推荐，且这些技能被使用了，认为是helpful
+    recommended_skills = set(retrieval_summary.get("recommended_skills", []))
+    selected_skills = set(state.selected_skills or [])
+    skill_overlap = len(recommended_skills & selected_skills)
+
+    # 如果检索置信度高且最终决策正确，认为是helpful
+    retrieval_confidence = retrieval_summary.get("retrieval_confidence", "low")
+    final_decision = state.final_decision or {}
+    true_label = str((state.case_info or {}).get("true_label", "")).strip().upper()
+    final_label = str(final_decision.get("final_label") or final_decision.get("diagnosis") or "").strip().upper()
+    is_correct = bool(true_label) and final_label == true_label
+
+    # 综合判断
+    confidence_bonus = {"high": 2, "medium": 1, "low": 0}.get(retrieval_confidence, 0)
+    helpful_score = skill_overlap + confidence_bonus + (2 if is_correct else 0)
+
+    return helpful_score >= 3  # 阈值判断

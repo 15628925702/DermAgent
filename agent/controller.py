@@ -6,6 +6,259 @@ from agent.state import CaseState
 from memory.skill_index import SkillIndex, sigmoid
 
 
+class TargetLearner:
+    """可学习的技能目标函数管理器"""
+
+    def __init__(self, learning_rate: float = 0.05, use_adam: bool = True):
+        self.learning_rate = learning_rate
+        self.use_adam = use_adam
+
+        # Adam优化器参数
+        if use_adam:
+            self.beta1 = 0.9
+            self.beta2 = 0.999
+            self.epsilon = 1e-8
+            self.m = {}  # 一阶矩
+            self.v = {}  # 二阶矩
+            self.t = 0   # 时间步
+
+        # 基础目标权重
+        self.base_targets = {
+            "uncertainty_assessment_skill": 1.0,  # 始终运行
+            "compare_skill": 0.5,
+            "malignancy_risk_skill": 0.4,
+            "metadata_consistency_skill": 0.6,
+            "ack_scc_specialist_skill": 0.3,
+            "bcc_scc_specialist_skill": 0.3,
+            "bcc_sek_specialist_skill": 0.3,
+            "mel_nev_specialist_skill": 0.3,
+        }
+
+        # 条件权重 - 将启发式变成特征权重
+        self.condition_weights = {
+            # compare_skill 条件
+            "compare_uncertainty_medium": 0.35,
+            "compare_uncertainty_high": 0.5,
+            "compare_incorrect": 0.4,
+            "compare_top_gap_small": 0.3,
+            "compare_has_multiple_candidates": 0.2,
+            "compare_high_confidence": 0.4,
+            "compare_low_confidence": -0.2,
+
+            # malignancy_risk_skill 条件
+            "malignancy_true_malignant": 0.4,
+            "malignancy_has_malignant_candidate": 0.3,
+            "malignancy_multiple_malignant": 0.5,
+
+            # metadata_consistency_skill 条件
+            "metadata_has_metadata": 0.3,
+            "metadata_low_confidence": 0.3,
+            "metadata_not_supports_top1": 0.2,
+            "metadata_incorrect": 0.3,
+            "metadata_age_match": 0.25,
+            "metadata_site_match": 0.2,
+
+            # specialist skills 条件
+            "specialist_pair_present": 0.6,
+            "specialist_retrieval_recommends": 0.4,
+            "specialist_confusion_support": 0.3,
+            "specialist_top1_uncertain": 0.35,
+        }
+
+    def predict_target(self, skill_id: str, features: Dict[str, float], state: CaseState) -> float:
+        """基于特征预测技能目标值"""
+        base = self.base_targets.get(skill_id, 0.0)
+
+        if skill_id == "uncertainty_assessment_skill":
+            return 1.0  # 始终运行
+
+        elif skill_id == "compare_skill":
+            # 条件累加
+            uncertainty = self.get_uncertainty_level(state)
+            conditions = [
+                features.get("uncertainty_medium", 0.0) * self.condition_weights["compare_uncertainty_medium"],
+                features.get("uncertainty_high", 0.0) * self.condition_weights["compare_uncertainty_high"],
+                (1.0 if self._is_incorrect(state) else 0.0) * self.condition_weights["compare_incorrect"],
+                features.get("top_gap_small", 0.0) * self.condition_weights["compare_top_gap_small"],
+                (1.0 if len(state.get_top_ddx_names()) >= 2 else 0.0) * self.condition_weights["compare_has_multiple_candidates"],
+                features.get("high_confidence", 0.0) * self.condition_weights["compare_high_confidence"],
+                features.get("low_confidence", 0.0) * self.condition_weights["compare_low_confidence"],
+            ]
+            return base + sum(conditions)
+
+        elif skill_id == "malignancy_risk_skill":
+            true_malignant = 1.0 if self._is_true_malignant(state) else 0.0
+            has_candidate = features.get("has_malignant_candidate", 0.0)
+            multiple_malignant = features.get("multiple_malignant_candidates", 0.0)
+            return base + (
+                true_malignant * self.condition_weights["malignancy_true_malignant"] +
+                has_candidate * self.condition_weights["malignancy_has_malignant_candidate"] +
+                multiple_malignant * self.condition_weights["malignancy_multiple_malignant"]
+            )
+
+        elif skill_id == "metadata_consistency_skill":
+            has_metadata = features.get("metadata_present", 0.0)
+            low_conf = features.get("retrieval_low", 0.0)
+            not_supports = 1.0 - features.get("supports_top1", 0.0)
+            incorrect = 1.0 if self._is_incorrect(state) else 0.0
+            age_match = features.get("age_match", 0.0)
+            site_match = features.get("site_match", 0.0)
+            return base + (
+                has_metadata * self.condition_weights["metadata_has_metadata"] +
+                low_conf * self.condition_weights["metadata_low_confidence"] +
+                not_supports * self.condition_weights["metadata_not_supports_top1"] +
+                incorrect * self.condition_weights["metadata_incorrect"] +
+                age_match * self.condition_weights["metadata_age_match"] +
+                site_match * self.condition_weights["metadata_site_match"]
+            )
+
+        elif skill_id in ["ack_scc_specialist_skill", "bcc_scc_specialist_skill",
+                         "bcc_sek_specialist_skill", "mel_nev_specialist_skill"]:
+            pair_present = self._has_specialist_pair(skill_id, features)
+            retrieval_rec = self._retrieval_recommends(skill_id, features)
+            confusion_sup = features.get("has_confusion_support", 0.0)
+            top1_uncertain = features.get("top1_uncertain", 0.0)
+            return base + (
+                pair_present * self.condition_weights["specialist_pair_present"] +
+                retrieval_rec * self.condition_weights["specialist_retrieval_recommends"] +
+                confusion_sup * self.condition_weights["specialist_confusion_support"] +
+                top1_uncertain * self.condition_weights["specialist_top1_uncertain"]
+            )
+
+        return base
+
+    def update_from_case(self, skill_id: str, features: Dict[str, float], state: CaseState,
+                        actual_helpful: bool, learning_rate: float = None) -> None:
+        """从案例中学习目标函数参数"""
+        lr = learning_rate or self.learning_rate
+        predicted = self.predict_target(skill_id, features, state)
+        target = 1.0 if actual_helpful else 0.0
+        error = target - predicted
+
+        # 更新基础目标
+        if skill_id in self.base_targets:
+            if self.use_adam:
+                self._adam_update(skill_id, lr * error)
+            else:
+                self.base_targets[skill_id] += lr * error
+
+        # 更新条件权重
+        if skill_id == "compare_skill":
+            self._update_condition_weights([
+                ("compare_uncertainty_medium", features.get("uncertainty_medium", 0.0)),
+                ("compare_uncertainty_high", features.get("uncertainty_high", 0.0)),
+                ("compare_incorrect", 1.0 if self._is_incorrect(state) else 0.0),
+                ("compare_top_gap_small", features.get("top_gap_small", 0.0)),
+                ("compare_has_multiple_candidates", 1.0 if len(state.get_top_ddx_names()) >= 2 else 0.0),                ("compare_high_confidence", features.get("high_confidence", 0.0)),
+                ("compare_low_confidence", features.get("low_confidence", 0.0)),            ], error, lr)
+
+        elif skill_id == "malignancy_risk_skill":
+            self._update_condition_weights([
+                ("malignancy_true_malignant", 1.0 if self._is_true_malignant(state) else 0.0),
+                ("malignancy_has_malignant_candidate", features.get("has_malignant_candidate", 0.0)),
+                ("malignancy_multiple_malignant", features.get("multiple_malignant_candidates", 0.0)),
+            ], error, lr)
+
+        elif skill_id == "metadata_consistency_skill":
+            self._update_condition_weights([
+                ("metadata_has_metadata", features.get("metadata_present", 0.0)),
+                ("metadata_low_confidence", features.get("retrieval_low", 0.0)),
+                ("metadata_not_supports_top1", 1.0 - features.get("supports_top1", 0.0)),
+                ("metadata_incorrect", 1.0 if self._is_incorrect(state) else 0.0),
+                ("metadata_age_match", features.get("age_match", 0.0)),
+                ("metadata_site_match", features.get("site_match", 0.0)),
+            ], error, lr)
+
+        elif skill_id in ["ack_scc_specialist_skill", "bcc_scc_specialist_skill",
+                         "bcc_sek_specialist_skill", "mel_nev_specialist_skill"]:
+            self._update_condition_weights([
+                ("specialist_pair_present", self._has_specialist_pair(skill_id, features)),
+                ("specialist_retrieval_recommends", self._retrieval_recommends(skill_id, features)),
+                ("specialist_confusion_support", features.get("has_confusion_support", 0.0)),
+                ("specialist_top1_uncertain", features.get("top1_uncertain", 0.0)),
+            ], error, lr)
+
+    def _update_condition_weights(self, conditions: List[Tuple[str, float]], error: float, lr: float) -> None:
+        """更新条件权重"""
+        for cond_name, cond_value in conditions:
+            if cond_name in self.condition_weights:
+                gradient = lr * error * cond_value
+                if self.use_adam:
+                    self._adam_update(cond_name, gradient)
+                else:
+                    self.condition_weights[cond_name] += gradient
+
+    def _adam_update(self, param_name: str, gradient: float) -> None:
+        """Adam优化器更新"""
+        self.t += 1
+
+        # 初始化矩
+        if param_name not in self.m:
+            self.m[param_name] = 0.0
+            self.v[param_name] = 0.0
+
+        # 更新一阶矩
+        self.m[param_name] = self.beta1 * self.m[param_name] + (1 - self.beta1) * gradient
+        # 更新二阶矩
+        self.v[param_name] = self.beta2 * self.v[param_name] + (1 - self.beta2) * gradient**2
+
+        # 偏差校正
+        m_hat = self.m[param_name] / (1 - self.beta1**self.t)
+        v_hat = self.v[param_name] / (1 - self.beta2**self.t)
+
+        # 更新参数
+        if param_name in self.condition_weights:
+            self.condition_weights[param_name] += self.learning_rate * m_hat / (v_hat**0.5 + self.epsilon)
+        elif param_name in self.base_targets:
+            self.base_targets[param_name] += self.learning_rate * m_hat / (v_hat**0.5 + self.epsilon)
+
+    def _is_incorrect(self, state: CaseState) -> bool:
+        true_label = str((state.case_info or {}).get("true_label", "")).strip().upper()
+        final_label = str(
+            (state.final_decision or {}).get("final_label")
+            or (state.final_decision or {}).get("diagnosis")
+            or ""
+        ).strip().upper()
+        return bool(true_label) and final_label and true_label != final_label
+
+    def _is_true_malignant(self, state: CaseState) -> bool:
+        true_label = str((state.case_info or {}).get("true_label", "")).strip().upper()
+        return true_label in {"MEL", "BCC", "SCC"}
+
+    def _has_specialist_pair(self, skill_id: str, features: Dict[str, float]) -> float:
+        pair_map = {
+            "ack_scc_specialist_skill": "has_ack_scc_pair",
+            "bcc_scc_specialist_skill": "has_bcc_scc_pair",
+            "bcc_sek_specialist_skill": "has_bcc_sek_pair",
+            "mel_nev_specialist_skill": "has_mel_nev_pair",
+        }
+        return features.get(pair_map.get(skill_id, ""), 0.0)
+
+    def _retrieval_recommends(self, skill_id: str, features: Dict[str, float]) -> float:
+        rec_map = {
+            "ack_scc_specialist_skill": "retrieval_recommends_ack_scc",
+            "bcc_scc_specialist_skill": "retrieval_recommends_bcc_scc",
+            "bcc_sek_specialist_skill": "retrieval_recommends_bcc_sek",
+            "mel_nev_specialist_skill": "retrieval_recommends_mel_nev",
+        }
+        return features.get(rec_map.get(skill_id, ""), 0.0)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "learning_rate": self.learning_rate,
+            "base_targets": {k: round(v, 4) for k, v in self.base_targets.items()},
+            "condition_weights": {k: round(v, 4) for k, v in self.condition_weights.items()},
+        }
+
+    def load_state(self, payload: Dict[str, Any]) -> None:
+        if not isinstance(payload, dict):
+            return
+        if "base_targets" in payload:
+            self.base_targets.update(payload["base_targets"])
+        if "condition_weights" in payload:
+            self.condition_weights.update(payload["condition_weights"])
+
+
 class LearnableSkillController:
     """
     Second-version controller.
@@ -22,10 +275,12 @@ class LearnableSkillController:
         *,
         learning_rate: float = 0.08,
         max_skills: int = 4,
+        use_adam: bool = True,
     ) -> None:
         self.skill_index = skill_index
         self.learning_rate = learning_rate
         self.max_skills = max_skills
+        self.target_learner = TargetLearner(learning_rate=learning_rate, use_adam=use_adam)
         self.stop_weights: Dict[str, float] = {
             "bias": 0.15,
             "uncertainty_low": 0.9,
@@ -285,6 +540,10 @@ class LearnableSkillController:
             helpful = spec.skill_id in state.selected_skills and (is_correct or target >= 0.65)
             if spec.skill_id in state.selected_skills:
                 spec.record_use(helpful=helpful)
+
+            # 更新目标学习器
+            self.target_learner.update_from_case(spec.skill_id, features, state, helpful, self.learning_rate)
+
             feedback["updated_skills"].append(
                 {
                     "skill_id": spec.skill_id,
@@ -352,6 +611,7 @@ class LearnableSkillController:
         return {
             "learning_rate": self.learning_rate,
             "max_skills": self.max_skills,
+            "target_learner": self.target_learner.to_dict(),
             "stop_weights": {
                 key: round(float(value), 6)
                 for key, value in sorted(self.stop_weights.items())
@@ -365,6 +625,8 @@ class LearnableSkillController:
             self.learning_rate = float(payload["learning_rate"])
         if payload.get("max_skills") is not None:
             self.max_skills = int(payload["max_skills"])
+        if "target_learner" in payload:
+            self.target_learner.load_state(payload["target_learner"])
         stop_weights = payload.get("stop_weights", {}) or {}
         if stop_weights:
             self.stop_weights = {
@@ -373,37 +635,30 @@ class LearnableSkillController:
             }
 
     def _build_targets(self, state: CaseState) -> Dict[str, float]:
-        top_names = state.get_top_ddx_names(top_k=3)
-        metadata = state.get_metadata()
-        retrieval_summary = state.retrieval.get("retrieval_summary", {}) or {}
-        true_label = str((state.case_info or {}).get("true_label", "")).strip().upper()
-        final_label = str(
-            (state.final_decision or {}).get("final_label")
-            or (state.final_decision or {}).get("diagnosis")
-            or ""
-        ).strip().upper()
-        incorrect = bool(true_label) and final_label and true_label != final_label
-        case_features = state.planner.get("case_features", {}) or {}
-        top_gap_small = bool(case_features.get("top_gap_small", False))
-        has_malignant_candidate = bool(
-            case_features.get("has_malignant_candidate", bool({"MEL", "BCC", "SCC"}.intersection(top_names)))
-        )
-        skill_outputs = state.skill_outputs or {}
+        # 提取特征用于目标预测
+        features = self.extract_features(state, planner_context={
+            "case_features": state.planner.get("case_features", {}) or {},
+            "decision_trace": state.planner.get("decision_trace", []) or [],
+            "flags": state.planner.get("flags", {}) or {},
+        })
 
-        targets = {
-            "uncertainty_assessment_skill": 1.0,
-            "compare_skill": 0.85 if (state.get_uncertainty_level() in {"medium", "high"} or incorrect or top_gap_small) else (0.35 if len(top_names) >= 2 else 0.0),
-            "malignancy_risk_skill": 0.8 if true_label in {"MEL", "BCC", "SCC"} else (0.45 if has_malignant_candidate else 0.0),
-            "metadata_consistency_skill": 0.7 if metadata and (
-                str(retrieval_summary.get("retrieval_confidence", "low")).lower() == "low"
-                or not retrieval_summary.get("supports_top1", False)
-                or incorrect
-            ) else (0.25 if metadata else 0.0),
-            "ack_scc_specialist_skill": 0.85 if {"ACK", "SCC"}.issubset(set(top_names)) else (0.35 if true_label in {"ACK", "SCC"} and "SCC" in top_names else 0.0),
-            "bcc_scc_specialist_skill": 0.85 if {"BCC", "SCC"}.issubset(set(top_names)) else (0.35 if true_label in {"BCC", "SCC"} and bool({"BCC", "SCC"}.intersection(set(top_names))) else 0.0),
-            "bcc_sek_specialist_skill": 0.85 if {"BCC", "SEK"}.issubset(set(top_names)) else (0.35 if true_label in {"BCC", "SEK"} and bool({"BCC", "SEK"}.intersection(set(top_names))) else 0.0),
-            "mel_nev_specialist_skill": 0.85 if {"MEL", "NEV"}.issubset(set(top_names)) else (0.35 if true_label in {"MEL", "NEV"} and "NEV" in top_names else 0.0),
-        }
+        # 使用可学习的目标函数预测每个技能的目标值
+        targets = {}
+        for skill_id in [
+            "uncertainty_assessment_skill",
+            "compare_skill",
+            "malignancy_risk_skill",
+            "metadata_consistency_skill",
+            "ack_scc_specialist_skill",
+            "bcc_scc_specialist_skill",
+            "bcc_sek_specialist_skill",
+            "mel_nev_specialist_skill",
+        ]:
+            targets[skill_id] = self.target_learner.predict_target(skill_id, features, state)
+
+        # 应用决策支持调整（保持原有逻辑）
+        skill_outputs = state.skill_outputs or {}
+        true_label = str((state.case_info or {}).get("true_label", "")).strip().upper()
 
         targets["compare_skill"] = self._decision_support_target(
             output=skill_outputs.get("compare_skill", {}) or {},

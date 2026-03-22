@@ -8,14 +8,274 @@ from memory.experience_bank import ExperienceBank
 from memory.experience_reranker import UtilityAwareExperienceReranker
 
 
+class LearnableRetrievalScorer:
+    """可学习的检索打分器，将规则式打分变成参数化学习"""
+
+    def __init__(self, learning_rate: float = 0.05, use_adam: bool = True):
+        self.learning_rate = learning_rate
+        self.use_adam = use_adam
+
+        # Adam优化器参数
+        if use_adam:
+            self.beta1 = 0.9
+            self.beta2 = 0.999
+            self.epsilon = 1e-8
+            self.m = {}  # 一阶矩
+            self.v = {}  # 二阶矩
+            self.t = 0   # 时间步
+
+        # 打分权重 - 将硬编码的分数变成可学习的参数
+        self.score_weights = {
+            # 疾病匹配相关
+            "disease_exact_match": 4.0,
+            "disease_partial_match": 2.0,
+
+            # 元数据相似性
+            "metadata_age_match": 1.5,
+            "metadata_site_match": 1.0,
+            "metadata_history_match": 0.8,
+
+            # 置信度和不确定性
+            "confidence_match": 0.8,
+            "uncertainty_match": 0.6,
+
+            # 视觉特征相似性
+            "visual_cues_overlap": 1.2,
+            "risk_cues_match": 0.7,
+
+            # 时间和使用频率
+            "recency_bonus": 0.3,
+            "frequency_penalty": -0.1,
+        }
+
+        # 特征权重 - 用于学习哪些特征更重要
+        self.feature_importance = {
+            "disease_match": 1.0,
+            "metadata_similarity": 0.8,
+            "confidence_alignment": 0.6,
+            "visual_similarity": 0.7,
+            "temporal_factors": 0.3,
+        }
+
+    def score_raw_case(self, case_item: Dict[str, Any], query_state: CaseState) -> float:
+        """计算原始病例的匹配分数"""
+        score = 0.0
+        features_used = {}
+
+        # 疾病匹配
+        case_disease = str(case_item.get("disease", "")).strip().upper()
+        query_diseases = set(query_state.get_top_ddx_names(top_k=5))
+        if case_disease in query_diseases:
+            score += self.score_weights["disease_exact_match"]
+            features_used["disease_match"] = 1.0
+        elif case_disease:  # 部分匹配逻辑可以扩展
+            score += self.score_weights["disease_partial_match"] * 0.5
+            features_used["disease_match"] = 0.5
+
+        # 元数据相似性
+        metadata_score = self._score_metadata_similarity(case_item, query_state)
+        score += metadata_score
+        features_used["metadata_similarity"] = min(1.0, metadata_score / 2.0)
+
+        # 置信度对齐
+        confidence_score = self._score_confidence_alignment(case_item, query_state)
+        score += confidence_score
+        features_used["confidence_alignment"] = min(1.0, confidence_score / 1.0)
+
+        # 视觉相似性
+        visual_score = self._score_visual_similarity(case_item, query_state)
+        score += visual_score
+        features_used["visual_similarity"] = min(1.0, visual_score / 2.0)
+
+        # 时间因素
+        temporal_score = self._score_temporal_factors(case_item)
+        score += temporal_score
+        features_used["temporal_factors"] = min(1.0, temporal_score / 0.5)
+
+        case_item["_retrieval_score"] = score
+        case_item["_score_features"] = features_used
+        return score
+
+    def _score_metadata_similarity(self, case_item: Dict[str, Any], query_state: CaseState) -> float:
+        """计算元数据相似性分数"""
+        score = 0.0
+        case_metadata = case_item.get("metadata", {}) or {}
+        query_metadata = query_state.get_metadata()
+
+        # 年龄匹配
+        case_age = case_metadata.get("age")
+        query_age = query_metadata.get("age")
+        if case_age and query_age and abs(case_age - query_age) <= 5:
+            score += self.score_weights["metadata_age_match"]
+
+        # 部位匹配
+        case_site = str(case_metadata.get("site", "")).lower()
+        query_site = str(query_metadata.get("site", "")).lower()
+        if case_site and query_site and case_site in query_site or query_site in case_site:
+            score += self.score_weights["metadata_site_match"]
+
+        # 病史匹配
+        case_history = str(case_metadata.get("history", "")).lower()
+        query_history = str(query_metadata.get("history", "")).lower()
+        if case_history and query_history:
+            common_words = set(case_history.split()) & set(query_history.split())
+            if len(common_words) > 2:
+                score += self.score_weights["metadata_history_match"]
+
+        return score
+
+    def _score_confidence_alignment(self, case_item: Dict[str, Any], query_state: CaseState) -> float:
+        """计算置信度对齐分数"""
+        score = 0.0
+
+        # 比较不确定性水平
+        case_uncertainty = case_item.get("perception", {}).get("uncertainty_level", "medium")
+        query_uncertainty = query_state.get_uncertainty_level()
+
+        if case_uncertainty == query_uncertainty:
+            score += self.score_weights["uncertainty_match"]
+
+        # 比较置信度
+        case_confidence = case_item.get("final_decision", {}).get("confidence", "medium")
+        query_confidence = query_state.retrieval.get("retrieval_summary", {}).get("retrieval_confidence", "medium")
+
+        if case_confidence == query_confidence:
+            score += self.score_weights["confidence_match"]
+
+        return score
+
+    def _score_visual_similarity(self, case_item: Dict[str, Any], query_state: CaseState) -> float:
+        """计算视觉相似性分数"""
+        score = 0.0
+
+        case_cues = set(case_item.get("perception", {}).get("visual_cues", []))
+        query_cues = set(query_state.perception.get("visual_cues", []))
+
+        if case_cues and query_cues:
+            overlap = len(case_cues & query_cues)
+            union = len(case_cues | query_cues)
+            if union > 0:
+                jaccard = overlap / union
+                score += self.score_weights["visual_cues_overlap"] * jaccard
+
+        # 风险线索匹配
+        case_risks = set(case_item.get("perception", {}).get("risk_cues", {}).get("malignant_cues", []))
+        query_risks = set(query_state.perception.get("risk_cues", {}).get("malignant_cues", []))
+
+        if case_risks and query_risks:
+            risk_overlap = len(case_risks & query_risks)
+            if risk_overlap > 0:
+                score += self.score_weights["risk_cues_match"]
+
+        return score
+
+    def _score_temporal_factors(self, case_item: Dict[str, Any]) -> float:
+        """计算时间相关因素"""
+        score = 0.0
+
+        # 最近使用奖励
+        last_used = case_item.get("last_accessed")
+        if last_used:
+            # 简单的时效性奖励，可以扩展为更复杂的逻辑
+            score += self.score_weights["recency_bonus"]
+
+        # 使用频率惩罚（避免过度依赖热门案例）
+        access_count = case_item.get("access_count", 0)
+        if access_count > 10:
+            score += self.score_weights["frequency_penalty"] * min(5, access_count / 10)
+
+        return score
+
+    def update_from_feedback(self, case_item: Dict[str, Any], was_helpful: bool, learning_rate: float = None) -> None:
+        """从检索结果的反馈中学习"""
+        lr = learning_rate or self.learning_rate
+        features = case_item.get("_score_features", {})
+
+        for feature_name, feature_value in features.items():
+            if feature_name in self.feature_importance:
+                # 如果这个案例有帮助，增加相应特征的权重
+                # 如果没有帮助，减少权重
+                adjustment = lr * feature_value * (1.0 if was_helpful else -1.0)
+
+                if self.use_adam:
+                    self._adam_update(f"importance_{feature_name}", adjustment)
+                    # 同时调整具体的打分权重
+                    related_weights = self._get_related_weights(feature_name)
+                    for weight_name in related_weights:
+                        self._adam_update(f"weight_{weight_name}", adjustment * 0.1)
+                else:
+                    self.feature_importance[feature_name] += adjustment
+                    # 同时调整具体的打分权重
+                    related_weights = self._get_related_weights(feature_name)
+                    for weight_name in related_weights:
+                        if weight_name in self.score_weights:
+                            self.score_weights[weight_name] += adjustment * 0.1  # 更保守的调整
+
+    def _adam_update(self, param_name: str, gradient: float) -> None:
+        """Adam优化器更新"""
+        self.t += 1
+
+        # 初始化矩
+        if param_name not in self.m:
+            self.m[param_name] = 0.0
+            self.v[param_name] = 0.0
+
+        # 更新一阶矩
+        self.m[param_name] = self.beta1 * self.m[param_name] + (1 - self.beta1) * gradient
+        # 更新二阶矩
+        self.v[param_name] = self.beta2 * self.v[param_name] + (1 - self.beta2) * gradient**2
+
+        # 偏差校正
+        m_hat = self.m[param_name] / (1 - self.beta1**self.t)
+        v_hat = self.v[param_name] / (1 - self.beta2**self.t)
+
+        # 更新参数
+        if param_name.startswith("importance_"):
+            feature_name = param_name[len("importance_"):]
+            if feature_name in self.feature_importance:
+                self.feature_importance[feature_name] += self.learning_rate * m_hat / (v_hat**0.5 + self.epsilon)
+        elif param_name.startswith("weight_"):
+            weight_name = param_name[len("weight_"):]
+            if weight_name in self.score_weights:
+                self.score_weights[weight_name] += self.learning_rate * m_hat / (v_hat**0.5 + self.epsilon)
+
+    def _get_related_weights(self, feature_name: str) -> List[str]:
+        """获取与特征相关的权重名称"""
+        mapping = {
+            "disease_match": ["disease_exact_match", "disease_partial_match"],
+            "metadata_similarity": ["metadata_age_match", "metadata_site_match", "metadata_history_match"],
+            "confidence_alignment": ["confidence_match", "uncertainty_match"],
+            "visual_similarity": ["visual_cues_overlap", "risk_cues_match"],
+            "temporal_factors": ["recency_bonus", "frequency_penalty"],
+        }
+        return mapping.get(feature_name, [])
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "learning_rate": self.learning_rate,
+            "score_weights": {k: round(v, 4) for k, v in self.score_weights.items()},
+            "feature_importance": {k: round(v, 4) for k, v in self.feature_importance.items()},
+        }
+
+    def load_state(self, payload: Dict[str, Any]) -> None:
+        if not isinstance(payload, dict):
+            return
+        if "score_weights" in payload:
+            self.score_weights.update(payload["score_weights"])
+        if "feature_importance" in payload:
+            self.feature_importance.update(payload["feature_importance"])
+
+
 class ExperienceRetriever:
     def __init__(
         self,
         bank: ExperienceBank,
         reranker: UtilityAwareExperienceReranker | None = None,
+        scorer: LearnableRetrievalScorer | None = None,
     ) -> None:
         self.bank = bank
         self.reranker = reranker
+        self.scorer = scorer or LearnableRetrievalScorer()
 
     def retrieve(self, state: CaseState, top_k: int = 5) -> Dict[str, Any]:
         all_items = self.bank.list_all()
@@ -90,26 +350,8 @@ class ExperienceRetriever:
         return [x[1] for x in scored[:top_k]]
 
     def _score_raw_case(self, item: Dict[str, Any], state: CaseState) -> float:
-        score = 0.0
-        current_top_names = set(state.get_top_ddx_names(top_k=5))
-        metadata = state.get_metadata()
-
-        final_diag = str(item.get("final_decision", {}).get("diagnosis", "")).upper()
-        if final_diag and final_diag in current_top_names:
-            score += 4.0
-
-        hist_ddx = {
-            str(x.get("name", "")).upper()
-            for x in item.get("perception", {}).get("ddx", [])
-            if str(x.get("name", "")).strip()
-        }
-        score += 1.5 * len(current_top_names.intersection(hist_ddx))
-        score += self._score_metadata_similarity(metadata, item.get("metadata", {}) or {})
-
-        uncertainty_level = str(item.get("tags", {}).get("uncertainty_level", "")).lower()
-        if uncertainty_level == "low":
-            score += 0.5
-        return score
+        # 使用可学习的打分器
+        return self.scorer.score_raw_case(item, state)
 
     def _retrieve_prototypes(self, all_items: List[Dict[str, Any]], state: CaseState, top_k: int) -> List[Dict[str, Any]]:
         scored: List[Tuple[float, Dict[str, Any]]] = []
@@ -453,3 +695,20 @@ class ExperienceRetriever:
         if value is None:
             return ""
         return str(value).strip().lower()
+
+    def update_from_feedback(self, retrieved_cases: List[Dict[str, Any]], was_helpful: bool) -> None:
+        """从检索结果的反馈中更新打分器"""
+        for case_item in retrieved_cases:
+            if "_score_features" in case_item:
+                self.scorer.update_from_feedback(case_item, was_helpful)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "scorer": self.scorer.to_dict(),
+        }
+
+    def load_state(self, payload: Dict[str, Any]) -> None:
+        if not isinstance(payload, dict):
+            return
+        if "scorer" in payload:
+            self.scorer.load_state(payload["scorer"])
