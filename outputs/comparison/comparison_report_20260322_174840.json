@@ -1,0 +1,550 @@
+{
+  "timestamp": "2026-03-22T17:48:40.840583",
+  "test_count": 20,
+  "agent_results": {
+    "success": true,
+    "metrics": {
+      "accuracy_top1": 0.5,
+      "accuracy_top3": 0.75,
+      "malignant_recall": 1.0,
+      "confusion_accuracy": 1.0
+    },
+    "per_case": [
+      {
+        "case_id": "PAT_1516_1765_530.png",
+        "true_label": "NEV",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "SCC"
+        ],
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "is_ack_scc_case": false,
+        "ack_scc_correct": false,
+        "error": null,
+        "selected_skills": [
+          "compare_skill",
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1359
+      },
+      {
+        "case_id": "PAT_1549_1882_230.png",
+        "true_label": "SEK",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "SCC",
+          "BCC"
+        ],
+        "is_top1_correct": false,
+        "is_top3_correct": false,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "is_ack_scc_case": false,
+        "ack_scc_correct": false,
+        "error": null,
+        "selected_skills": [
+          "compare_skill",
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1359
+      },
+      {
+        "case_id": "PAT_1995_4080_695.png",
+        "true_label": "ACK",
+        "predicted_label": "ACK",
+        "top3": [
+          "ACK",
+          "SCC",
+          "NEV"
+        ],
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "is_ack_scc_case": true,
+        "ack_scc_correct": true,
+        "error": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "compare_skill",
+          "metadata_consistency_skill",
+          "ack_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2315
+      },
+      {
+        "case_id": "PAT_636_1204_521.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "top3": [
+          "SCC",
+          "BCC",
+          "NEV"
+        ],
+        "is_top1_correct": false,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "is_ack_scc_case": false,
+        "ack_scc_correct": false,
+        "error": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "compare_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2315
+      }
+    ],
+    "total_cases": 4,
+    "errors": 0
+  },
+  "qwen_direct_results": {
+    "success": true,
+    "metrics": {
+      "accuracy_top1": 0.15,
+      "malignant_recall": 1.0
+    },
+    "per_case": [
+      {
+        "case_id": "PAT_1516_1765_530.png",
+        "true_label": "NEV",
+        "predicted_label": "NEV",
+        "confidence": 0.9,
+        "is_correct": true,
+        "raw_text": "{\n  \"diagnosis\": \"NEV\",\n  \"top_k\": [\"NEV\", \"MEL\", \"SEK\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion appears as a well-circumscribed, slightly elevated, brownish patch on the arm, which is characteristic of a nevus (mole). The clinical history is not provided, but the appearance suggests a benign lesion without concerning features for malignancy such as irregular borders, asymmetry, or color variation.\"\n}",
+        "raw_response": {
+          "diagnosis": "NEV",
+          "top_k": [
+            "NEV",
+            "MEL",
+            "SEK"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion appears as a well-circumscribed, slightly elevated, brownish patch on the arm, which is characteristic of a nevus (mole). The clinical history is not provided, but the appearance suggests a benign lesion without concerning features for malignancy such as irregular borders, asymmetry, or color variation."
+        },
+        "reasoning": "The lesion appears as a well-circumscribed, slightly elevated, brownish patch on the arm, which is characteristic of a nevus (mole). The clinical history is not provided, but the appearance suggests a benign lesion without concerning features for malignancy such as irregular borders, asymmetry, or color variation.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_46_881_939.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"BCC\", \"ACK\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion is erythematous, elevated, and has a central ulceration, which is consistent with squamous cell carcinoma (SCC). The history of growth, change, and bleeding also supports this diagnosis. Basal cell carcinoma (BCC) and actinic keratosis (ACK) can present similarly but typically have different clinical features that are less prominent in this case.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "BCC",
+            "ACK"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion is erythematous, elevated, and has a central ulceration, which is consistent with squamous cell carcinoma (SCC). The history of growth, change, and bleeding also supports this diagnosis. Basal cell carcinoma (BCC) and actinic keratosis (ACK) can present similarly but typically have different clinical features that are less prominent in this case."
+        },
+        "reasoning": "The lesion is erythematous, elevated, and has a central ulceration, which is consistent with squamous cell carcinoma (SCC). The history of growth, change, and bleeding also supports this diagnosis. Basal cell carcinoma (BCC) and actinic keratosis (ACK) can present similarly but typically have different clinical features that are less prominent in this case.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_1545_1867_547.png",
+        "true_label": "ACK",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as an erythematous plaque with irregular borders and some scaling, which is consistent with squamous cell carcinoma (SCC). The patient's age and location on the face also increase the likelihood of SCC. However, the differential diagnosis includes actinic keratosis (ACK) and basal cell carcinoma (BCC), given the clinical history of itching and the appearance of the lesion.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as an erythematous plaque with irregular borders and some scaling, which is consistent with squamous cell carcinoma (SCC). The patient's age and location on the face also increase the likelihood of SCC. However, the differential diagnosis includes actinic keratosis (ACK) and basal cell carcinoma (BCC), given the clinical history of itching and the appearance of the lesion."
+        },
+        "reasoning": "The lesion appears as an erythematous plaque with irregular borders and some scaling, which is consistent with squamous cell carcinoma (SCC). The patient's age and location on the face also increase the likelihood of SCC. However, the differential diagnosis includes actinic keratosis (ACK) and basal cell carcinoma (BCC), given the clinical history of itching and the appearance of the lesion.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_1989_4061_934.png",
+        "true_label": "ACK",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a scaly, erythematous patch on the hand, which is consistent with squamous cell carcinoma (SCC). The clinical history of itch also supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on the image alone.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a scaly, erythematous patch on the hand, which is consistent with squamous cell carcinoma (SCC). The clinical history of itch also supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on the image alone."
+        },
+        "reasoning": "The lesion appears as a scaly, erythematous patch on the hand, which is consistent with squamous cell carcinoma (SCC). The clinical history of itch also supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on the image alone.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_684_1302_588.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.9,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion is erythematous, elevated, and has a history of growth and bleeding, which are common features of squamous cell carcinoma (SCC). The presence of an ulcerated area also supports this diagnosis. While basal cell carcinoma (BCC) can have similar features, the clinical history and appearance favor SCC as the primary diagnosis.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion is erythematous, elevated, and has a history of growth and bleeding, which are common features of squamous cell carcinoma (SCC). The presence of an ulcerated area also supports this diagnosis. While basal cell carcinoma (BCC) can have similar features, the clinical history and appearance favor SCC as the primary diagnosis."
+        },
+        "reasoning": "The lesion is erythematous, elevated, and has a history of growth and bleeding, which are common features of squamous cell carcinoma (SCC). The presence of an ulcerated area also supports this diagnosis. While basal cell carcinoma (BCC) can have similar features, the clinical history and appearance favor SCC as the primary diagnosis.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_1549_1882_230.png",
+        "true_label": "SEK",
+        "predicted_label": "SEK",
+        "confidence": 0.33,
+        "is_correct": true,
+        "raw_text": "{\n  \"diagnosis\": \"SEK\",\n  \"top_k\": [\"SEK\", \"NEV\"],\n  \"confidence\": \"low\",\n  \"reasoning\": \"The lesion appears as a small, slightly elevated area with a dark center, which is characteristic of seborrheic keratosis. However, the clinical history of itching and elevation suggests it could also be a nevus.\"\n}",
+        "raw_response": {
+          "diagnosis": "SEK",
+          "top_k": [
+            "SEK",
+            "NEV"
+          ],
+          "confidence": "low",
+          "reasoning": "The lesion appears as a small, slightly elevated area with a dark center, which is characteristic of seborrheic keratosis. However, the clinical history of itching and elevation suggests it could also be a nevus."
+        },
+        "reasoning": "The lesion appears as a small, slightly elevated area with a dark center, which is characteristic of seborrheic keratosis. However, the clinical history of itching and elevation suggests it could also be a nevus.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_778_1471_835.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.9,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion exhibits features consistent with squamous cell carcinoma (SCC), including growth, change in appearance, bleeding, and elevation. The clinical history supports the diagnosis as well.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion exhibits features consistent with squamous cell carcinoma (SCC), including growth, change in appearance, bleeding, and elevation. The clinical history supports the diagnosis as well."
+        },
+        "reasoning": "The lesion exhibits features consistent with squamous cell carcinoma (SCC), including growth, change in appearance, bleeding, and elevation. The clinical history supports the diagnosis as well.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_117_179_983.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion is elevated, ulcerated, and has a crusty surface, which is consistent with squamous cell carcinoma (SCC). The history of growth, pain, and bleeding also supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on the image alone.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion is elevated, ulcerated, and has a crusty surface, which is consistent with squamous cell carcinoma (SCC). The history of growth, pain, and bleeding also supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on the image alone."
+        },
+        "reasoning": "The lesion is elevated, ulcerated, and has a crusty surface, which is consistent with squamous cell carcinoma (SCC). The history of growth, pain, and bleeding also supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on the image alone.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_1995_4080_695.png",
+        "true_label": "ACK",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a raised, erythematous area with a slightly irregular border, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The history of itch and change in the lesion also supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on the image alone.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a raised, erythematous area with a slightly irregular border, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The history of itch and change in the lesion also supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on the image alone."
+        },
+        "reasoning": "The lesion appears as a raised, erythematous area with a slightly irregular border, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The history of itch and change in the lesion also supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on the image alone.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_705_4015_413.png",
+        "true_label": "ACK",
+        "predicted_label": "BCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"BCC\",\n  \"top_k\": [\"BCC\", \"SCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as a raised, warty growth on the forearm, which is characteristic of basal cell carcinoma (BCC). The clinical history of growth also supports this diagnosis.\"\n}",
+        "raw_response": {
+          "diagnosis": "BCC",
+          "top_k": [
+            "BCC",
+            "SCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as a raised, warty growth on the forearm, which is characteristic of basal cell carcinoma (BCC). The clinical history of growth also supports this diagnosis."
+        },
+        "reasoning": "The lesion appears as a raised, warty growth on the forearm, which is characteristic of basal cell carcinoma (BCC). The clinical history of growth also supports this diagnosis.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_2140_4726_141.png",
+        "true_label": "ACK",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as an elevated, slightly erythematous area on the neck, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The itching and elevation suggest a potentially malignant process. However, further evaluation with biopsy is necessary for definitive diagnosis.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as an elevated, slightly erythematous area on the neck, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The itching and elevation suggest a potentially malignant process. However, further evaluation with biopsy is necessary for definitive diagnosis."
+        },
+        "reasoning": "The lesion appears as an elevated, slightly erythematous area on the neck, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The itching and elevation suggest a potentially malignant process. However, further evaluation with biopsy is necessary for definitive diagnosis.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_967_1827_247.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears elevated, erythematous, and crusty, which is consistent with squamous cell carcinoma (SCC). The clinical history of itch and bleeding further supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on the provided information alone.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears elevated, erythematous, and crusty, which is consistent with squamous cell carcinoma (SCC). The clinical history of itch and bleeding further supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on the provided information alone."
+        },
+        "reasoning": "The lesion appears elevated, erythematous, and crusty, which is consistent with squamous cell carcinoma (SCC). The clinical history of itch and bleeding further supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out based on the provided information alone.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_2088_4524_465.png",
+        "true_label": "NEV",
+        "predicted_label": "SEK",
+        "confidence": 0.33,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SEK\",\n  \"top_k\": [\"SEK\", \"NEV\", \"MEL\"],\n  \"confidence\": \"low\",\n  \"reasoning\": \"The lesion appears as a small, slightly raised, brownish spot on the chest, which is not typical for SCC, BCC, or ACK. However, the clinical history is missing, making it difficult to provide a confident diagnosis.\"\n}",
+        "raw_response": {
+          "diagnosis": "SEK",
+          "top_k": [
+            "SEK",
+            "NEV",
+            "MEL"
+          ],
+          "confidence": "low",
+          "reasoning": "The lesion appears as a small, slightly raised, brownish spot on the chest, which is not typical for SCC, BCC, or ACK. However, the clinical history is missing, making it difficult to provide a confident diagnosis."
+        },
+        "reasoning": "The lesion appears as a small, slightly raised, brownish spot on the chest, which is not typical for SCC, BCC, or ACK. However, the clinical history is missing, making it difficult to provide a confident diagnosis.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_636_1204_521.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.9,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"BCC\", \"ACK\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion exhibits characteristics of SCC including ulceration, elevation, and bleeding, which are common in squamous cell carcinomas. The clinical history of itch, growth, pain, change, and bleeding further supports this diagnosis.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "BCC",
+            "ACK"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion exhibits characteristics of SCC including ulceration, elevation, and bleeding, which are common in squamous cell carcinomas. The clinical history of itch, growth, pain, change, and bleeding further supports this diagnosis."
+        },
+        "reasoning": "The lesion exhibits characteristics of SCC including ulceration, elevation, and bleeding, which are common in squamous cell carcinomas. The clinical history of itch, growth, pain, change, and bleeding further supports this diagnosis.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_38_54_234.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as an erythematous, slightly raised area on the thigh, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The presence of itching also supports this diagnosis. However, other conditions like actinic keratosis (ACK) and basal cell carcinoma (BCC) cannot be ruled out without histopathological confirmation.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as an erythematous, slightly raised area on the thigh, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The presence of itching also supports this diagnosis. However, other conditions like actinic keratosis (ACK) and basal cell carcinoma (BCC) cannot be ruled out without histopathological confirmation."
+        },
+        "reasoning": "The lesion appears as an erythematous, slightly raised area on the thigh, which is consistent with the clinical presentation of squamous cell carcinoma (SCC). The presence of itching also supports this diagnosis. However, other conditions like actinic keratosis (ACK) and basal cell carcinoma (BCC) cannot be ruled out without histopathological confirmation.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_741_1401_619.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears elevated and slightly erythematous, which is consistent with squamous cell carcinoma (SCC). The clinical history of itching and elevation supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without biopsy.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears elevated and slightly erythematous, which is consistent with squamous cell carcinoma (SCC). The clinical history of itching and elevation supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without biopsy."
+        },
+        "reasoning": "The lesion appears elevated and slightly erythematous, which is consistent with squamous cell carcinoma (SCC). The clinical history of itching and elevation supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without biopsy.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_380_1540_959.png",
+        "true_label": "SCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": true,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as an erythematous, slightly elevated area on the nose, which is a common location for squamous cell carcinoma (SCC). The presence of itching suggests chronic irritation, which can be associated with SCC. However, other conditions like actinic keratosis (ACK) and basal cell carcinoma (BCC) also need to be considered due to their similar presentations in sun-exposed areas.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as an erythematous, slightly elevated area on the nose, which is a common location for squamous cell carcinoma (SCC). The presence of itching suggests chronic irritation, which can be associated with SCC. However, other conditions like actinic keratosis (ACK) and basal cell carcinoma (BCC) also need to be considered due to their similar presentations in sun-exposed areas."
+        },
+        "reasoning": "The lesion appears as an erythematous, slightly elevated area on the nose, which is a common location for squamous cell carcinoma (SCC). The presence of itching suggests chronic irritation, which can be associated with SCC. However, other conditions like actinic keratosis (ACK) and basal cell carcinoma (BCC) also need to be considered due to their similar presentations in sun-exposed areas.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_1783_3414_120.png",
+        "true_label": "SEK",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears elevated on the scalp, which is a common presentation for squamous cell carcinoma (SCC). The irregular borders and color variation suggest malignancy. However, further evaluation is necessary for a definitive diagnosis.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears elevated on the scalp, which is a common presentation for squamous cell carcinoma (SCC). The irregular borders and color variation suggest malignancy. However, further evaluation is necessary for a definitive diagnosis."
+        },
+        "reasoning": "The lesion appears elevated on the scalp, which is a common presentation for squamous cell carcinoma (SCC). The irregular borders and color variation suggest malignancy. However, further evaluation is necessary for a definitive diagnosis.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_759_1538_566.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.9,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"high\",\n  \"reasoning\": \"The lesion is erythematous, elevated, and has a history of growth and bleeding, which are common features of squamous cell carcinoma (SCC). The location on the nose and the clinical history also support this diagnosis.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "high",
+          "reasoning": "The lesion is erythematous, elevated, and has a history of growth and bleeding, which are common features of squamous cell carcinoma (SCC). The location on the nose and the clinical history also support this diagnosis."
+        },
+        "reasoning": "The lesion is erythematous, elevated, and has a history of growth and bleeding, which are common features of squamous cell carcinoma (SCC). The location on the nose and the clinical history also support this diagnosis.",
+        "error": null
+      },
+      {
+        "case_id": "PAT_821_1547_77.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "confidence": 0.66,
+        "is_correct": false,
+        "raw_text": "{\n  \"diagnosis\": \"SCC\",\n  \"top_k\": [\"SCC\", \"ACK\", \"BCC\"],\n  \"confidence\": \"medium\",\n  \"reasoning\": \"The lesion appears as an elevated, slightly erythematous area on the nose, which is consistent with squamous cell carcinoma (SCC). The clinical history of itching and elevation supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without histopathological confirmation.\"\n}",
+        "raw_response": {
+          "diagnosis": "SCC",
+          "top_k": [
+            "SCC",
+            "ACK",
+            "BCC"
+          ],
+          "confidence": "medium",
+          "reasoning": "The lesion appears as an elevated, slightly erythematous area on the nose, which is consistent with squamous cell carcinoma (SCC). The clinical history of itching and elevation supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without histopathological confirmation."
+        },
+        "reasoning": "The lesion appears as an elevated, slightly erythematous area on the nose, which is consistent with squamous cell carcinoma (SCC). The clinical history of itching and elevation supports this diagnosis. However, basal cell carcinoma (BCC) and actinic keratosis (ACK) cannot be ruled out without histopathological confirmation.",
+        "error": null
+      }
+    ],
+    "total_cases": 20,
+    "valid_cases": 20,
+    "errors": 0
+  },
+  "comparison": {
+    "accuracy_improvement": {
+      "agent": 0.5,
+      "qwen_direct": 0.15,
+      "improvement_percentage": 233.33333333333334,
+      "absolute_improvement": 0.35
+    },
+    "malignant_recall_improvement": {
+      "agent": 1.0,
+      "qwen_direct": 1.0,
+      "improvement_percentage": 0.0,
+      "absolute_improvement": 0.0
+    },
+    "agent_efficiency": {
+      "total_cases": 4,
+      "errors": 0,
+      "error_rate": 0.0
+    },
+    "qwen_efficiency": {
+      "total_cases": 20,
+      "errors": 0,
+      "error_rate": 0.0
+    },
+    "conclusion": "✅ Agent框架在准确率上优于直接Qwen（+35.0%）"
+  },
+  "duration_seconds": 38.422664
+}
