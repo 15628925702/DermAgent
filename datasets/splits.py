@@ -103,7 +103,9 @@ def load_or_create_split_manifest(
 ) -> Dict[str, Any]:
     split_path = Path(path)
     if split_path.exists():
-        return load_split_manifest(split_path)
+        payload = load_split_manifest(split_path)
+        if _manifest_matches_cases(payload, cases):
+            return payload
     payload = build_stratified_split(
         cases,
         seed=seed,
@@ -139,6 +141,28 @@ def summarize_split_cases(cases: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
         "num_cases": len(cases),
         "label_counts": dict(sorted(label_counts.items())),
     }
+
+
+def _manifest_matches_cases(payload: Dict[str, Any], cases: Sequence[Dict[str, Any]]) -> bool:
+    if not isinstance(payload, dict):
+        return False
+
+    manifest_num_cases = int(payload.get("num_cases", -1) or -1)
+    current_case_ids = {get_case_id(case) for case in cases}
+    if manifest_num_cases != len(current_case_ids):
+        return False
+
+    split_payload = payload.get("splits", {}) or {}
+    manifest_case_ids = {
+        str(case_id).strip()
+        for split_case_ids in split_payload.values()
+        for case_id in (split_case_ids or [])
+        if str(case_id).strip()
+    }
+    if manifest_case_ids != current_case_ids:
+        return False
+
+    return True
 
 
 def _normalize_ratios(ratios: Dict[str, float]) -> Dict[str, float]:
