@@ -150,6 +150,7 @@ def run_agent(
         planner = ExperienceSkillPlanner(
             use_specialist=use_specialist,
             controller=controller if use_controller else None,
+            evidence_calibrator=evidence_calibrator,
             rule_scorer=rule_scorer if use_controller else None,
             planning_mode="learnable_hybrid" if use_controller else "rules_only",
             enabled_skills=set(registry.keys()),

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 from agent.controller import LearnableSkillController
+from agent.evidence_calibrator import LearnableEvidenceCalibrator
 from agent.rule_scorer import LearnableRuleScorer
 from agent.state import CaseState
 
@@ -38,12 +39,14 @@ class ExperienceSkillPlanner:
         self,
         use_specialist: bool = True,
         controller: LearnableSkillController | None = None,
+        evidence_calibrator: LearnableEvidenceCalibrator | None = None,
         rule_scorer: LearnableRuleScorer | None = None,
         planning_mode: str = "learnable_hybrid",
         enabled_skills: set[str] | None = None,
     ) -> None:
         self.use_specialist = use_specialist
         self.controller = controller
+        self.evidence_calibrator = evidence_calibrator
         self.rule_scorer = rule_scorer
         self.planning_mode = planning_mode
         self.enabled_skills = enabled_skills or set()
@@ -406,7 +409,7 @@ class ExperienceSkillPlanner:
             state=state,
         )
         if pair_set.issubset(set(top_names)):
-            if learned_score >= self.LEARNED_SPECIALIST_THRESHOLD:
+            if learned_score >= self._specialist_gate_threshold():
                 return True, "learned_specialist_score"
             if ambiguous_context and self._pair_in_top2(target_pair, top_names):
                 return True, "pair_present_in_top_k"
@@ -448,7 +451,7 @@ class ExperienceSkillPlanner:
             recommended_skills=[],
             state=state,
         )
-        if learned_score >= self.LEARNED_METADATA_THRESHOLD:
+        if learned_score >= self._metadata_gate_threshold():
             return True
         if str(case_features["uncertainty"]) in {"medium", "high"}:
             return True
@@ -549,6 +552,16 @@ class ExperienceSkillPlanner:
             return float(target_learner.predict_target(skill_name, features, state))
         except Exception:
             return 0.0
+
+    def _specialist_gate_threshold(self) -> float:
+        if self.evidence_calibrator is None:
+            return float(self.LEARNED_SPECIALIST_THRESHOLD)
+        return self.evidence_calibrator.get_weight("planner_specialist_threshold", self.LEARNED_SPECIALIST_THRESHOLD)
+
+    def _metadata_gate_threshold(self) -> float:
+        if self.evidence_calibrator is None:
+            return float(self.LEARNED_METADATA_THRESHOLD)
+        return self.evidence_calibrator.get_weight("planner_metadata_threshold", self.LEARNED_METADATA_THRESHOLD)
 
     def _site_matches(self, site: str, keywords: List[str]) -> bool:
         if not site:

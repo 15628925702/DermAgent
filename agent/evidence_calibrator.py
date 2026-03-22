@@ -32,6 +32,8 @@ class LearnableEvidenceCalibrator:
             self.t = 0
 
         self.weights: Dict[str, float] = {
+            "planner_specialist_threshold": 0.95,
+            "planner_metadata_threshold": 0.92,
             "specialist_support_scale": 1.0,
             "specialist_repeat_decay": 0.35,
             "specialist_overlap_decay": 0.15,
@@ -46,6 +48,8 @@ class LearnableEvidenceCalibrator:
             "skill_correction_metadata": 0.10,
         }
         self.bounds: Dict[str, tuple[float, float]] = {
+            "planner_specialist_threshold": (0.65, 0.99),
+            "planner_metadata_threshold": (0.60, 0.99),
             "specialist_support_scale": (0.35, 1.8),
             "specialist_repeat_decay": (0.10, 0.70),
             "specialist_overlap_decay": (0.05, 0.40),
@@ -88,6 +92,7 @@ class LearnableEvidenceCalibrator:
         metadata_support_signal = 0.0
         metadata_penalty_signal = 0.0
         metadata_bonus_signal = 0.0
+        metadata_threshold_signal = 0.0
 
         if true_label in supported:
             metadata_support_signal += 1.0
@@ -102,11 +107,20 @@ class LearnableEvidenceCalibrator:
                 metadata_bonus_signal += 1.0
             if pred_label == "BCC" and pred_label != true_label:
                 metadata_bonus_signal -= 1.0
+        if true_label in supported:
+            metadata_threshold_signal -= 0.4
+        if true_label in penalized:
+            metadata_threshold_signal += 0.5
+        if pred_label != true_label and pred_label in supported:
+            metadata_threshold_signal += 0.35
+        if pred_label != true_label and pred_label in penalized:
+            metadata_threshold_signal -= 0.2
 
         specialist_votes: Dict[str, int] = {}
         specialist_signal = 0.0
         duplicate_signal = 0.0
         malignant_cap_signal = 0.0
+        specialist_threshold_signal = 0.0
         for skill_name, output in skill_outputs.items():
             if not str(skill_name).endswith("_specialist_skill"):
                 continue
@@ -123,10 +137,12 @@ class LearnableEvidenceCalibrator:
             specialist_votes[recommendation] = specialist_votes.get(recommendation, 0) + 1
             if recommendation == true_label:
                 specialist_signal += confidence
+                specialist_threshold_signal -= 0.35 * confidence
                 if recommendation in {"MEL", "BCC", "SCC"}:
                     malignant_cap_signal += 0.5 * confidence
             elif recommendation == pred_label and pred_label != true_label:
                 specialist_signal -= confidence
+                specialist_threshold_signal += 0.45 * confidence
                 if recommendation in {"MEL", "BCC", "SCC"}:
                     malignant_cap_signal -= 0.7 * confidence
 
@@ -149,7 +165,9 @@ class LearnableEvidenceCalibrator:
         self._update_weight("metadata_support_weight", metadata_support_signal, feedback["weight_updates"])
         self._update_weight("metadata_penalty_weight", metadata_penalty_signal, feedback["weight_updates"])
         self._update_weight("metadata_bcc_bonus", metadata_bonus_signal, feedback["weight_updates"])
+        self._update_weight("planner_metadata_threshold", metadata_threshold_signal, feedback["weight_updates"])
         self._update_weight("skill_correction_metadata", 0.35 * metadata_support_signal + 0.35 * metadata_penalty_signal, feedback["weight_updates"])
+        self._update_weight("planner_specialist_threshold", specialist_threshold_signal - 0.25 * duplicate_signal, feedback["weight_updates"])
         self._update_weight("specialist_support_scale", specialist_signal, feedback["weight_updates"])
         self._update_weight("specialist_repeat_decay", duplicate_signal, feedback["weight_updates"])
         self._update_weight("specialist_overlap_decay", -0.6 * duplicate_signal, feedback["weight_updates"])

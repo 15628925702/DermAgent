@@ -1,5 +1,8 @@
+from agent.controller import LearnableSkillController
+from agent.evidence_calibrator import LearnableEvidenceCalibrator
 from agent.planner import ExperienceSkillPlanner
 from agent.state import create_case_state
+from memory.skill_index import build_default_skill_index
 
 
 def test_planner_records_case_features_and_decision_trace():
@@ -187,3 +190,55 @@ def test_planner_only_triggers_top2_specialist_when_multiple_pairs_overlap():
 
     assert "ack_scc_specialist_skill" in result["selected_skills"]
     assert "bcc_scc_specialist_skill" not in result["selected_skills"]
+
+
+def test_planner_can_use_learned_specialist_threshold_from_calibrator(monkeypatch):
+    state = create_case_state(
+        {
+            "file": "planner5.png",
+            "metadata": {"age": 67, "site": "face"},
+            "text": "",
+        }
+    )
+    state.perception = {
+        "ddx_candidates": [
+            {"name": "BCC", "score": 0.82},
+            {"name": "SCC", "score": 0.14},
+        ],
+        "uncertainty": {"level": "low"},
+        "risk_cues": {"malignant_cues": []},
+    }
+    state.retrieval = {
+        "confusion_hits": [],
+        "rule_hits": [],
+        "retrieval_summary": {
+            "retrieval_confidence": "low",
+            "supports_top1": False,
+            "has_confusion_support": False,
+            "memory_recommended_skills": [],
+            "recommended_skills": [],
+        },
+    }
+
+    controller = LearnableSkillController(build_default_skill_index())
+    monkeypatch.setattr(
+        controller.target_learner,
+        "predict_target",
+        lambda skill_name, features, state: 0.8 if skill_name == "bcc_scc_specialist_skill" else 0.0,
+    )
+    calibrator = LearnableEvidenceCalibrator()
+    calibrator.weights["planner_specialist_threshold"] = 0.75
+
+    planner = ExperienceSkillPlanner(
+        use_specialist=True,
+        controller=controller,
+        evidence_calibrator=calibrator,
+        planning_mode="rules_only",
+        enabled_skills={
+            "uncertainty_assessment_skill",
+            "bcc_scc_specialist_skill",
+        },
+    )
+    result = planner.plan(state)
+
+    assert "bcc_scc_specialist_skill" in result["selected_skills"]
