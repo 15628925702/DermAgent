@@ -1,0 +1,9 @@
+{
+  "learning_rate": 0.05,
+  "weight_decay": 0.01,
+  "batch_size": 1000,
+  "attention_heads": 16,
+  "hidden_dim": 512,
+  "dropout_rate": 0.1,
+  "fusion_method": "attention"
+}

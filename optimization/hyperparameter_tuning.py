@@ -133,11 +133,26 @@ class HyperparameterOptimizer:
         # 保存结果
         self._save_results(study)
 
+        # 将study转为可序列化字典（避免JSON序列化错误）
+        study_info = {
+            'best_value': study.best_value,
+            'best_params': study.best_params,
+            'trials': [
+                {
+                    'number': t.number,
+                    'value': t.value,
+                    'params': t.params,
+                    'state': str(t.state)
+                }
+                for t in study.trials
+            ]
+        }
+
         return {
             'best_params': self.best_params,
             'best_score': self.best_score,
             'all_results': self.results,
-            'study': study
+            'study': study_info
         }
 
     def _save_results(self, study: optuna.Study):
@@ -212,9 +227,20 @@ class GridSearchOptimizer:
 
     def _evaluate_params(self, params: Dict[str, Any]) -> float:
         """评估参数组合"""
-        # 使用与贝叶斯优化相同的模拟函数
+        # 补全缺省超参数，用于缺少的网格参数
+        default_space = HyperparameterSpace()
+        full_params = {
+            'learning_rate': params.get('learning_rate', default_space.learning_rates[0]),
+            'weight_decay': params.get('weight_decay', default_space.weight_decays[0]),
+            'batch_size': params.get('batch_size', default_space.batch_sizes[0]),
+            'attention_heads': params.get('attention_heads', default_space.attention_heads[0]),
+            'hidden_dim': params.get('hidden_dim', default_space.hidden_dims[0]),
+            'dropout_rate': params.get('dropout_rate', default_space.dropout_rates[0]),
+            'fusion_method': params.get('fusion_method', default_space.fusion_methods[0])
+        }
+
         optimizer = HyperparameterOptimizer(HyperparameterSpace())
-        return optimizer._simulate_training(params)
+        return optimizer._simulate_training(full_params)
 
 class EnsembleOptimizer:
     """集成优化策略"""

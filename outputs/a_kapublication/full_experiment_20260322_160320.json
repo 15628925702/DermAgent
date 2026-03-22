@@ -1,0 +1,9 @@
+{
+  "experiment_start": "2026-03-22T16:03:20.218018",
+  "stages": {},
+  "final_results": {},
+  "publication_readiness": {},
+  "error": "'NoneType' object has no attribute 'get_extended_dataset'",
+  "experiment_duration": 4.291534423828125e-05,
+  "experiment_end": "2026-03-22T16:03:20.218061"
+}

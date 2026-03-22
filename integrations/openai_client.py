@@ -346,3 +346,7 @@ Metadata:
             fallback_kwargs = dict(kwargs)
             fallback_kwargs.pop("response_format", None)
             return self.client.chat.completions.create(**fallback_kwargs)
+
+
+# backward compatibility
+OpenAIClient = OpenAICompatClient

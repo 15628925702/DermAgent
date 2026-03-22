@@ -1,0 +1,50 @@
+{
+  "experiment_start": "2026-03-22T16:08:46.565783",
+  "stages": {
+    "data_preparation": {
+      "base_dataset_size": 5000,
+      "augmented_dataset_size": 45000,
+      "expansion_factor": 9.0,
+      "augmentation_types": {
+        "original": 5000,
+        "image": 15000,
+        "metadata": 15000,
+        "cross_dataset_ham10000": 5000,
+        "cross_dataset_isic2019": 5000
+      },
+      "dataset_stats": {
+        "total_cases": 45000,
+        "datasets": {
+          "pad_ufes20": 180,
+          "pad_ufes20_synthetic": 44820
+        },
+        "labels": {
+          "unknown": 35000,
+          "nv": 3313,
+          "NV": 2582,
+          "MEL": 917,
+          "akiec": 149,
+          "mel": 541,
+          "DF": 86,
+          "BCC": 623,
+          "bkl": 577,
+          "bcc": 264,
+          "BKL": 476,
+          "AKIEC": 178,
+          "df": 105,
+          "VASC": 138,
+          "vasc": 51
+        },
+        "metadata_stats": {}
+      },
+      "datasets_used": [
+        "pad_ufes20"
+      ]
+    }
+  },
+  "final_results": {},
+  "publication_readiness": {},
+  "error": "'batch_size'",
+  "experiment_duration": 0.34333133697509766,
+  "experiment_end": "2026-03-22T16:08:46.909112"
+}

@@ -12,6 +12,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 from typing import Dict, List, Any, Optional, Tuple
 import numpy as np
 from dataclasses import dataclass
@@ -243,7 +244,8 @@ class EnhancedAgentTrainer:
     def __init__(self, config: EnhancedConfig):
         self.config = config
         self.model = EnhancedTargetLearner(config)
-        self.optimizer = AdaptiveOptimizer(adaptive=config.adaptive_lr)
+        self.adaptive_optimizer = AdaptiveOptimizer(base_lr=0.02, adaptive=config.adaptive_lr)
+        self.base_optimizer = optim.Adam(self.model.parameters(), lr=0.02, weight_decay=0.01)
         self.curriculum = CurriculumLearningScheduler(100) if config.curriculum_learning else None
 
         # 损失函数
@@ -269,10 +271,15 @@ class EnhancedAgentTrainer:
 
         total_loss = decision_loss + 0.1 * attention_loss
 
+        # 自适应学习率更新
+        lr = self.adaptive_optimizer.get_learning_rate(epoch, [total_loss.item()])
+        for param_group in self.base_optimizer.param_groups:
+            param_group['lr'] = lr
+
         # 反向传播
-        self.optimizer.zero_grad()
+        self.base_optimizer.zero_grad()
         total_loss.backward()
-        self.optimizer.step()
+        self.base_optimizer.step()
 
         return {
             'total_loss': total_loss.item(),

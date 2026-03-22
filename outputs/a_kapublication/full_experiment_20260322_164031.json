@@ -1,0 +1,891 @@
+{
+  "experiment_start": "2026-03-22T16:40:30.836057",
+  "stages": {
+    "data_preparation": {
+      "base_dataset_size": 5000,
+      "augmented_dataset_size": 45000,
+      "expansion_factor": 9.0,
+      "augmentation_types": {
+        "original": 5000,
+        "image": 15000,
+        "metadata": 15000,
+        "cross_dataset_ham10000": 5000,
+        "cross_dataset_isic2019": 5000
+      },
+      "dataset_stats": {
+        "total_cases": 45000,
+        "datasets": {
+          "pad_ufes20": 41364,
+          "pad_ufes20_synthetic": 3636
+        },
+        "labels": {
+          "NEV": 3689,
+          "bkl": 592,
+          "BCC": 13553,
+          "mel": 563,
+          "BKL": 489,
+          "ACK": 11095,
+          "VASC": 136,
+          "nv": 3330,
+          "DF": 87,
+          "NV": 2472,
+          "SEK": 3605,
+          "MEL": 1740,
+          "bcc": 235,
+          "SCC": 2926,
+          "df": 90,
+          "akiec": 137,
+          "AKIEC": 208,
+          "vasc": 53
+        },
+        "metadata_stats": {}
+      },
+      "datasets_used": [
+        "pad_ufes20"
+      ]
+    },
+    "hyperparameter_optimization": {
+      "best_params": {
+        "learning_rate": 0.05,
+        "weight_decay": 0.01,
+        "batch_size": 500,
+        "attention_heads": 4,
+        "hidden_dim": 1024,
+        "dropout_rate": 0.2,
+        "fusion_method": "gated"
+      },
+      "best_score": 0.5916878635377255,
+      "all_results": [
+        {
+          "params": {
+            "learning_rate": 0.01,
+            "weight_decay": 0.001,
+            "batch_size": 100,
+            "attention_heads": 4,
+            "hidden_dim": 768,
+            "dropout_rate": 0.2,
+            "fusion_method": "concat"
+          },
+          "score": 0.4205327871582076,
+          "trial": 0
+        },
+        {
+          "params": {
+            "learning_rate": 0.02,
+            "weight_decay": 0.001,
+            "batch_size": 200,
+            "attention_heads": 8,
+            "hidden_dim": 768,
+            "dropout_rate": 0.1,
+            "fusion_method": "gated"
+          },
+          "score": 0.5017687015326195,
+          "trial": 1
+        },
+        {
+          "params": {
+            "learning_rate": 0.005,
+            "weight_decay": 0.01,
+            "batch_size": 1000,
+            "attention_heads": 12,
+            "hidden_dim": 768,
+            "dropout_rate": 0.3,
+            "fusion_method": "gated"
+          },
+          "score": 0.5176428853120477,
+          "trial": 2
+        },
+        {
+          "params": {
+            "learning_rate": 0.02,
+            "weight_decay": 0.001,
+            "batch_size": 1000,
+            "attention_heads": 16,
+            "hidden_dim": 512,
+            "dropout_rate": 0.1,
+            "fusion_method": "attention"
+          },
+          "score": 0.5217777635121926,
+          "trial": 3
+        },
+        {
+          "params": {
+            "learning_rate": 0.005,
+            "weight_decay": 0.1,
+            "batch_size": 200,
+            "attention_heads": 16,
+            "hidden_dim": 768,
+            "dropout_rate": 0.5,
+            "fusion_method": "attention"
+          },
+          "score": 0.39532718773190784,
+          "trial": 4
+        },
+        {
+          "params": {
+            "learning_rate": 0.005,
+            "weight_decay": 0.001,
+            "batch_size": 500,
+            "attention_heads": 8,
+            "hidden_dim": 512,
+            "dropout_rate": 0.2,
+            "fusion_method": "gated"
+          },
+          "score": 0.4487997656136583,
+          "trial": 5
+        },
+        {
+          "params": {
+            "learning_rate": 0.01,
+            "weight_decay": 0.1,
+            "batch_size": 500,
+            "attention_heads": 16,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.5,
+            "fusion_method": "gated"
+          },
+          "score": 0.4359021258909097,
+          "trial": 6
+        },
+        {
+          "params": {
+            "learning_rate": 0.005,
+            "weight_decay": 0.001,
+            "batch_size": 1000,
+            "attention_heads": 16,
+            "hidden_dim": 256,
+            "dropout_rate": 0.3,
+            "fusion_method": "concat"
+          },
+          "score": 0.43588298642946566,
+          "trial": 7
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.1,
+            "batch_size": 500,
+            "attention_heads": 4,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.2,
+            "fusion_method": "gated"
+          },
+          "score": 0.5440774909292468,
+          "trial": 8
+        },
+        {
+          "params": {
+            "learning_rate": 0.01,
+            "weight_decay": 0.1,
+            "batch_size": 100,
+            "attention_heads": 12,
+            "hidden_dim": 256,
+            "dropout_rate": 0.5,
+            "fusion_method": "attention"
+          },
+          "score": 0.3682512587680399,
+          "trial": 9
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.01,
+            "batch_size": 500,
+            "attention_heads": 4,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.2,
+            "fusion_method": "gated"
+          },
+          "score": 0.5730642811574365,
+          "trial": 10
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.01,
+            "batch_size": 500,
+            "attention_heads": 4,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.2,
+            "fusion_method": "gated"
+          },
+          "score": 0.5613788653457156,
+          "trial": 11
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.01,
+            "batch_size": 500,
+            "attention_heads": 4,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.2,
+            "fusion_method": "gated"
+          },
+          "score": 0.580981375615633,
+          "trial": 12
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.01,
+            "batch_size": 500,
+            "attention_heads": 4,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.2,
+            "fusion_method": "gated"
+          },
+          "score": 0.5450880860085536,
+          "trial": 13
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.01,
+            "batch_size": 500,
+            "attention_heads": 4,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.2,
+            "fusion_method": "gated"
+          },
+          "score": 0.5916878635377255,
+          "trial": 14
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.01,
+            "batch_size": 500,
+            "attention_heads": 4,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.2,
+            "fusion_method": "concat"
+          },
+          "score": 0.5575584252624184,
+          "trial": 15
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.01,
+            "batch_size": 500,
+            "attention_heads": 4,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.2,
+            "fusion_method": "gated"
+          },
+          "score": 0.522684425084712,
+          "trial": 16
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.01,
+            "batch_size": 100,
+            "attention_heads": 4,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.3,
+            "fusion_method": "gated"
+          },
+          "score": 0.4842798322604118,
+          "trial": 17
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.01,
+            "batch_size": 200,
+            "attention_heads": 8,
+            "hidden_dim": 256,
+            "dropout_rate": 0.1,
+            "fusion_method": "concat"
+          },
+          "score": 0.5330371246999862,
+          "trial": 18
+        },
+        {
+          "params": {
+            "learning_rate": 0.02,
+            "weight_decay": 0.01,
+            "batch_size": 500,
+            "attention_heads": 12,
+            "hidden_dim": 512,
+            "dropout_rate": 0.2,
+            "fusion_method": "attention"
+          },
+          "score": 0.47035905114688026,
+          "trial": 19
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.01,
+            "batch_size": 500,
+            "attention_heads": 4,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.2,
+            "fusion_method": "gated"
+          },
+          "score": 0.5893332105325303,
+          "trial": 20
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.01,
+            "batch_size": 500,
+            "attention_heads": 4,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.2,
+            "fusion_method": "gated"
+          },
+          "score": 0.5410035270284108,
+          "trial": 21
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.01,
+            "batch_size": 500,
+            "attention_heads": 4,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.2,
+            "fusion_method": "gated"
+          },
+          "score": 0.5813476755475061,
+          "trial": 22
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.01,
+            "batch_size": 500,
+            "attention_heads": 4,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.2,
+            "fusion_method": "gated"
+          },
+          "score": 0.5784503926781727,
+          "trial": 23
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.01,
+            "batch_size": 500,
+            "attention_heads": 4,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.2,
+            "fusion_method": "gated"
+          },
+          "score": 0.5490080396732929,
+          "trial": 24
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.01,
+            "batch_size": 500,
+            "attention_heads": 4,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.2,
+            "fusion_method": "gated"
+          },
+          "score": 0.5329341938328079,
+          "trial": 25
+        },
+        {
+          "params": {
+            "learning_rate": 0.05,
+            "weight_decay": 0.01,
+            "batch_size": 1000,
+            "attention_heads": 4,
+            "hidden_dim": 1024,
+            "dropout_rate": 0.3,
+            "fusion_method": "gated"
+          },
+          "score": 0.5734470021202065,
+          "trial": 26
+        },
+        {
+          "params": {
+            "learning_rate": 0.01,
+            "weight_decay": 0.01,
+            "batch_size": 200,
+            "attention_heads": 8,
+            "hidden_dim": 256,
+            "dropout_rate": 0.1,
+            "fusion_method": "gated"
+          },
+          "score": 0.39284621341090287,
+          "trial": 27
+        },
+        {
+          "params": {
+            "learning_rate": 0.02,
+            "weight_decay": 0.1,
+            "batch_size": 100,
+            "attention_heads": 12,
+            "hidden_dim": 512,
+            "dropout_rate": 0.5,
+            "fusion_method": "attention"
+          },
+          "score": 0.42615101621043794,
+          "trial": 28
+        },
+        {
+          "params": {
+            "learning_rate": 0.01,
+            "weight_decay": 0.01,
+            "batch_size": 100,
+            "attention_heads": 4,
+            "hidden_dim": 768,
+            "dropout_rate": 0.2,
+            "fusion_method": "concat"
+          },
+          "score": 0.37946711333009236,
+          "trial": 29
+        }
+      ],
+      "study": {
+        "best_value": 0.5916878635377255,
+        "best_params": {
+          "learning_rate": 0.05,
+          "weight_decay": 0.01,
+          "batch_size": 500,
+          "attention_heads": 4,
+          "hidden_dim": 1024,
+          "dropout_rate": 0.2,
+          "fusion_method": "gated"
+        },
+        "trials": [
+          {
+            "number": 0,
+            "value": 0.4205327871582076,
+            "params": {
+              "learning_rate": 0.01,
+              "weight_decay": 0.001,
+              "batch_size": 100,
+              "attention_heads": 4,
+              "hidden_dim": 768,
+              "dropout_rate": 0.2,
+              "fusion_method": "concat"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 1,
+            "value": 0.5017687015326195,
+            "params": {
+              "learning_rate": 0.02,
+              "weight_decay": 0.001,
+              "batch_size": 200,
+              "attention_heads": 8,
+              "hidden_dim": 768,
+              "dropout_rate": 0.1,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 2,
+            "value": 0.5176428853120477,
+            "params": {
+              "learning_rate": 0.005,
+              "weight_decay": 0.01,
+              "batch_size": 1000,
+              "attention_heads": 12,
+              "hidden_dim": 768,
+              "dropout_rate": 0.3,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 3,
+            "value": 0.5217777635121926,
+            "params": {
+              "learning_rate": 0.02,
+              "weight_decay": 0.001,
+              "batch_size": 1000,
+              "attention_heads": 16,
+              "hidden_dim": 512,
+              "dropout_rate": 0.1,
+              "fusion_method": "attention"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 4,
+            "value": 0.39532718773190784,
+            "params": {
+              "learning_rate": 0.005,
+              "weight_decay": 0.1,
+              "batch_size": 200,
+              "attention_heads": 16,
+              "hidden_dim": 768,
+              "dropout_rate": 0.5,
+              "fusion_method": "attention"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 5,
+            "value": 0.4487997656136583,
+            "params": {
+              "learning_rate": 0.005,
+              "weight_decay": 0.001,
+              "batch_size": 500,
+              "attention_heads": 8,
+              "hidden_dim": 512,
+              "dropout_rate": 0.2,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 6,
+            "value": 0.4359021258909097,
+            "params": {
+              "learning_rate": 0.01,
+              "weight_decay": 0.1,
+              "batch_size": 500,
+              "attention_heads": 16,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.5,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 7,
+            "value": 0.43588298642946566,
+            "params": {
+              "learning_rate": 0.005,
+              "weight_decay": 0.001,
+              "batch_size": 1000,
+              "attention_heads": 16,
+              "hidden_dim": 256,
+              "dropout_rate": 0.3,
+              "fusion_method": "concat"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 8,
+            "value": 0.5440774909292468,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.1,
+              "batch_size": 500,
+              "attention_heads": 4,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.2,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 9,
+            "value": 0.3682512587680399,
+            "params": {
+              "learning_rate": 0.01,
+              "weight_decay": 0.1,
+              "batch_size": 100,
+              "attention_heads": 12,
+              "hidden_dim": 256,
+              "dropout_rate": 0.5,
+              "fusion_method": "attention"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 10,
+            "value": 0.5730642811574365,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.01,
+              "batch_size": 500,
+              "attention_heads": 4,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.2,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 11,
+            "value": 0.5613788653457156,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.01,
+              "batch_size": 500,
+              "attention_heads": 4,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.2,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 12,
+            "value": 0.580981375615633,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.01,
+              "batch_size": 500,
+              "attention_heads": 4,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.2,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 13,
+            "value": 0.5450880860085536,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.01,
+              "batch_size": 500,
+              "attention_heads": 4,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.2,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 14,
+            "value": 0.5916878635377255,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.01,
+              "batch_size": 500,
+              "attention_heads": 4,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.2,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 15,
+            "value": 0.5575584252624184,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.01,
+              "batch_size": 500,
+              "attention_heads": 4,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.2,
+              "fusion_method": "concat"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 16,
+            "value": 0.522684425084712,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.01,
+              "batch_size": 500,
+              "attention_heads": 4,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.2,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 17,
+            "value": 0.4842798322604118,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.01,
+              "batch_size": 100,
+              "attention_heads": 4,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.3,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 18,
+            "value": 0.5330371246999862,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.01,
+              "batch_size": 200,
+              "attention_heads": 8,
+              "hidden_dim": 256,
+              "dropout_rate": 0.1,
+              "fusion_method": "concat"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 19,
+            "value": 0.47035905114688026,
+            "params": {
+              "learning_rate": 0.02,
+              "weight_decay": 0.01,
+              "batch_size": 500,
+              "attention_heads": 12,
+              "hidden_dim": 512,
+              "dropout_rate": 0.2,
+              "fusion_method": "attention"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 20,
+            "value": 0.5893332105325303,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.01,
+              "batch_size": 500,
+              "attention_heads": 4,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.2,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 21,
+            "value": 0.5410035270284108,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.01,
+              "batch_size": 500,
+              "attention_heads": 4,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.2,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 22,
+            "value": 0.5813476755475061,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.01,
+              "batch_size": 500,
+              "attention_heads": 4,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.2,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 23,
+            "value": 0.5784503926781727,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.01,
+              "batch_size": 500,
+              "attention_heads": 4,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.2,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 24,
+            "value": 0.5490080396732929,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.01,
+              "batch_size": 500,
+              "attention_heads": 4,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.2,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 25,
+            "value": 0.5329341938328079,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.01,
+              "batch_size": 500,
+              "attention_heads": 4,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.2,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 26,
+            "value": 0.5734470021202065,
+            "params": {
+              "learning_rate": 0.05,
+              "weight_decay": 0.01,
+              "batch_size": 1000,
+              "attention_heads": 4,
+              "hidden_dim": 1024,
+              "dropout_rate": 0.3,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 27,
+            "value": 0.39284621341090287,
+            "params": {
+              "learning_rate": 0.01,
+              "weight_decay": 0.01,
+              "batch_size": 200,
+              "attention_heads": 8,
+              "hidden_dim": 256,
+              "dropout_rate": 0.1,
+              "fusion_method": "gated"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 28,
+            "value": 0.42615101621043794,
+            "params": {
+              "learning_rate": 0.02,
+              "weight_decay": 0.1,
+              "batch_size": 100,
+              "attention_heads": 12,
+              "hidden_dim": 512,
+              "dropout_rate": 0.5,
+              "fusion_method": "attention"
+            },
+            "state": "TrialState.COMPLETE"
+          },
+          {
+            "number": 29,
+            "value": 0.37946711333009236,
+            "params": {
+              "learning_rate": 0.01,
+              "weight_decay": 0.01,
+              "batch_size": 100,
+              "attention_heads": 4,
+              "hidden_dim": 768,
+              "dropout_rate": 0.2,
+              "fusion_method": "concat"
+            },
+            "state": "TrialState.COMPLETE"
+          }
+        ]
+      }
+    }
+  },
+  "final_results": {},
+  "publication_readiness": {},
+  "error": "TheoreticalAnalysis.agent_architecture_advantage() missing 1 required positional argument: 'architecture_config'",
+  "experiment_duration": 0.8023526668548584,
+  "experiment_end": "2026-03-22T16:40:31.638407"
+}

@@ -1,0 +1,53 @@
+{
+  "experiment_start": "2026-03-22T16:34:55.134694",
+  "stages": {
+    "data_preparation": {
+      "base_dataset_size": 5000,
+      "augmented_dataset_size": 45000,
+      "expansion_factor": 9.0,
+      "augmentation_types": {
+        "original": 5000,
+        "image": 15000,
+        "metadata": 15000,
+        "cross_dataset_ham10000": 5000,
+        "cross_dataset_isic2019": 5000
+      },
+      "dataset_stats": {
+        "total_cases": 45000,
+        "datasets": {
+          "pad_ufes20": 41364,
+          "pad_ufes20_synthetic": 3636
+        },
+        "labels": {
+          "NEV": 3731,
+          "nv": 3303,
+          "NV": 2495,
+          "BCC": 13525,
+          "mel": 592,
+          "ACK": 11137,
+          "bkl": 573,
+          "SEK": 3605,
+          "MEL": 1686,
+          "akiec": 142,
+          "BKL": 522,
+          "SCC": 2849,
+          "AKIEC": 185,
+          "VASC": 164,
+          "DF": 101,
+          "bcc": 245,
+          "df": 95,
+          "vasc": 50
+        },
+        "metadata_stats": {}
+      },
+      "datasets_used": [
+        "pad_ufes20"
+      ]
+    }
+  },
+  "final_results": {},
+  "publication_readiness": {},
+  "error": "Object of type Study is not JSON serializable",
+  "experiment_duration": 0.8680629730224609,
+  "experiment_end": "2026-03-22T16:34:56.002735"
+}

@@ -354,18 +354,26 @@ class DataAugmentationPipeline:
             aug_cases = self.augment_case(case, augmentation_config)
             augmented_dataset.extend(aug_cases)
 
-        print(f"增强完成，最终数据集大小: {len(augmented_dataset)}")
-        print(f"扩增倍数: {len(augmented_dataset) / len(cases):.1f}x")
+        augmented_size = len(augmented_dataset)
+        original_size = len(cases)
+        expansion_factor = (augmented_size / original_size) if original_size > 0 else 0.0
+
+        print(f"增强完成，最终数据集大小: {augmented_size}")
+        print(f"扩增倍数: {expansion_factor:.1f}x")
 
         return augmented_dataset
 
     def get_augmentation_stats(self, original_cases: List[Dict[str, Any]],
                               augmented_cases: List[Dict[str, Any]]) -> Dict[str, Any]:
         """获取增强统计"""
+        original_size = len(original_cases)
+        augmented_size = len(augmented_cases)
+        expansion_factor = (augmented_size / original_size) if original_size > 0 else 0.0
+
         stats = {
-            'original_size': len(original_cases),
-            'augmented_size': len(augmented_cases),
-            'expansion_factor': len(augmented_cases) / len(original_cases),
+            'original_size': original_size,
+            'augmented_size': augmented_size,
+            'expansion_factor': expansion_factor,
             'augmentation_types': {}
         }
 

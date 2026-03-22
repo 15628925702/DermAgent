@@ -1,0 +1,151 @@
+{
+  "timestamp": "2026-03-22T17:11:36.925009",
+  "test_count": 20,
+  "agent_results": {
+    "success": true,
+    "metrics": {
+      "accuracy_top1": 0.5,
+      "accuracy_top3": 0.75,
+      "malignant_recall": 1.0,
+      "confusion_accuracy": 1.0
+    },
+    "per_case": [
+      {
+        "case_id": "PAT_1516_1765_530.png",
+        "true_label": "NEV",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "SCC"
+        ],
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "is_ack_scc_case": false,
+        "ack_scc_correct": false,
+        "error": null,
+        "selected_skills": [
+          "compare_skill",
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1359
+      },
+      {
+        "case_id": "PAT_1549_1882_230.png",
+        "true_label": "SEK",
+        "predicted_label": "NEV",
+        "top3": [
+          "NEV",
+          "SCC",
+          "BCC"
+        ],
+        "is_top1_correct": false,
+        "is_top3_correct": false,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "is_ack_scc_case": false,
+        "ack_scc_correct": false,
+        "error": null,
+        "selected_skills": [
+          "compare_skill",
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.1359
+      },
+      {
+        "case_id": "PAT_1995_4080_695.png",
+        "true_label": "ACK",
+        "predicted_label": "ACK",
+        "top3": [
+          "ACK",
+          "SCC",
+          "NEV"
+        ],
+        "is_top1_correct": true,
+        "is_top3_correct": true,
+        "is_malignant_case": false,
+        "malignant_recalled": false,
+        "is_ack_scc_case": true,
+        "ack_scc_correct": true,
+        "error": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "compare_skill",
+          "metadata_consistency_skill",
+          "ack_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2315
+      },
+      {
+        "case_id": "PAT_636_1204_521.png",
+        "true_label": "BCC",
+        "predicted_label": "SCC",
+        "top3": [
+          "SCC",
+          "BCC",
+          "NEV"
+        ],
+        "is_top1_correct": false,
+        "is_top3_correct": true,
+        "is_malignant_case": true,
+        "malignant_recalled": true,
+        "is_ack_scc_case": false,
+        "ack_scc_correct": false,
+        "error": null,
+        "selected_skills": [
+          "uncertainty_assessment_skill",
+          "metadata_consistency_skill",
+          "compare_skill",
+          "bcc_scc_specialist_skill"
+        ],
+        "planner_mode": "learnable_hybrid",
+        "stop_probability": 0.2315
+      }
+    ],
+    "total_cases": 4,
+    "errors": 0
+  },
+  "qwen_direct_results": {
+    "success": true,
+    "metrics": {
+      "accuracy_top1": 0.0,
+      "malignant_recall": 0.0
+    },
+    "per_case": [],
+    "total_cases": 20,
+    "valid_cases": 0,
+    "errors": 20
+  },
+  "comparison": {
+    "accuracy_improvement": {
+      "agent": 0.5,
+      "qwen_direct": 0.0,
+      "improvement_percentage": 50000000.0,
+      "absolute_improvement": 0.5
+    },
+    "malignant_recall_improvement": {
+      "agent": 1.0,
+      "qwen_direct": 0.0,
+      "improvement_percentage": 100000000.0,
+      "absolute_improvement": 1.0
+    },
+    "agent_efficiency": {
+      "total_cases": 4,
+      "errors": 0,
+      "error_rate": 0.0
+    },
+    "qwen_efficiency": {
+      "total_cases": 20,
+      "errors": 20,
+      "error_rate": 1.0
+    },
+    "conclusion": "\u2705 Agent\u6846\u67b6\u5168\u9762\u4f18\u4e8e\u76f4\u63a5Qwen\uff08\u5e73\u5747\u63d0\u5347 75.0%\uff09"
+  },
+  "duration_seconds": 11.388929
+}
