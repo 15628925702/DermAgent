@@ -1,5 +1,14 @@
 # DermAgent: An Experience-Grounded Agentic Framework for Dermatology Image Triage and Differential Diagnosis
 
+**Running title:** DermAgent for Multimodal Dermatology Reasoning  
+**Keywords:** dermatology AI; medical agent systems; vision-language model; retrieval-augmented diagnosis; multimodal reasoning; fairness evaluation
+
+## Highlights
+- We present an agentic dermatology framework that decomposes perception, retrieval, specialist reasoning, aggregation, and reporting while using the same underlying vision-language model as a direct baseline.
+- Under a frozen, same-model, sample-aligned comparison on PAD-UFES-20, DermAgent substantially improves top-1 accuracy and malignant-case recall over direct Qwen inference.
+- Experience-bank retrieval is the strongest contributor in ablations, while calibrated metadata reasoning and learned scorers become increasingly useful with additional training.
+- We provide an external DDI evaluation pipeline and show that DDI is best used here as a binary robustness and fairness benchmark rather than a six-class primary training source.
+
 ## Abstract
 Large vision-language models can perform direct dermatology image inference, but naive single-shot prompting often underuses clinical metadata, lacks explicit uncertainty handling, and provides little mechanism for iterative experience accumulation. We present **DermAgent**, an agentic dermatology framework that combines a shared vision-language backbone with modular perception, retrieval, metadata-consistency checking, specialist reasoning, learned aggregation, and an experience bank that is updated offline and online. The framework is designed to improve differential diagnosis quality while preserving auditability through structured intermediate outputs.
 
@@ -153,6 +162,26 @@ The current workflow uses a two-stage training regime:
 
 Final comparison and paper-facing evaluation are then run in **frozen mode**.
 
+### 6.6 Implementation Details
+The current implementation uses a Qwen-compatible OpenAI-style inference endpoint for both the direct baseline and the agent branch. The same model name is explicitly propagated into agent perception and reporting to prevent hidden model mismatch. The evaluation code also records fallback counts, model-usage diagnostics, sample alignment, and runtime flags in each exported report.
+
+The main code layers are:
+
+- `agent/` for orchestration, planning, routing, aggregation, and reflection;
+- `skills/` for perception, retrieval, metadata consistency, pairwise specialists, and reporting;
+- `memory/` for the experience bank, reranking, writeback, checkpoint storage, and compression;
+- `scripts/` for training, compare, ablation, quality evaluation, significance testing, figure export, and external DDI evaluation.
+
+### 6.7 Statistical Analysis
+We treat paired internal comparisons as matched-case evaluations. The codebase includes:
+
+- McNemar testing for paired correctness comparisons;
+- paired bootstrap confidence intervals for top-1 difference and malignant-recall difference;
+- calibration analysis through expected calibration error;
+- subgroup reporting for internal and external slices when metadata is available.
+
+At the time of writing, the full paper-facing statistical export pipeline has already been implemented, but the final long-training outputs are still pending.
+
 ## 7. Results
 ### 7.1 Controlled Internal Comparison on PAD-UFES-20
 In the current frozen 100-case internal benchmark slice, DermAgent outperforms direct Qwen inference under same-model and sample-aligned conditions.
@@ -253,7 +282,35 @@ DermAgent is intended for research on assistive diagnostic reasoning, not for au
 
 We explicitly avoid presenting this system as a clinical diagnostic device. The goal is to study whether structured agentic reasoning can improve the reliability and interpretability of multimodal dermatology AI.
 
-## 11. Conclusion
+## 11. Data and Code Availability
+The code for the current research prototype is organized in the DermAgent repository and includes separate entry points for training, comparison, ablation, quality analysis, significance testing, figure export, and external DDI evaluation. PAD-UFES-20 split manifests, learned checkpoints, comparison outputs, and paper-facing artifacts are generated under `outputs/`.
+
+Dataset availability depends on the source dataset:
+
+- PAD-UFES-20 is used as the primary internal benchmark.
+- DDI is used as an external benchmark subject to its original access conditions.
+
+For publication, this section should be updated with the final repository state, release policy, and any dataset-specific access language required by the target journal.
+
+## 12. Author Contributions Statement Template
+This manuscript currently has a single-project authorship draft state. Replace the following template with the actual author list before submission.
+
+- Conceptualization: [Author Names]
+- Methodology: [Author Names]
+- Software: [Author Names]
+- Formal analysis: [Author Names]
+- Investigation: [Author Names]
+- Writing, original draft: [Author Names]
+- Writing, review and editing: [Author Names]
+- Supervision: [Author Names]
+
+## 13. Funding Statement Template
+No funding statement has been inserted in the current draft. Replace this section with the actual grant, lab, institutional, or self-funded support statement before submission.
+
+## 14. Conflict of Interest Statement Template
+The authors declare no competing interests. Replace or edit this statement if the final submission requires a different disclosure.
+
+## 15. Conclusion
 We presented DermAgent, an experience-grounded agentic dermatology framework built around the same vision-language backbone as a direct baseline. By combining structured perception, retrieval, metadata-consistency reasoning, specialist skills, learned aggregation, and an explicit memory system, DermAgent substantially improves performance in a frozen same-model comparison on PAD-UFES-20. The system now also supports external DDI evaluation for robustness and subgroup analysis.
 
 The main engineering work is complete: the remaining step is to run longer training and finalize the paper-facing experiments. This makes the current system a strong **research prototype and paper-ready baseline**, with a clear path toward stronger empirical validation in the next stage.
@@ -284,3 +341,14 @@ When the final overnight run is complete, update the following sections with the
 - Table 2: replace the smoke-checkpoint ablation with the final trained-checkpoint ablation.
 - Section 7.3: insert the final DDI external binary results and subgroup gaps.
 - Add statistical significance values from the final paper evidence suite.
+
+## Appendix C. Suggested Figure Set for Submission
+The current paper package is designed around the following final figures:
+
+1. Agent vs direct-Qwen internal comparison bar chart.
+2. System ablation bar chart.
+3. Per-label internal F1 chart.
+4. Internal calibration curve.
+5. Internal confusion matrix.
+6. External DDI binary metric chart.
+7. External DDI subgroup chart by skin tone or related metadata slice.
