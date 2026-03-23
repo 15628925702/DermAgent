@@ -19,6 +19,7 @@ from agent.evidence_calibrator import LearnableEvidenceCalibrator
 from agent.final_scorer import LearnableFinalScorer
 from agent.rule_scorer import LearnableRuleScorer
 from agent.run_agent import run_agent
+from datasets.splits import load_or_create_split_manifest, select_split_cases
 from evaluation.run_eval import load_pad_ufes20_cases
 from integrations.openai_client import OpenAICompatClient, OpenAIClient
 from memory.controller_store import load_controller_checkpoint
@@ -221,6 +222,10 @@ class ComparisonFramework:
         self,
         test_limit: int = 100,
         *,
+        dataset_root: str = "data/pad_ufes_20",
+        split_json: str | None = None,
+        split_name: str | None = None,
+        seed: int = 42,
         controller_checkpoint: str | None = None,
         bank_state_in: str | None = None,
         online_learning: bool = False,
@@ -229,6 +234,10 @@ class ComparisonFramework:
         use_controller: bool | None = None,
     ) -> None:
         self.test_limit = test_limit
+        self.dataset_root = dataset_root
+        self.split_json = split_json
+        self.split_name = split_name
+        self.seed = seed
         self.controller_checkpoint = controller_checkpoint
         self.bank_state_in = bank_state_in
         self.online_learning = bool(online_learning)
@@ -265,7 +274,11 @@ class ComparisonFramework:
         started_at = datetime.now()
 
         print("📊 加载测试数据...")
-        all_cases = load_pad_ufes20_cases(dataset_root="data/pad_ufes_20", limit=self.test_limit)
+        all_cases = load_pad_ufes20_cases(dataset_root=self.dataset_root, limit=self.test_limit)
+        if self.split_name:
+            split_path = self.split_json or str(Path("outputs/splits") / f"{Path(self.dataset_root).name}_seed{self.seed}.json")
+            split_payload = load_or_create_split_manifest(all_cases, split_path, seed=self.seed)
+            all_cases = select_split_cases(all_cases, split_payload, self.split_name)
         print(f"  已加载 {len(all_cases)} 个测试案例\n")
 
         print("🤖 方案1: Agent+Qwen 框架")
@@ -279,6 +292,10 @@ class ComparisonFramework:
 
         report = {
             "timestamp": datetime.now().isoformat(),
+            "dataset_root": self.dataset_root,
+            "split_json": self.split_json,
+            "split_name": self.split_name,
+            "seed": self.seed,
             "test_count": len(all_cases),
             "agent_results": agent_results,
             "qwen_direct_results": qwen_results,
@@ -805,6 +822,10 @@ class ComparisonFramework:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Compare DermAgent against direct Qwen VLM.")
     parser.add_argument("--test-limit", type=int, default=100, help="Number of cases to compare.")
+    parser.add_argument("--dataset-root", default="data/pad_ufes_20")
+    parser.add_argument("--split-json", default=None)
+    parser.add_argument("--split-name", default=None, choices=["train", "val", "test"])
+    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--controller-checkpoint", default=None, help="Checkpoint for controller/final scorer/rule scorer/evidence calibrator.")
     parser.add_argument("--bank-state-in", default=None, help="Optional experience bank checkpoint.")
     parser.add_argument("--online-learning", action="store_true", help="Enable online updates during compare. Off by default for frozen benchmarking.")
@@ -822,6 +843,10 @@ def main() -> None:
 
     framework = ComparisonFramework(
         test_limit=args.test_limit,
+        dataset_root=args.dataset_root,
+        split_json=args.split_json,
+        split_name=args.split_name,
+        seed=args.seed,
         controller_checkpoint=args.controller_checkpoint,
         bank_state_in=args.bank_state_in,
         online_learning=args.online_learning,

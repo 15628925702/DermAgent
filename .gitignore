@@ -8,6 +8,13 @@ outputs/archive/
 outputs/logs/
 outputs/quick_compare/
 outputs/train_runs/
+outputs/ablation/
+outputs/quality/
+outputs/external_ddi/
+outputs/paper_figures/
+outputs/paper_stats/
+outputs/multiseed/
+outputs/ddi_loader_case_*/
 
 __pycache__/
 *.py[cod]

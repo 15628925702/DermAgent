@@ -28,6 +28,8 @@ def main() -> None:
     parser.add_argument("--bootstrap-bank", default="outputs/checkpoints/bootstrap_bank.json")
     parser.add_argument("--learned-bank", default="outputs/checkpoints/learned_bank_best.json")
     parser.add_argument("--controller-checkpoint", default="outputs/checkpoints/learned_controller_best.json")
+    parser.add_argument("--external-ddi-root", default=None)
+    parser.add_argument("--external-ddi-limit", type=int, default=None)
     args = parser.parse_args()
 
     python = sys.executable
@@ -101,6 +103,21 @@ def main() -> None:
     if args.quality_limit is not None:
         quality_cmd.extend(["--limit", str(args.quality_limit)])
     _run(quality_cmd)
+
+    if args.external_ddi_root:
+        ddi_cmd = [
+            python,
+            "scripts/run_external_ddi_eval.py",
+            "--dataset-root",
+            args.external_ddi_root,
+            "--controller-checkpoint",
+            args.controller_checkpoint,
+            "--bank-state-in",
+            args.learned_bank,
+        ]
+        if args.external_ddi_limit is not None:
+            ddi_cmd.extend(["--limit", str(args.external_ddi_limit)])
+        _run(ddi_cmd)
 
 
 if __name__ == "__main__":

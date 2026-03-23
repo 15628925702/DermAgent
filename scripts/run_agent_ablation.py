@@ -18,6 +18,7 @@ from agent.evidence_calibrator import LearnableEvidenceCalibrator
 from agent.final_scorer import LearnableFinalScorer
 from agent.rule_scorer import LearnableRuleScorer
 from agent.run_agent import run_agent
+from datasets.splits import load_or_create_split_manifest, select_split_cases
 from evaluation.run_eval import load_pad_ufes20_cases
 from integrations.openai_client import OpenAICompatClient
 from memory.controller_store import load_controller_checkpoint
@@ -283,6 +284,10 @@ def _run_direct_qwen(cases: List[Dict[str, Any]]) -> Dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run staged ablation for DermAgent.")
     parser.add_argument("--test-limit", type=int, default=100)
+    parser.add_argument("--dataset-root", default="data/pad_ufes_20")
+    parser.add_argument("--split-json", default=None)
+    parser.add_argument("--split-name", default=None, choices=["train", "val", "test"])
+    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--controller-checkpoint", default=None)
     parser.add_argument("--bank-state-in", default=None)
     parser.add_argument("--output-dir", default="outputs/ablation")
@@ -300,7 +305,11 @@ def main() -> None:
     report_model = str(args.report_model or perception_model)
 
     print("加载对比样本...")
-    cases = load_pad_ufes20_cases(limit=args.test_limit)
+    cases = load_pad_ufes20_cases(dataset_root=args.dataset_root, limit=args.test_limit)
+    if args.split_name:
+        split_path = args.split_json or str(Path("outputs/splits") / f"{Path(args.dataset_root).name}_seed{args.seed}.json")
+        split_payload = load_or_create_split_manifest(cases, split_path, seed=args.seed)
+        cases = select_split_cases(cases, split_payload, args.split_name)
     print(f"  样本数: {len(cases)}")
 
     results: List[Dict[str, Any]] = []
@@ -324,6 +333,10 @@ def main() -> None:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     report = {
         "timestamp": datetime.now().isoformat(),
+        "dataset_root": args.dataset_root,
+        "split_json": args.split_json,
+        "split_name": args.split_name,
+        "seed": args.seed,
         "test_count": len(cases),
         "perception_model": perception_model,
         "report_model": report_model,
