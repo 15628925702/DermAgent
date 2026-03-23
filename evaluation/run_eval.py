@@ -3,7 +3,9 @@
 import argparse
 import csv
 import json
+import random
 import sys
+from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -93,6 +95,47 @@ def load_dataset_cases(
     raise ValueError(f"Unsupported dataset type: {dataset_type}")
 
 
+def stratified_subsample_cases(
+    cases: List[Dict[str, Any]],
+    limit: int | None,
+    *,
+    seed: int = 42,
+) -> List[Dict[str, Any]]:
+    if limit is None or limit <= 0 or limit >= len(cases):
+        return list(cases)
+
+    by_label: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    for case in cases:
+        label = str(case.get("label", "")).strip().upper() or "UNKNOWN"
+        by_label[label].append(case)
+
+    ordered_labels = sorted(by_label.keys())
+    shuffled_groups: Dict[str, List[Dict[str, Any]]] = {}
+    for label in ordered_labels:
+        items = list(by_label[label])
+        label_seed = seed + sum(ord(ch) for ch in label)
+        random.Random(label_seed).shuffle(items)
+        shuffled_groups[label] = items
+
+    sampled: List[Dict[str, Any]] = []
+    cursors = {label: 0 for label in ordered_labels}
+    while len(sampled) < limit:
+        progressed = False
+        for label in ordered_labels:
+            cursor = cursors[label]
+            group = shuffled_groups[label]
+            if cursor >= len(group):
+                continue
+            sampled.append(group[cursor])
+            cursors[label] += 1
+            progressed = True
+            if len(sampled) >= limit:
+                break
+        if not progressed:
+            break
+    return sampled
+
+
 def run_evaluation(
     dataset_type: str | None = None,
     dataset_root: str | Path = "data/pad_ufes_20",
@@ -115,7 +158,7 @@ def run_evaluation(
     report_model: str | None = None,
 ) -> Dict[str, Any]:
     resolved_dataset_type = normalize_dataset_type(dataset_type, dataset_root)
-    all_cases = load_dataset_cases(dataset_type=resolved_dataset_type, dataset_root=dataset_root, limit=limit)
+    all_cases = load_dataset_cases(dataset_type=resolved_dataset_type, dataset_root=dataset_root, limit=None)
     resolved_split_path = split_json
     split_payload = None
     if split_json:
@@ -128,6 +171,7 @@ def run_evaluation(
     cases = select_split_cases(all_cases, split_payload, split_name)
     if not split_name:
         cases = list(all_cases)
+    cases = stratified_subsample_cases(cases, limit, seed=42)
 
     bank = ExperienceBank.from_json(bank_state_in) if bank_state_in else ExperienceBank()
     bank_loaded = bool(bank_state_in)

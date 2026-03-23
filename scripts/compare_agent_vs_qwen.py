@@ -20,7 +20,7 @@ from agent.final_scorer import LearnableFinalScorer
 from agent.rule_scorer import LearnableRuleScorer
 from agent.run_agent import run_agent
 from datasets.splits import load_or_create_split_manifest, select_split_cases
-from evaluation.run_eval import load_dataset_cases, normalize_dataset_type
+from evaluation.run_eval import load_dataset_cases, normalize_dataset_type, stratified_subsample_cases
 from integrations.openai_client import OpenAICompatClient, OpenAIClient
 from memory.controller_store import load_controller_checkpoint
 from memory.experience_bank import ExperienceBank
@@ -281,8 +281,7 @@ class ComparisonFramework:
             split_path = self.split_json or str(Path("outputs/splits") / f"{Path(self.dataset_root).name}_seed{self.seed}.json")
             split_payload = load_or_create_split_manifest(all_cases, split_path, seed=self.seed)
             all_cases = select_split_cases(all_cases, split_payload, self.split_name)
-        if self.test_limit is not None:
-            all_cases = all_cases[: self.test_limit]
+        all_cases = stratified_subsample_cases(all_cases, self.test_limit, seed=self.seed)
         print(f"  已加载 {len(all_cases)} 个测试案例\n")
 
         print("🤖 方案1: Agent+Qwen 框架")
