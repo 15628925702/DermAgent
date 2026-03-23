@@ -20,7 +20,7 @@ from agent.final_scorer import LearnableFinalScorer
 from agent.rule_scorer import LearnableRuleScorer
 from agent.run_agent import run_agent
 from datasets.splits import load_or_create_split_manifest, select_split_cases
-from evaluation.run_eval import load_pad_ufes20_cases
+from evaluation.run_eval import load_dataset_cases, normalize_dataset_type
 from integrations.openai_client import OpenAICompatClient, OpenAIClient
 from memory.controller_store import load_controller_checkpoint
 from memory.experience_bank import ExperienceBank
@@ -222,9 +222,10 @@ class ComparisonFramework:
         self,
         test_limit: int = 100,
         *,
+        dataset_type: str | None = None,
         dataset_root: str = "data/pad_ufes_20",
         split_json: str | None = None,
-        split_name: str | None = None,
+        split_name: str | None = "test",
         seed: int = 42,
         controller_checkpoint: str | None = None,
         bank_state_in: str | None = None,
@@ -234,6 +235,7 @@ class ComparisonFramework:
         use_controller: bool | None = None,
     ) -> None:
         self.test_limit = test_limit
+        self.dataset_type = normalize_dataset_type(dataset_type, dataset_root)
         self.dataset_root = dataset_root
         self.split_json = split_json
         self.split_name = split_name
@@ -274,11 +276,13 @@ class ComparisonFramework:
         started_at = datetime.now()
 
         print("📊 加载测试数据...")
-        all_cases = load_pad_ufes20_cases(dataset_root=self.dataset_root, limit=self.test_limit)
+        all_cases = load_dataset_cases(dataset_type=self.dataset_type, dataset_root=self.dataset_root, limit=None)
         if self.split_name:
             split_path = self.split_json or str(Path("outputs/splits") / f"{Path(self.dataset_root).name}_seed{self.seed}.json")
             split_payload = load_or_create_split_manifest(all_cases, split_path, seed=self.seed)
             all_cases = select_split_cases(all_cases, split_payload, self.split_name)
+        if self.test_limit is not None:
+            all_cases = all_cases[: self.test_limit]
         print(f"  已加载 {len(all_cases)} 个测试案例\n")
 
         print("🤖 方案1: Agent+Qwen 框架")
@@ -292,11 +296,13 @@ class ComparisonFramework:
 
         report = {
             "timestamp": datetime.now().isoformat(),
+            "dataset_type": self.dataset_type,
             "dataset_root": self.dataset_root,
             "split_json": self.split_json,
             "split_name": self.split_name,
             "seed": self.seed,
             "test_count": len(all_cases),
+            "requested_limit": self.test_limit,
             "agent_results": agent_results,
             "qwen_direct_results": qwen_results,
             "comparison": comparison,
@@ -452,6 +458,7 @@ class ComparisonFramework:
                 "success": True,
                 "metrics": {
                     "accuracy_top1": correct_top1 / total_valid if total_valid > 0 else 0.0,
+                    "accuracy_top3": sum(1 for row in per_case_results if row.get("is_top3_correct")) / total_valid if total_valid > 0 else 0.0,
                     "malignant_recall": malignant_hit / malignant_total if malignant_total > 0 else 0.0,
                 },
                 "per_case": per_case_results,
@@ -550,6 +557,7 @@ class ComparisonFramework:
                 "success": True,
                 "metrics": {
                     "accuracy_top1": correct_top1 / total_valid if total_valid > 0 else 0.0,
+                    "accuracy_top3": sum(1 for row in per_case_results if row.get("is_top3_correct")) / total_valid if total_valid > 0 else 0.0,
                     "malignant_recall": malignant_hit / malignant_total if malignant_total > 0 else 0.0,
                 },
                 "per_case": per_case_results,
@@ -587,7 +595,9 @@ class ComparisonFramework:
         agent_metrics = agent_results.get("metrics", {})
         qwen_metrics = qwen_results.get("metrics", {})
         agent_acc = float(agent_metrics.get("accuracy_top1", 0.0))
+        agent_top3 = float(agent_metrics.get("accuracy_top3", 0.0))
         qwen_acc = float(qwen_metrics.get("accuracy_top1", 0.0))
+        qwen_top3 = float(qwen_metrics.get("accuracy_top3", 0.0))
         agent_recall = float(agent_metrics.get("malignant_recall", 0.0))
         qwen_recall = float(qwen_metrics.get("malignant_recall", 0.0))
 
@@ -620,6 +630,12 @@ class ComparisonFramework:
                 "qwen_direct": qwen_acc,
                 "improvement_percentage": self._safe_relative_improvement(agent_acc, qwen_acc),
                 "absolute_improvement": agent_acc - qwen_acc,
+            },
+            "top3_improvement": {
+                "agent": agent_top3,
+                "qwen_direct": qwen_top3,
+                "improvement_percentage": self._safe_relative_improvement(agent_top3, qwen_top3),
+                "absolute_improvement": agent_top3 - qwen_top3,
             },
             "malignant_recall_improvement": {
                 "agent": agent_recall,
@@ -822,9 +838,10 @@ class ComparisonFramework:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Compare DermAgent against direct Qwen VLM.")
     parser.add_argument("--test-limit", type=int, default=100, help="Number of cases to compare.")
+    parser.add_argument("--dataset-type", default=None, choices=["pad_ufes20", "pad_ufes_20", "ham10000"])
     parser.add_argument("--dataset-root", default="data/pad_ufes_20")
     parser.add_argument("--split-json", default=None)
-    parser.add_argument("--split-name", default=None, choices=["train", "val", "test"])
+    parser.add_argument("--split-name", default="test", choices=["train", "val", "test"])
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--controller-checkpoint", default=None, help="Checkpoint for controller/final scorer/rule scorer/evidence calibrator.")
     parser.add_argument("--bank-state-in", default=None, help="Optional experience bank checkpoint.")
@@ -843,6 +860,7 @@ def main() -> None:
 
     framework = ComparisonFramework(
         test_limit=args.test_limit,
+        dataset_type=args.dataset_type,
         dataset_root=args.dataset_root,
         split_json=args.split_json,
         split_name=args.split_name,

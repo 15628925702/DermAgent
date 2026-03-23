@@ -286,7 +286,7 @@ def main() -> None:
     parser.add_argument("--test-limit", type=int, default=100)
     parser.add_argument("--dataset-root", default="data/pad_ufes_20")
     parser.add_argument("--split-json", default=None)
-    parser.add_argument("--split-name", default=None, choices=["train", "val", "test"])
+    parser.add_argument("--split-name", default="test", choices=["train", "val", "test"])
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--controller-checkpoint", default=None)
     parser.add_argument("--bank-state-in", default=None)
@@ -305,11 +305,13 @@ def main() -> None:
     report_model = str(args.report_model or perception_model)
 
     print("加载对比样本...")
-    cases = load_pad_ufes20_cases(dataset_root=args.dataset_root, limit=args.test_limit)
+    cases = load_pad_ufes20_cases(dataset_root=args.dataset_root, limit=None)
     if args.split_name:
         split_path = args.split_json or str(Path("outputs/splits") / f"{Path(args.dataset_root).name}_seed{args.seed}.json")
         split_payload = load_or_create_split_manifest(cases, split_path, seed=args.seed)
         cases = select_split_cases(cases, split_payload, args.split_name)
+    if args.test_limit is not None:
+        cases = cases[: args.test_limit]
     print(f"  样本数: {len(cases)}")
 
     results: List[Dict[str, Any]] = []

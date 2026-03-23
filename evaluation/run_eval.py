@@ -16,6 +16,7 @@ from agent.evidence_calibrator import LearnableEvidenceCalibrator
 from agent.final_scorer import LearnableFinalScorer
 from agent.rule_scorer import LearnableRuleScorer
 from agent.run_agent import run_agent
+from datasets.ham10000 import load_ham10000_cases
 from datasets.splits import (
     load_or_create_split_manifest,
     load_split_manifest,
@@ -31,6 +32,7 @@ from memory.skill_index import build_default_skill_index
 MALIGNANT_LABELS = {"MEL", "BCC", "SCC"}
 ACK_SCC_LABELS = {"ACK", "SCC"}
 SUPPORTED_LABELS = {"MEL", "NEV", "SCC", "BCC", "ACK", "SEK"}
+SUPPORTED_DATASET_TYPES = {"pad_ufes20", "pad_ufes_20", "ham10000"}
 
 
 def load_pad_ufes20_cases(dataset_root: str | Path = "data/pad_ufes_20", limit: int | None = None) -> List[Dict[str, Any]]:
@@ -64,7 +66,35 @@ def load_pad_ufes20_cases(dataset_root: str | Path = "data/pad_ufes_20", limit: 
     return cases
 
 
+def normalize_dataset_type(dataset_type: str | None, dataset_root: str | Path) -> str:
+    text = str(dataset_type or "").strip().lower().replace("-", "_")
+    if text:
+        if text in SUPPORTED_DATASET_TYPES:
+            return text
+        raise ValueError(f"Unsupported dataset type: {dataset_type}")
+
+    root_name = Path(dataset_root).name.strip().lower().replace("-", "_")
+    if root_name in SUPPORTED_DATASET_TYPES:
+        return root_name
+    return "pad_ufes_20"
+
+
+def load_dataset_cases(
+    *,
+    dataset_type: str | None = None,
+    dataset_root: str | Path = "data/pad_ufes_20",
+    limit: int | None = None,
+) -> List[Dict[str, Any]]:
+    resolved_type = normalize_dataset_type(dataset_type, dataset_root)
+    if resolved_type in {"pad_ufes20", "pad_ufes_20"}:
+        return load_pad_ufes20_cases(dataset_root=dataset_root, limit=limit)
+    if resolved_type == "ham10000":
+        return load_ham10000_cases(dataset_root=dataset_root, limit=limit)
+    raise ValueError(f"Unsupported dataset type: {dataset_type}")
+
+
 def run_evaluation(
+    dataset_type: str | None = None,
     dataset_root: str | Path = "data/pad_ufes_20",
     limit: int | None = None,
     split_json: str | None = None,
@@ -84,7 +114,8 @@ def run_evaluation(
     perception_model: str | None = None,
     report_model: str | None = None,
 ) -> Dict[str, Any]:
-    all_cases = load_pad_ufes20_cases(dataset_root=dataset_root, limit=limit)
+    resolved_dataset_type = normalize_dataset_type(dataset_type, dataset_root)
+    all_cases = load_dataset_cases(dataset_type=resolved_dataset_type, dataset_root=dataset_root, limit=limit)
     resolved_split_path = split_json
     split_payload = None
     if split_json:
@@ -207,6 +238,7 @@ def run_evaluation(
         )
 
     result = {
+        "dataset_type": resolved_dataset_type,
         "dataset_root": str(dataset_root),
         "num_cases": total,
         "metrics": {
@@ -270,6 +302,7 @@ def run_evaluation(
             rule_scorer=rule_scorer,
             evidence_calibrator=evidence_calibrator,
             metadata={
+                "dataset_type": resolved_dataset_type,
                 "dataset_root": str(dataset_root),
                 "num_cases": total,
                 "metrics": result["metrics"],
@@ -288,6 +321,7 @@ def run_evaluation(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run DermAgent evaluation.")
+    parser.add_argument("--dataset-type", default=None, choices=sorted(SUPPORTED_DATASET_TYPES))
     parser.add_argument("--dataset-root", default="data/pad_ufes_20")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--split-json", default=None)
@@ -310,6 +344,7 @@ def main() -> None:
     args = parser.parse_args()
 
     result = run_evaluation(
+        dataset_type=args.dataset_type,
         dataset_root=args.dataset_root,
         limit=args.limit,
         split_json=args.split_json,

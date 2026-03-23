@@ -196,10 +196,12 @@ def main() -> None:
     parser.add_argument("--output-dir", default="outputs/quality")
     args = parser.parse_args()
 
-    all_cases = load_pad_ufes20_cases(dataset_root=args.dataset_root, limit=args.limit)
+    all_cases = load_pad_ufes20_cases(dataset_root=args.dataset_root, limit=None)
     split_path = args.split_json or str(Path("outputs/splits") / f"{Path(args.dataset_root).name}_seed{args.seed}.json")
     split_payload = load_or_create_split_manifest(all_cases, split_path, seed=args.seed)
     cases = select_split_cases(all_cases, split_payload, args.split_name)
+    if args.limit is not None:
+        cases = cases[: args.limit]
     if not cases:
         raise RuntimeError(f"Split '{args.split_name}' is empty.")
 
