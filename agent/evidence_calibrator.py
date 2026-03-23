@@ -44,6 +44,12 @@ class LearnableEvidenceCalibrator:
             "metadata_support_weight": 0.35,
             "metadata_penalty_weight": 0.25,
             "metadata_bcc_bonus": 0.20,
+            "metadata_pediatric_benign_bonus": 1.0,
+            "metadata_pediatric_malignant_penalty": 1.0,
+            "metadata_trunk_benign_bonus": 0.75,
+            "metadata_sun_exposed_keratinocytic_bonus": 0.70,
+            "metadata_invasive_malignant_bonus": 0.90,
+            "metadata_nev_rescue_bonus": 0.85,
             "skill_correction_specialist": 0.20,
             "skill_correction_metadata": 0.10,
         }
@@ -60,6 +66,12 @@ class LearnableEvidenceCalibrator:
             "metadata_support_weight": (0.08, 0.90),
             "metadata_penalty_weight": (0.08, 0.90),
             "metadata_bcc_bonus": (0.00, 0.45),
+            "metadata_pediatric_benign_bonus": (0.40, 1.80),
+            "metadata_pediatric_malignant_penalty": (0.40, 1.80),
+            "metadata_trunk_benign_bonus": (0.20, 1.40),
+            "metadata_sun_exposed_keratinocytic_bonus": (0.20, 1.40),
+            "metadata_invasive_malignant_bonus": (0.30, 1.60),
+            "metadata_nev_rescue_bonus": (0.20, 1.60),
             "skill_correction_specialist": (0.05, 0.45),
             "skill_correction_metadata": (0.02, 0.28),
         }
@@ -88,6 +100,24 @@ class LearnableEvidenceCalibrator:
         rationale_text = " ".join(str(x) for x in (metadata_output.get("rationale", []) or [])).lower()
         supported = {self._norm_label(x) for x in (metadata_output.get("supported_labels") or metadata_output.get("supported_diagnoses") or [])}
         penalized = {self._norm_label(x) for x in (metadata_output.get("penalized_labels") or metadata_output.get("penalized_diagnoses") or [])}
+        support_strengths = {
+            self._norm_label(k): self._safe_float(v)
+            for k, v in (metadata_output.get("support_strengths", {}) or {}).items()
+            if self._norm_label(k)
+        }
+        penalty_strengths = {
+            self._norm_label(k): self._safe_float(v)
+            for k, v in (metadata_output.get("penalty_strengths", {}) or {}).items()
+            if self._norm_label(k)
+        }
+        metadata_snapshot = metadata_output.get("metadata_snapshot", {}) or {}
+        age = self._safe_float(metadata_snapshot.get("age"))
+        site = self._norm_text(metadata_snapshot.get("site"))
+        history = self._norm_text(metadata_snapshot.get("history"))
+        pediatric_case = age > 0 and age <= 18
+        sun_exposed_site = any(token in site.split() for token in ["face", "scalp", "ear", "neck", "nose", "temple", "cheek", "hand", "forearm", "lip"])
+        trunk_site = any(token in site.split() for token in ["trunk", "back", "chest", "abdomen"])
+        invasive_history = any(token in history for token in ["bleed", "bleeding", "rapid growth", "pain", "hurt", "ulcer", "ulcerated"])
 
         metadata_support_signal = 0.0
         metadata_penalty_signal = 0.0
@@ -115,6 +145,46 @@ class LearnableEvidenceCalibrator:
             metadata_threshold_signal += 0.35
         if pred_label != true_label and pred_label in penalized:
             metadata_threshold_signal -= 0.2
+
+        if pediatric_case:
+            benign_true = true_label in {"NEV", "SEK"}
+            wrong_malignant = pred_label in {"ACK", "BCC", "SCC", "MEL"} and pred_label != true_label
+            self._update_weight(
+                "metadata_pediatric_benign_bonus",
+                1.0 if benign_true and support_strengths.get(true_label, 0.0) > 0 else -0.8 if wrong_malignant else 0.0,
+                feedback["weight_updates"],
+            )
+            self._update_weight(
+                "metadata_pediatric_malignant_penalty",
+                1.0 if benign_true and penalty_strengths.get(pred_label, 0.0) > 0 else -0.6 if wrong_malignant else 0.0,
+                feedback["weight_updates"],
+            )
+            self._update_weight(
+                "metadata_nev_rescue_bonus",
+                1.0 if true_label == "NEV" and support_strengths.get("NEV", 0.0) > 0 else -0.7 if true_label == "NEV" else 0.0,
+                feedback["weight_updates"],
+            )
+
+        if trunk_site:
+            self._update_weight(
+                "metadata_trunk_benign_bonus",
+                0.8 if true_label == "NEV" and support_strengths.get("NEV", 0.0) > 0 else -0.5 if pred_label == "ACK" and pred_label != true_label else 0.0,
+                feedback["weight_updates"],
+            )
+
+        if sun_exposed_site:
+            self._update_weight(
+                "metadata_sun_exposed_keratinocytic_bonus",
+                0.7 if true_label in {"ACK", "BCC", "SCC"} and support_strengths.get(true_label, 0.0) > 0 else -0.5 if pred_label in {"ACK", "BCC", "SCC"} and pred_label != true_label else 0.0,
+                feedback["weight_updates"],
+            )
+
+        if invasive_history or true_label in {"MEL", "SCC"}:
+            self._update_weight(
+                "metadata_invasive_malignant_bonus",
+                0.8 if support_strengths.get(true_label, 0.0) > 0 else -0.7 if pred_label in {"MEL", "BCC", "SCC"} and pred_label != true_label else 0.0,
+                feedback["weight_updates"],
+            )
 
         specialist_votes: Dict[str, int] = {}
         specialist_signal = 0.0
@@ -233,6 +303,11 @@ class LearnableEvidenceCalibrator:
         if value is None:
             return ""
         return str(value).strip().upper()
+
+    def _norm_text(self, value: Any) -> str:
+        if value is None:
+            return ""
+        return str(value).strip().lower().replace("-", " ").replace("/", " ")
 
     def _safe_float(self, value: Any) -> float:
         try:

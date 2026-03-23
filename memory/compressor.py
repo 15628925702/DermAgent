@@ -19,6 +19,7 @@ KNOWN_CONFUSION_PAIRS = {
 }
 
 MAX_CONFUSION_GAP = 0.15
+MAX_DYNAMIC_CONFUSION_GAP = 0.08
 
 
 class ExperienceCompressor:
@@ -64,10 +65,13 @@ class ExperienceCompressor:
 
     def _build_prototypes(self, raw_cases: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         groups: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+        variant_groups: Dict[Tuple[str, str, str], List[Dict[str, Any]]] = defaultdict(list)
         for item in raw_cases:
             label = self._extract_final_label(item)
             if label:
                 groups[label].append(item)
+                metadata = item.get("metadata", {}) or {}
+                variant_groups[(label, self._summarize_age_group_from_case(metadata), self._site_group(metadata))].append(item)
 
         prototypes: List[Dict[str, Any]] = []
         for label, cases in sorted(groups.items()):
@@ -102,6 +106,46 @@ class ExperienceCompressor:
                 str(case.get("case_id", "")).strip() for case in cases[:10] if str(case.get("case_id", "")).strip()
             ]
             prototype["compression_level"] = self._support_level(len(cases))
+            prototype["prototype_scope"] = "global"
+            prototypes.append(prototype)
+
+        for (label, age_group, site_group), cases in sorted(variant_groups.items()):
+            if len(cases) < max(self.min_cases_per_prototype + 1, 4):
+                continue
+
+            cues = self._top_strings(
+                cue
+                for case in cases
+                for cue in case.get("perception", {}).get("visual_cues", []) or []
+            )
+            common_confusions = self._top_strings(
+                candidate
+                for case in cases
+                for candidate in self._other_ddx_names(case, exclude=label)
+            )
+            recommended_skills = self._top_strings(
+                skill
+                for case in cases
+                for skill in case.get("selected_skills", []) or []
+            )
+
+            prototype = build_prototype_experience(
+                disease=label,
+                typical_cues=cues[:8],
+                typical_metadata=self._summarize_metadata(cases),
+                common_confusions=common_confusions[:5],
+                recommended_skills=recommended_skills[:5],
+            )
+            prototype["source_count"] = len(cases)
+            prototype["source_case_ids"] = [
+                str(case.get("case_id", "")).strip() for case in cases[:10] if str(case.get("case_id", "")).strip()
+            ]
+            prototype["compression_level"] = self._support_level(len(cases))
+            prototype["prototype_scope"] = "subgroup"
+            prototype["prototype_variant"] = {
+                "age_group": age_group,
+                "site_group": site_group,
+            }
             prototypes.append(prototype)
 
         return prototypes
@@ -126,6 +170,8 @@ class ExperienceCompressor:
                 continue
 
             pair = ordered_pairs[key]
+            if frozenset(pair) not in KNOWN_CONFUSION_PAIRS and len(cases) < max(2, self.min_cases_per_confusion + 1):
+                continue
             clues = self._top_strings(
                 cue
                 for case in cases
@@ -386,11 +432,11 @@ class ExperienceCompressor:
         pair = self._extract_top2_pair(item)
         if len(pair) != 2:
             return False
-        if frozenset(pair) not in KNOWN_CONFUSION_PAIRS:
-            return False
 
         gap = self._extract_top2_gap(item)
-        if gap is not None and gap > MAX_CONFUSION_GAP:
+        known_pair = frozenset(pair) in KNOWN_CONFUSION_PAIRS
+        allowed_gap = MAX_CONFUSION_GAP if known_pair else MAX_DYNAMIC_CONFUSION_GAP
+        if gap is not None and gap > allowed_gap:
             return False
 
         tags = item.get("tags", {}) or {}
@@ -398,6 +444,8 @@ class ExperienceCompressor:
         selected_skills = set(item.get("selected_skills", []) or [])
 
         return (
+            known_pair
+            or
             str(tags.get("uncertainty_level", "")).lower() in {"medium", "high"}
             or "compare_skill" in selected_skills
             or "mel_nev_specialist_skill" in selected_skills
@@ -507,4 +555,32 @@ class ExperienceCompressor:
         if value is None:
             return ""
         return str(value).strip().lower()
+
+    def _summarize_age_group_from_case(self, metadata: Dict[str, Any]) -> str:
+        age = self._safe_int(metadata.get("age"))
+        if age is None:
+            return ""
+        if age <= 18:
+            return "pediatric"
+        if age < 30:
+            return "young"
+        if age < 60:
+            return "middle"
+        return "older"
+
+    def _site_group(self, metadata: Dict[str, Any]) -> str:
+        site = self._norm(
+            metadata.get("location")
+            or metadata.get("site")
+            or metadata.get("anatomical_site")
+        )
+        if not site:
+            return ""
+        if any(token in site for token in ["face", "scalp", "ear", "neck", "nose", "temple", "cheek", "hand", "forearm", "lip"]):
+            return "sun_exposed"
+        if any(token in site for token in ["trunk", "back", "chest", "abdomen"]):
+            return "trunk"
+        if any(token in site for token in ["leg", "foot", "toe"]):
+            return "lower_limb"
+        return "other"
 

@@ -304,7 +304,11 @@ class DecisionAggregator:
             name = self._norm_label(label)
             if not name:
                 continue
-            weight = self._calibration_weight("metadata_support_weight", 0.35)
+            support_strengths = output.get("support_strengths", {}) or {}
+            local_strength = self._safe_float(support_strengths.get(name))
+            if local_strength <= 0.0:
+                local_strength = 1.0
+            weight = self._calibration_weight("metadata_support_weight", 0.35) * max(0.35, local_strength)
             if name == "BCC" and any(
                 token in rationale_text
                 for token in [
@@ -326,7 +330,11 @@ class DecisionAggregator:
             name = self._norm_label(label)
             if not name:
                 continue
-            penalty = self._calibration_weight("metadata_penalty_weight", 0.25)
+            penalty_strengths = output.get("penalty_strengths", {}) or {}
+            local_strength = self._safe_float(penalty_strengths.get(name))
+            if local_strength <= 0.0:
+                local_strength = 1.0
+            penalty = self._calibration_weight("metadata_penalty_weight", 0.25) * max(0.35, local_strength)
             self._apply_feature(candidate_scores, candidate_features, name, "metadata_score", -penalty)
             evidence_log.append({
                 "source": "metadata_consistency_skill",

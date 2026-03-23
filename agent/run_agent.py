@@ -120,6 +120,7 @@ def run_agent(
                 "disable_skills": disable_skills,
                 "perception_model": perception_model,
                 "report_model": report_model,
+                "evidence_calibrator": evidence_calibrator,
             },
         )
         state.trace("registry", "success", "Skill registry built")

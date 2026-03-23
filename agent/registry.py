@@ -67,6 +67,7 @@ def build_skill_registry(
     debug = bool(config.get("debug", False))
     perception_model = str(config.get("perception_model", "")).strip() or None
     report_model = str(config.get("report_model", "")).strip() or None
+    evidence_calibrator = config.get("evidence_calibrator")
 
     # =========================
     # 依赖构建
@@ -82,7 +83,7 @@ def build_skill_registry(
         "uncertainty_assessment_skill": UncertaintyAssessmentSkill(),
         "compare_skill": CompareSkill(),
         "malignancy_risk_skill": MalignancyRiskSkill(),
-        "metadata_consistency_skill": MetadataConsistencySkill(),
+        "metadata_consistency_skill": MetadataConsistencySkill(evidence_calibrator=evidence_calibrator),
         "ack_scc_specialist_skill": AckSccSpecialistSkill(),
         "bcc_scc_specialist_skill": BccSccSpecialistSkill(),
         "bcc_sek_specialist_skill": BccSekSpecialistSkill(),
