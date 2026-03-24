@@ -20,6 +20,7 @@ from agent.final_scorer import LearnableFinalScorer
 from agent.rule_scorer import LearnableRuleScorer
 from agent.run_agent import run_agent
 from datasets.splits import load_or_create_split_manifest, select_split_cases
+from evaluation.case_selection import resolve_eval_cases
 from evaluation.run_eval import load_dataset_cases, normalize_dataset_type
 from integrations.openai_client import OpenAICompatClient
 from memory.controller_store import load_controller_checkpoint
@@ -457,21 +458,18 @@ def _load_cases(
     split_name: str | None,
     seed: int,
     test_limit: int | None,
+    case_manifest_in: str | None,
 ) -> Dict[str, Any]:
-    resolved_type = normalize_dataset_type(dataset_type, dataset_root)
-    cases = load_dataset_cases(dataset_type=resolved_type, dataset_root=dataset_root, limit=None)
-    resolved_split_path = split_json
-    if split_name:
-        resolved_split_path = resolved_split_path or str(Path("outputs/splits") / f"{Path(dataset_root).name}_seed{seed}.json")
-        split_payload = load_or_create_split_manifest(cases, resolved_split_path, seed=seed)
-        cases = select_split_cases(cases, split_payload, split_name)
-    if test_limit is not None:
-        cases = cases[: test_limit]
-    return {
-        "dataset_type": resolved_type,
-        "cases": cases,
-        "resolved_split_path": resolved_split_path,
-    }
+    return resolve_eval_cases(
+        dataset_type=dataset_type,
+        dataset_root=dataset_root,
+        split_json=split_json,
+        split_name=split_name,
+        seed=seed,
+        limit=test_limit,
+        case_manifest_in=case_manifest_in,
+        case_manifest_out=None,
+    )
 
 
 def main() -> None:
@@ -487,6 +485,7 @@ def main() -> None:
     parser.add_argument("--output-dir", default="outputs/ablation")
     parser.add_argument("--perception-model", default=None)
     parser.add_argument("--report-model", default=None)
+    parser.add_argument("--case-manifest-in", default=None, help="Replay the exact evaluation cases used by compare_agent_vs_qwen.py.")
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir)
@@ -506,10 +505,12 @@ def main() -> None:
         split_name=args.split_name,
         seed=args.seed,
         test_limit=args.test_limit,
+        case_manifest_in=args.case_manifest_in,
     )
     cases = case_bundle["cases"]
     resolved_dataset_type = case_bundle["dataset_type"]
     resolved_split_path = case_bundle["resolved_split_path"]
+    case_manifest_path = case_bundle["case_manifest_path"]
     print(f"  dataset_type: {resolved_dataset_type}")
     print(f"  cases: {len(cases)}")
 
@@ -544,6 +545,7 @@ def main() -> None:
         "split_name": args.split_name,
         "seed": args.seed,
         "test_count": len(cases),
+        "case_manifest_path": case_manifest_path,
         "perception_model": perception_model,
         "report_model": report_model,
         "controller_checkpoint": args.controller_checkpoint,

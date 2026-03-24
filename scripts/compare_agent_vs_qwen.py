@@ -20,6 +20,7 @@ from agent.final_scorer import LearnableFinalScorer
 from agent.rule_scorer import LearnableRuleScorer
 from agent.run_agent import run_agent
 from datasets.splits import load_or_create_split_manifest, select_split_cases
+from evaluation.case_selection import resolve_eval_cases
 from evaluation.run_eval import load_dataset_cases, normalize_dataset_type, stratified_subsample_cases
 from integrations.openai_client import OpenAICompatClient, OpenAIClient
 from memory.controller_store import load_controller_checkpoint
@@ -233,6 +234,8 @@ class ComparisonFramework:
         use_retrieval: bool = True,
         use_specialist: bool = True,
         use_controller: bool | None = None,
+        case_manifest_in: str | None = None,
+        case_manifest_out: str | None = None,
     ) -> None:
         self.test_limit = test_limit
         self.dataset_type = normalize_dataset_type(dataset_type, dataset_root)
@@ -246,6 +249,8 @@ class ComparisonFramework:
         self.use_retrieval = bool(use_retrieval)
         self.use_specialist = bool(use_specialist)
         self.use_controller = bool(controller_checkpoint) if use_controller is None else bool(use_controller)
+        self.case_manifest_in = case_manifest_in
+        self.case_manifest_out = case_manifest_out
         self.results_dir = Path("outputs/comparison")
         self.results_dir.mkdir(parents=True, exist_ok=True)
 
@@ -296,38 +301,47 @@ class ComparisonFramework:
         }
 
     def run_full_comparison(self) -> Dict[str, Any]:
-        print("🚀 开始 Agent vs 直接 Qwen 对比实验")
-        print(f"测试集大小: {self.test_limit} 案例\n")
+        print("?????? ??????????Agent vs ????????? Qwen ??????????????????")
+        print(f"?????????????????????? {self.test_limit} ?????????\n")
 
         started_at = datetime.now()
 
-        print("📊 加载测试数据...")
-        all_cases = load_dataset_cases(dataset_type=self.dataset_type, dataset_root=self.dataset_root, limit=None)
-        if self.split_name:
-            split_path = self.split_json or str(Path("outputs/splits") / f"{Path(self.dataset_root).name}_seed{self.seed}.json")
-            split_payload = load_or_create_split_manifest(all_cases, split_path, seed=self.seed)
-            all_cases = select_split_cases(all_cases, split_payload, self.split_name)
-        all_cases = stratified_subsample_cases(all_cases, self.test_limit, seed=self.seed)
-        print(f"  已加载 {len(all_cases)} 个测试案例\n")
+        print("?????? ???????????????????????????...")
+        case_bundle = resolve_eval_cases(
+            dataset_type=self.dataset_type,
+            dataset_root=self.dataset_root,
+            split_json=self.split_json,
+            split_name=self.split_name,
+            seed=self.seed,
+            limit=self.test_limit,
+            case_manifest_in=self.case_manifest_in,
+            case_manifest_out=self.case_manifest_out,
+        )
+        all_cases = case_bundle["cases"]
+        resolved_split_path = case_bundle["resolved_split_path"]
+        case_manifest_path = case_bundle["case_manifest_path"]
+        print(f"  ?????????????{len(all_cases)} ????????????????????????n")
 
-        print("🤖 方案1: Agent+Qwen 框架")
+        print("?????? ?????????1: Agent+Qwen ?????????")
         agent_results = self._run_agent_pipeline(all_cases)
 
-        print("\n🔍 方案2: 直接调用 Qwen VLM")
+        print("\n?????? ?????????2: ?????????????????? Qwen VLM")
         qwen_results = self._run_qwen_direct(all_cases)
 
-        print("\n📈 计算对比指标...")
+        print("\n?????? ???????????????????????????...")
         comparison = self._compute_comparison(all_cases, agent_results, qwen_results)
 
         report = {
             "timestamp": datetime.now().isoformat(),
             "dataset_type": self.dataset_type,
             "dataset_root": self.dataset_root,
-            "split_json": self.split_json,
+            "split_json": resolved_split_path,
             "split_name": self.split_name,
             "seed": self.seed,
             "test_count": len(all_cases),
             "requested_limit": self.test_limit,
+            "case_manifest_path": case_manifest_path,
+            "evaluated_case_ids": case_bundle["case_ids"],
             "agent_results": agent_results,
             "qwen_direct_results": qwen_results,
             "comparison": comparison,
@@ -901,6 +915,8 @@ def main() -> None:
     parser.add_argument("--disable-specialist", action="store_true", help="Disable specialist skills in the agent branch.")
     parser.add_argument("--enable-controller", action="store_true", help="Force enable learned controller/scorers.")
     parser.add_argument("--disable-controller", action="store_true", help="Force disable learned controller/scorers.")
+    parser.add_argument("--case-manifest-in", default=None, help="Replay an exact evaluation case list from a manifest JSON.")
+    parser.add_argument("--case-manifest-out", default=None, help="Write the evaluated case ids to a manifest JSON.")
     args = parser.parse_args()
 
     use_controller = None
@@ -922,6 +938,8 @@ def main() -> None:
         use_retrieval=not args.disable_retrieval,
         use_specialist=not args.disable_specialist,
         use_controller=use_controller,
+        case_manifest_in=args.case_manifest_in,
+        case_manifest_out=args.case_manifest_out,
     )
     framework.run_full_comparison()
 
