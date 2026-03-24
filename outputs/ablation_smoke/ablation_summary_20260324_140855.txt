@@ -1,0 +1,119 @@
+DermAgent Staged Ablation
+timestamp: 2026-03-24T14:08:55.909781
+dataset_type: pad_ufes_20
+dataset_root: data/pad_ufes_20
+split_json: outputs\splits\pad_ufes_20_seed42.json
+split_name: test
+seed: 42
+test_count: 1
+
+Direct Qwen
+  top1_accuracy: 0.0000
+  top3_accuracy: 0.0000
+  malignant_recall: 0.0000
+  error_rate: 1.0000
+
+Agent perception only
+  top1_accuracy: 1.0000
+  top3_accuracy: 1.0000
+  malignant_recall: 1.0000
+  error_rate: 0.0000
+  direct_correct_variant_wrong: 0
+  direct_wrong_variant_correct: 1
+  perception_correct_variant_wrong: 0
+  changed_from_perception_top1: 0
+  no_harm_applied: 0
+  harmful_skills: none
+  harmful_sources: none
+
++ compare
+  top1_accuracy: 1.0000
+  top3_accuracy: 1.0000
+  malignant_recall: 1.0000
+  error_rate: 0.0000
+  direct_correct_variant_wrong: 0
+  direct_wrong_variant_correct: 1
+  perception_correct_variant_wrong: 0
+  changed_from_perception_top1: 0
+  no_harm_applied: 0
+  harmful_skills: none
+  harmful_sources: none
+
++ metadata
+  top1_accuracy: 1.0000
+  top3_accuracy: 1.0000
+  malignant_recall: 1.0000
+  error_rate: 0.0000
+  direct_correct_variant_wrong: 0
+  direct_wrong_variant_correct: 1
+  perception_correct_variant_wrong: 0
+  changed_from_perception_top1: 0
+  no_harm_applied: 0
+  harmful_skills: none
+  harmful_sources: none
+
++ malignancy
+  top1_accuracy: 1.0000
+  top3_accuracy: 1.0000
+  malignant_recall: 1.0000
+  error_rate: 0.0000
+  direct_correct_variant_wrong: 0
+  direct_wrong_variant_correct: 1
+  perception_correct_variant_wrong: 0
+  changed_from_perception_top1: 0
+  no_harm_applied: 0
+  harmful_skills: none
+  harmful_sources: none
+
++ specialists
+  top1_accuracy: 1.0000
+  top3_accuracy: 1.0000
+  malignant_recall: 1.0000
+  error_rate: 0.0000
+  direct_correct_variant_wrong: 0
+  direct_wrong_variant_correct: 1
+  perception_correct_variant_wrong: 0
+  changed_from_perception_top1: 0
+  no_harm_applied: 0
+  harmful_skills: none
+  harmful_sources: none
+
++ controller/scorers
+  top1_accuracy: 1.0000
+  top3_accuracy: 1.0000
+  malignant_recall: 1.0000
+  error_rate: 0.0000
+  direct_correct_variant_wrong: 0
+  direct_wrong_variant_correct: 1
+  perception_correct_variant_wrong: 0
+  changed_from_perception_top1: 0
+  no_harm_applied: 0
+  harmful_skills: none
+  harmful_sources: none
+
+Full agent (+ retrieval)
+  top1_accuracy: 1.0000
+  top3_accuracy: 1.0000
+  malignant_recall: 1.0000
+  error_rate: 0.0000
+  direct_correct_variant_wrong: 0
+  direct_wrong_variant_correct: 1
+  perception_correct_variant_wrong: 0
+  changed_from_perception_top1: 0
+  no_harm_applied: 0
+  harmful_skills: none
+  harmful_sources: none
+
+Full agent (+ retrieval, no-harm)
+  top1_accuracy: 1.0000
+  top3_accuracy: 1.0000
+  malignant_recall: 1.0000
+  error_rate: 0.0000
+  direct_correct_variant_wrong: 0
+  direct_wrong_variant_correct: 1
+  perception_correct_variant_wrong: 0
+  changed_from_perception_top1: 0
+  no_harm_applied: 0
+  harmful_skills: none
+  harmful_sources: none
+

@@ -253,6 +253,8 @@ class ExperienceSkillPlanner:
 
         final_selected = rule_selected
         controller_payload: Dict[str, Any] = {}
+        hybrid_retained_skills: List[str] = []
+        hybrid_dropped_rule_skills: List[str] = []
         if self.controller is not None and self.planning_mode in {"controller", "learnable_hybrid"}:
             controller_payload = self.controller.select_skills(
                 state,
@@ -269,11 +271,13 @@ class ExperienceSkillPlanner:
             if not final_selected:
                 final_selected = rule_selected
             if self.planning_mode == "learnable_hybrid":
-                mandatory_rule_skills = [
-                    skill_name for skill_name in rule_selected
-                    if self._is_enabled(skill_name) and skill_name == "malignancy_risk_skill"
-                ]
-                final_selected = list(dict.fromkeys(final_selected + mandatory_rule_skills))
+                final_selected, hybrid_retained_skills, hybrid_dropped_rule_skills = self._merge_hybrid_skills(
+                    rule_selected=rule_selected,
+                    controller_payload=controller_payload,
+                    case_features=case_features,
+                    planner_flags=planner_flags,
+                    rule_skill_scores=rule_payload.get("recommended_skill_scores", {}) or {},
+                )
 
         state.selected_skills = list(dict.fromkeys(final_selected))
         state.planner = {
@@ -283,6 +287,9 @@ class ExperienceSkillPlanner:
             "flags": planner_flags,
             "case_features": case_features,
             "rule_selected_skills": rule_selected,
+            "controller_selected_skills": list(controller_payload.get("selected_skills", []) or []),
+            "hybrid_retained_skills": hybrid_retained_skills,
+            "hybrid_dropped_rule_skills": hybrid_dropped_rule_skills,
             "skill_scores": controller_payload.get("skill_scores", {}),
             "stop_probability": controller_payload.get("stop_probability"),
             "controller_debug": controller_payload.get("controller_debug", {}),
@@ -297,11 +304,103 @@ class ExperienceSkillPlanner:
             payload={
                 "rule_selected_skills": rule_selected,
                 "controller_selected_skills": controller_payload.get("selected_skills", rule_selected),
+                "hybrid_retained_skills": hybrid_retained_skills,
                 "stop_probability": controller_payload.get("stop_probability"),
                 "applied_rules": rule_payload.get("applied_rules", []),
             },
         )
         return state.planner
+
+    def _merge_hybrid_skills(
+        self,
+        *,
+        rule_selected: List[str],
+        controller_payload: Dict[str, Any],
+        case_features: Dict[str, Any],
+        planner_flags: Dict[str, Any],
+        rule_skill_scores: Dict[str, Any],
+    ) -> tuple[List[str], List[str], List[str]]:
+        controller_selected = list(controller_payload.get("selected_skills", []) or [])
+        final_selected = list(dict.fromkeys(controller_selected))
+        skill_scores = controller_payload.get("skill_scores", {}) or {}
+        recommended_skills = {
+            str(x).strip()
+            for x in planner_flags.get("recommended_skills", []) or []
+            if str(x).strip()
+        }
+        difficulty_score = self._hybrid_difficulty_score(case_features)
+        budget = getattr(self.controller, "max_skills", len(final_selected) or 1)
+        if difficulty_score >= 1.8 and recommended_skills:
+            budget = min(max(budget, len(final_selected)) + 1, 5)
+        budget = max(len(final_selected), budget)
+
+        retained: List[str] = []
+        candidates: List[tuple[float, str]] = []
+        for skill_name in rule_selected:
+            if skill_name in final_selected or not self._is_enabled(skill_name):
+                continue
+
+            info = skill_scores.get(skill_name, {}) or {}
+            probability = self._safe_float(info.get("probability"))
+            threshold = self._safe_float(info.get("threshold")) or 0.5
+            extra_bias = self._safe_float(info.get("extra_bias"))
+            margin = max(0.0, threshold - probability)
+            recommended = skill_name in recommended_skills
+            rule_support = self._safe_float(rule_skill_scores.get(skill_name))
+
+            retention_score = 0.0
+            if margin <= 0.08:
+                retention_score += 1.0
+            elif margin <= 0.15:
+                retention_score += 0.65
+            elif margin <= 0.25:
+                retention_score += 0.3
+            if recommended:
+                retention_score += 0.55
+            if rule_support > 0.0:
+                retention_score += min(0.75, rule_support)
+            if extra_bias > 0.0:
+                retention_score += min(0.25, extra_bias)
+            if difficulty_score >= 1.5:
+                retention_score += 0.25
+
+            if margin <= 0.25 and retention_score >= 1.0:
+                candidates.append((retention_score, skill_name))
+
+        candidates.sort(key=lambda item: (item[0], item[1]), reverse=True)
+        for _, skill_name in candidates:
+            if skill_name in final_selected:
+                continue
+            if len(final_selected) >= budget:
+                break
+            final_selected.append(skill_name)
+            retained.append(skill_name)
+
+        dropped = [
+            skill_name for skill_name in rule_selected
+            if skill_name not in final_selected and skill_name not in retained
+        ]
+        return list(dict.fromkeys(final_selected)), retained, dropped
+
+    def _hybrid_difficulty_score(self, case_features: Dict[str, Any]) -> float:
+        uncertainty = str(case_features.get("uncertainty", "")).lower()
+        difficulty = 0.0
+        if uncertainty == "high":
+            difficulty += 1.0
+        elif uncertainty == "medium":
+            difficulty += 0.55
+        if bool(case_features.get("top_gap_small", False)):
+            difficulty += 0.8
+        if bool(case_features.get("has_confusion_support", False)):
+            difficulty += 0.7
+        if not bool(case_features.get("supports_top1", False)):
+            difficulty += 0.4
+        retrieval_confidence = str(case_features.get("retrieval_confidence", "")).lower()
+        if retrieval_confidence == "low":
+            difficulty += 0.35
+        elif retrieval_confidence == "medium":
+            difficulty += 0.12
+        return difficulty
 
     def extract_case_features(self, state: CaseState) -> Dict[str, Any]:
         ddx = state.perception.get("ddx_candidates", []) or []

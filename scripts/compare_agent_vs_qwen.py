@@ -269,6 +269,32 @@ class ComparisonFramework:
                 return base_url
         return OpenAICompatClient().base_url
 
+    def _count_items(self, rows: List[Dict[str, Any]], key: str) -> Dict[str, int]:
+        counts: Dict[str, int] = {}
+        for row in rows:
+            values = row.get(key, []) or []
+            for value in values:
+                name = str(value).strip()
+                if not name:
+                    continue
+                counts[name] = counts.get(name, 0) + 1
+        return dict(sorted(counts.items(), key=lambda item: (-item[1], item[0])))
+
+    def _summarize_module_participation(self, rows: List[Dict[str, Any]]) -> Dict[str, Any]:
+        return {
+            "cases_with_memory_recommendations": sum(1 for row in rows if row.get("memory_recommended_skills")),
+            "cases_with_rule_recommendations": sum(1 for row in rows if row.get("rule_recommended_skills")),
+            "cases_with_applied_rules": sum(1 for row in rows if row.get("applied_rules")),
+            "cases_with_hybrid_retention": sum(1 for row in rows if row.get("hybrid_retained_skills")),
+            "cases_with_confusion_support": sum(1 for row in rows if row.get("has_confusion_support")),
+            "cases_with_supports_top1": sum(1 for row in rows if row.get("supports_top1")),
+            "selected_skill_counts": self._count_items(rows, "selected_skills"),
+            "rule_selected_skill_counts": self._count_items(rows, "rule_selected_skills"),
+            "memory_recommended_skill_counts": self._count_items(rows, "memory_recommended_skills"),
+            "rule_recommended_skill_counts": self._count_items(rows, "rule_recommended_skills"),
+            "hybrid_retained_skill_counts": self._count_items(rows, "hybrid_retained_skills"),
+        }
+
     def run_full_comparison(self) -> Dict[str, Any]:
         print("🚀 开始 Agent vs 直接 Qwen 对比实验")
         print(f"测试集大小: {self.test_limit} 案例\n")
@@ -390,6 +416,11 @@ class ComparisonFramework:
 
                 true_label = _norm_label(case.get("label"))
                 final_decision = result.get("final_decision", {}) or {}
+                planner = result.get("planner", {}) or {}
+                retrieval = result.get("retrieval", {}) or {}
+                retrieval_summary = retrieval.get("retrieval_summary", {}) or {}
+                aggregator_debug = final_decision.get("aggregator_debug", {}) or {}
+                evidence_summary = final_decision.get("evidence_summary", {}) or {}
                 pred_label = _norm_label(final_decision.get("final_label") or final_decision.get("diagnosis"))
                 top3 = _extract_top_k_labels(final_decision, top_n=3)
                 has_error = result.get("error") is not None
@@ -444,14 +475,31 @@ class ComparisonFramework:
                         "report_generation_mode": report_generation_mode or "unknown",
                         "report_fallback_reason": report.get("fallback_reason"),
                         "selected_skills": result.get("selected_skills", []),
-                        "planner_mode": (result.get("planner", {}) or {}).get("planning_mode"),
-                        "stop_probability": (result.get("planner", {}) or {}).get("stop_probability"),
+                        "rule_selected_skills": planner.get("rule_selected_skills", []),
+                        "controller_selected_skills": planner.get("controller_selected_skills", []),
+                        "hybrid_retained_skills": planner.get("hybrid_retained_skills", []),
+                        "hybrid_dropped_rule_skills": planner.get("hybrid_dropped_rule_skills", []),
+                        "planner_mode": planner.get("planning_mode"),
+                        "stop_probability": planner.get("stop_probability"),
+                        "retrieval_confidence": retrieval_summary.get("retrieval_confidence"),
+                        "supports_top1": retrieval_summary.get("supports_top1", False),
+                        "has_confusion_support": retrieval_summary.get("has_confusion_support", False),
+                        "memory_consensus_label": retrieval_summary.get("memory_consensus_label"),
+                        "memory_recommended_skills": retrieval_summary.get("memory_recommended_skills", []),
+                        "rule_recommended_skills": retrieval_summary.get("rule_recommended_skills", []),
+                        "recommended_skills": retrieval_summary.get("recommended_skills", []),
+                        "applied_rules": (planner.get("flags", {}) or {}).get("applied_rules", []),
+                        "retrieval_learning_feedback": retrieval.get("learning_feedback", {}),
+                        "aggregator_used_sources": evidence_summary.get("used_sources", []),
+                        "aggregator_top_candidates": evidence_summary.get("top_candidates", []),
+                        "candidate_features": aggregator_debug.get("candidate_features", {}),
                         "error": result.get("error"),
                     }
                 )
 
             total_valid = len(cases) - errors
             same_model = self.agent_perception_model == self.direct_model == self.agent_report_model
+            module_participation = self._summarize_module_participation(per_case_results)
 
             return {
                 "success": True,
@@ -480,6 +528,7 @@ class ComparisonFramework:
                     "perception_fallback_cases": perception_fallback_cases,
                     "report_fallback_cases": report_fallback_cases,
                 },
+                "module_participation": module_participation,
                 "runtime_flags": {
                     "use_retrieval": self.use_retrieval,
                     "use_specialist": self.use_specialist,
@@ -659,6 +708,9 @@ class ComparisonFramework:
             },
             "model_usage": {
                 "agent": agent_results.get("model_usage", {}),
+            },
+            "module_participation": {
+                "agent": agent_results.get("module_participation", {}),
             },
             "fairness": fairness,
             "conclusion": self._generate_conclusion(

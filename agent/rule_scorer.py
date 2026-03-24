@@ -155,6 +155,7 @@ class LearnableRuleScorer:
         ).strip().upper()
         is_correct = bool(true_label) and pred_label == true_label
         selected_skills = set(state.selected_skills)
+        skill_outputs = state.skill_outputs or {}
 
         updates: List[Dict[str, Any]] = []
         for rule_name, info in rule_scores.items():
@@ -164,7 +165,14 @@ class LearnableRuleScorer:
             if not rule_applied:
                 continue
 
-            target = 1.0 if is_correct else 0.0
+            target = self._rule_target(
+                suggested_skills=suggested_skills,
+                selected_skills=selected_skills,
+                skill_outputs=skill_outputs,
+                true_label=true_label,
+                predicted_label=pred_label,
+                is_correct=is_correct,
+            )
             error = target - prediction
             features = info.get("features", {}) or {}
             for key, value in features.items():
@@ -193,6 +201,48 @@ class LearnableRuleScorer:
             "is_correct": is_correct,
             "updated_rules": updates,
         }
+
+    def _rule_target(
+        self,
+        *,
+        suggested_skills: set[str],
+        selected_skills: set[str],
+        skill_outputs: Dict[str, Any],
+        true_label: str,
+        predicted_label: str,
+        is_correct: bool,
+    ) -> float:
+        overlap = suggested_skills.intersection(selected_skills)
+        target = 0.65 if is_correct else 0.25
+        if overlap:
+            target += 0.1
+        else:
+            target -= 0.1
+
+        support_for_truth = 0.0
+        support_for_wrong = 0.0
+        for skill_name in overlap:
+            output = skill_outputs.get(skill_name, {}) or {}
+            local = output.get("local_decision", {}) or {}
+            supported = self._norm_label(
+                local.get("supports")
+                or output.get("supports")
+                or output.get("supported_label")
+                or output.get("recommendation")
+                or output.get("winner")
+            )
+            confidence = max(
+                0.25,
+                self._safe_float(local.get("confidence", output.get("confidence") or output.get("score") or 0.5)),
+            )
+            if true_label and supported == true_label:
+                support_for_truth += confidence
+            elif predicted_label and predicted_label != true_label and supported == predicted_label:
+                support_for_wrong += confidence
+
+        target += min(0.25, 0.15 * support_for_truth)
+        target -= min(0.3, 0.2 * support_for_wrong)
+        return max(0.0, min(1.0, target))
 
     def _adam_update(self, param_name: str, gradient: float) -> None:
         """Adam优化器更新"""
@@ -253,3 +303,8 @@ class LearnableRuleScorer:
             return float(value)
         except (TypeError, ValueError):
             return default
+
+    def _norm_label(self, value: Any) -> str:
+        if value is None:
+            return ""
+        return str(value).strip().upper()

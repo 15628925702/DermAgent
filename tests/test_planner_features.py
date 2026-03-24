@@ -242,3 +242,66 @@ def test_planner_can_use_learned_specialist_threshold_from_calibrator(monkeypatc
     result = planner.plan(state)
 
     assert "bcc_scc_specialist_skill" in result["selected_skills"]
+
+
+def test_hybrid_planner_retains_near_threshold_recommended_skill(monkeypatch):
+    state = create_case_state(
+        {
+            "file": "planner_hybrid.png",
+            "metadata": {"age": 71, "site": "face"},
+            "text": "",
+        }
+    )
+    state.perception = {
+        "ddx_candidates": [
+            {"name": "BCC", "score": 0.53},
+            {"name": "SCC", "score": 0.50},
+        ],
+        "uncertainty": {"level": "high"},
+        "risk_cues": {"malignant_cues": ["ulcerated"]},
+    }
+    state.retrieval = {
+        "confusion_hits": [{"pair": ["BCC", "SCC"]}],
+        "rule_hits": [],
+        "retrieval_summary": {
+            "retrieval_confidence": "low",
+            "supports_top1": False,
+            "has_confusion_support": True,
+            "memory_recommended_skills": ["bcc_scc_specialist_skill"],
+            "recommended_skills": ["bcc_scc_specialist_skill"],
+        },
+    }
+
+    controller = LearnableSkillController(build_default_skill_index())
+
+    def fake_select_skills(*args, **kwargs):
+        return {
+            "selected_skills": ["uncertainty_assessment_skill", "compare_skill"],
+            "skill_scores": {
+                "compare_skill": {"probability": 0.74, "threshold": 0.55, "extra_bias": 0.10},
+                "bcc_scc_specialist_skill": {"probability": 0.53, "threshold": 0.56, "extra_bias": 0.45},
+                "uncertainty_assessment_skill": {"probability": 0.99, "threshold": 0.45, "extra_bias": 0.0},
+            },
+            "stop_probability": 0.09,
+            "controller_debug": {},
+            "controller_mode": "learnable_hybrid",
+        }
+
+    monkeypatch.setattr(controller, "select_skills", fake_select_skills)
+
+    planner = ExperienceSkillPlanner(
+        use_specialist=True,
+        controller=controller,
+        planning_mode="learnable_hybrid",
+        enabled_skills={
+            "uncertainty_assessment_skill",
+            "compare_skill",
+            "malignancy_risk_skill",
+            "metadata_consistency_skill",
+            "bcc_scc_specialist_skill",
+        },
+    )
+    result = planner.plan(state)
+
+    assert "bcc_scc_specialist_skill" in result["selected_skills"]
+    assert "bcc_scc_specialist_skill" in result["hybrid_retained_skills"]

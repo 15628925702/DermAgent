@@ -126,9 +126,17 @@ class TargetLearner:
 
         return base
 
-    def update_from_case(self, skill_id: str, features: Dict[str, float], state: CaseState,
-                        actual_helpful: bool, learning_rate: float = None) -> None:
+    def update_from_case(
+        self,
+        skill_id: str,
+        features: Dict[str, float],
+        state: CaseState,
+        actual_helpful: bool | None,
+        learning_rate: float = None,
+    ) -> None:
         """从案例中学习目标函数参数"""
+        if actual_helpful is None:
+            return
         lr = learning_rate or self.learning_rate
         predicted = self.predict_target(skill_id, features, state)
         target = 1.0 if actual_helpful else 0.0
@@ -346,6 +354,7 @@ class LearnableSkillController:
             scored.append((probability, spec.skill_id, score_item))
 
         scored.sort(key=lambda item: (item[0], item[2]["logit"]), reverse=True)
+        stop_probability = self._estimate_stop_probability(features)
 
         selected = [
             skill_id
@@ -355,15 +364,24 @@ class LearnableSkillController:
         if "uncertainty_assessment_skill" not in selected:
             selected.insert(0, "uncertainty_assessment_skill")
 
-        if len(selected) == 1:
+        desired_skill_floor = self._desired_skill_floor(
+            features,
+            rule_priors=rule_priors,
+            recommended_skills=recommended_skills,
+            stop_probability=stop_probability,
+        )
+        floor_retained: List[str] = []
+        if len(selected) < desired_skill_floor:
             for probability, skill_id, item in scored:
                 if skill_id == "uncertainty_assessment_skill":
                     continue
                 if skill_id not in selected:
                     selected.append(skill_id)
                     item["selected"] = True
-                    item["reasons"].append("min_skill_floor")
-                    break
+                    item["reasons"].append("dynamic_skill_floor")
+                    floor_retained.append(skill_id)
+                    if len(selected) >= desired_skill_floor:
+                        break
 
         if len(selected) > self.max_skills:
             kept: List[str] = []
@@ -377,11 +395,12 @@ class LearnableSkillController:
                     break
             selected = kept
 
-        stop_probability = self._estimate_stop_probability(features)
         controller_debug = {
             "case_features": {key: round(float(value), 4) for key, value in features.items()},
             "recommended_skills": sorted(recommended_skills),
             "rule_priors": rule_priors,
+            "desired_skill_floor": desired_skill_floor,
+            "floor_retained_skills": floor_retained,
             "scored_skills": [item for _, _, item in scored],
         }
 
@@ -538,6 +557,7 @@ class LearnableSkillController:
             "targets": targets,
             "updated_skills": [],
         }
+        selected_skills = set(state.selected_skills or [])
         final_label = str(
             (state.final_decision or {}).get("final_label")
             or (state.final_decision or {}).get("diagnosis")
@@ -560,12 +580,20 @@ class LearnableSkillController:
                 prediction=prediction,
                 learning_rate=self.learning_rate,
             )
-            helpful = spec.skill_id in state.selected_skills and (is_correct or target >= 0.65)
-            if spec.skill_id in state.selected_skills:
+            was_executed = spec.skill_id in selected_skills
+            helpful = was_executed and (is_correct or target >= 0.65)
+            if was_executed:
                 spec.record_use(helpful=helpful)
 
             # 更新目标学习器
-            self.target_learner.update_from_case(spec.skill_id, features, state, helpful, self.learning_rate)
+            observed_helpfulness = helpful if was_executed else None
+            self.target_learner.update_from_case(
+                spec.skill_id,
+                features,
+                state,
+                observed_helpfulness,
+                self.learning_rate,
+            )
 
             feedback["updated_skills"].append(
                 {
@@ -573,6 +601,8 @@ class LearnableSkillController:
                     "target": round(target, 4),
                     "prediction": round(prediction, 4),
                     "success_rate": round(spec.success_rate(), 4),
+                    "executed": was_executed,
+                    "observed_helpful": observed_helpfulness,
                 }
             )
 
@@ -629,6 +659,33 @@ class LearnableSkillController:
         for name, weight in self.stop_weights.items():
             logit += float(weight) * float(features.get(name, 0.0))
         return sigmoid(logit)
+
+    def _desired_skill_floor(
+        self,
+        features: Dict[str, float],
+        *,
+        rule_priors: List[str],
+        recommended_skills: set[str],
+        stop_probability: float,
+    ) -> int:
+        difficulty = 0.0
+        difficulty += 1.0 * float(features.get("uncertainty_high", 0.0))
+        difficulty += 0.55 * float(features.get("uncertainty_medium", 0.0))
+        difficulty += 0.8 * float(features.get("top_gap_small", 0.0))
+        difficulty += 0.65 * float(features.get("has_confusion_support", 0.0))
+        difficulty += 0.45 * (1.0 - float(features.get("supports_top1", 0.0)))
+        difficulty += 0.35 * float(features.get("retrieval_low", 0.0))
+        difficulty += 0.15 * min(2, len(rule_priors))
+        difficulty += 0.12 * min(2, len(recommended_skills))
+        if stop_probability <= 0.18:
+            difficulty += 0.3
+
+        floor = 2
+        if difficulty >= 1.6:
+            floor += 1
+        if difficulty >= 2.8 and self.max_skills >= 4:
+            floor += 1
+        return max(1, min(self.max_skills, floor))
 
     def to_dict(self) -> Dict[str, Any]:
         return {

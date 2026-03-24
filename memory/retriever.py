@@ -186,16 +186,23 @@ class LearnableRetrievalScorer:
 
         return score
 
-    def update_from_feedback(self, case_item: Dict[str, Any], was_helpful: bool, learning_rate: float = None) -> None:
+    def update_from_feedback(
+        self,
+        case_item: Dict[str, Any],
+        helpful_signal: float | bool,
+        learning_rate: float = None,
+    ) -> None:
         """从检索结果的反馈中学习"""
         lr = learning_rate or self.learning_rate
         features = case_item.get("_score_features", {})
+        signal = 1.0 if helpful_signal is True else -1.0 if helpful_signal is False else float(helpful_signal)
+        signal = max(-1.0, min(1.0, signal))
 
         for feature_name, feature_value in features.items():
             if feature_name in self.feature_importance:
                 # 如果这个案例有帮助，增加相应特征的权重
                 # 如果没有帮助，减少权重
-                adjustment = lr * feature_value * (1.0 if was_helpful else -1.0)
+                adjustment = lr * feature_value * signal
 
                 if self.use_adam:
                     self._adam_update(f"importance_{feature_name}", adjustment)
@@ -696,11 +703,11 @@ class ExperienceRetriever:
             return ""
         return str(value).strip().lower()
 
-    def update_from_feedback(self, retrieved_cases: List[Dict[str, Any]], was_helpful: bool) -> None:
+    def update_from_feedback(self, retrieved_cases: List[Dict[str, Any]], helpful_signal: float | bool) -> None:
         """从检索结果的反馈中更新打分器"""
         for case_item in retrieved_cases:
             if "_score_features" in case_item:
-                self.scorer.update_from_feedback(case_item, was_helpful)
+                self.scorer.update_from_feedback(case_item, helpful_signal)
 
     def to_dict(self) -> Dict[str, Any]:
         return {

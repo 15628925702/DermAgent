@@ -14,9 +14,11 @@ class DecisionAggregator:
         self,
         final_scorer: LearnableFinalScorer | None = None,
         evidence_calibrator: LearnableEvidenceCalibrator | None = None,
+        no_harm_mode: str = "off",
     ) -> None:
         self.final_scorer = final_scorer
         self.evidence_calibrator = evidence_calibrator
+        self.no_harm_mode = str(no_harm_mode or "off").strip().lower()
 
     def aggregate(self, state: CaseState) -> Dict[str, Any]:
         candidate_scores: Dict[str, float] = {}
@@ -56,6 +58,12 @@ class DecisionAggregator:
             ranked_candidates=ranked_candidates,
             candidate_features=candidate_features,
         )
+        ranked_candidates, no_harm_debug = self._apply_no_harm_guard(
+            state=state,
+            ranked_candidates=ranked_candidates,
+            candidate_features=candidate_features,
+            safety_override=safety_override,
+        )
 
         final_label = ranked_candidates[0][0] if ranked_candidates else "UNKNOWN"
         confidence = self._estimate_final_confidence(ranked_candidates=ranked_candidates, state=state)
@@ -85,6 +93,7 @@ class DecisionAggregator:
                 "uses_evidence_calibrator": self.evidence_calibrator is not None,
                 "evidence_calibrator_weights": self.evidence_calibrator.to_dict().get("weights", {}) if self.evidence_calibrator is not None else {},
                 "safety_override": safety_override,
+                "no_harm_guard": no_harm_debug,
                 "conservative_top_k": conservative_top_k,
             },
         }
@@ -668,6 +677,112 @@ class DecisionAggregator:
             add(label, score)
 
         return [{"name": name, "score": round(score, 4)} for name, score in ordered[:5]]
+
+    def _apply_no_harm_guard(
+        self,
+        *,
+        state: CaseState,
+        ranked_candidates: List[Tuple[str, float]],
+        candidate_features: Dict[str, Dict[str, float]],
+        safety_override: Dict[str, Any],
+    ) -> Tuple[List[Tuple[str, float]], Dict[str, Any]]:
+        debug: Dict[str, Any] = {
+            "mode": self.no_harm_mode,
+            "applied": False,
+            "reason": "",
+            "perception_top1": "",
+            "top_label_before": ranked_candidates[0][0] if ranked_candidates else "",
+            "top_label_after": ranked_candidates[0][0] if ranked_candidates else "",
+            "perception_score": 0.0,
+            "top_label_support_sources": 0,
+            "top_label_support_strength": 0.0,
+            "score_gap_to_perception": None,
+        }
+        if self.no_harm_mode not in {"conservative", "strict"}:
+            debug["reason"] = "disabled"
+            return ranked_candidates, debug
+        if not ranked_candidates:
+            debug["reason"] = "no_ranked_candidates"
+            return ranked_candidates, debug
+        if bool((safety_override or {}).get("applied")):
+            debug["reason"] = "blocked_by_safety_override"
+            return ranked_candidates, debug
+
+        perception_top1 = self._norm_label((state.perception.get("most_likely", {}) or {}).get("name"))
+        perception_topk = state.get_top_ddx_names(top_k=1)
+        if not perception_top1 and perception_topk:
+            perception_top1 = self._norm_label(perception_topk[0])
+        debug["perception_top1"] = perception_top1
+        if not perception_top1:
+            debug["reason"] = "missing_perception_top1"
+            return ranked_candidates, debug
+
+        top_label, top_score = ranked_candidates[0]
+        if top_label == perception_top1:
+            debug["reason"] = "already_matches_perception"
+            return ranked_candidates, debug
+
+        ranked_map = {self._norm_label(label): float(score) for label, score in ranked_candidates}
+        top_features = candidate_features.get(top_label, {}) or {}
+        perception_features = candidate_features.get(perception_top1, {}) or {}
+        perception_score = float(ranked_map.get(perception_top1, self._safe_float(perception_features.get("perception_score"))))
+        support_sources = self._count_positive_support_sources(top_features)
+        support_strength = (
+            max(0.0, self._safe_float(top_features.get("retrieval_score")))
+            + max(0.0, self._safe_float(top_features.get("prototype_score")))
+            + max(0.0, self._safe_float(top_features.get("confusion_score")))
+            + max(0.0, self._safe_float(top_features.get("compare_score")))
+            + max(0.0, self._safe_float(top_features.get("specialist_score")))
+            + max(0.0, self._safe_float(top_features.get("metadata_score")))
+            + max(0.0, self._safe_float(top_features.get("malignancy_score")))
+            + max(0.0, self._safe_float(top_features.get("memory_consensus_score")))
+        )
+        gap_to_perception = float(top_score) - float(perception_score)
+        debug["perception_score"] = round(perception_score, 4)
+        debug["top_label_support_sources"] = int(support_sources)
+        debug["top_label_support_strength"] = round(support_strength, 4)
+        debug["score_gap_to_perception"] = round(gap_to_perception, 4)
+
+        has_strong_non_perception_support = (
+            support_sources >= 2
+            or support_strength >= 1.2
+            or self._safe_float(top_features.get("specialist_score")) >= 0.75
+            or self._safe_float(top_features.get("retrieval_score")) >= 0.8
+            or self._safe_float(top_features.get("prototype_score")) >= 0.85
+            or self._safe_float(top_features.get("confusion_score")) >= 0.85
+            or self._safe_float(top_features.get("compare_score")) >= 0.95
+        )
+        if has_strong_non_perception_support:
+            debug["reason"] = "top_label_has_strong_support"
+            return ranked_candidates, debug
+
+        should_override = False
+        if self.no_harm_mode == "strict":
+            should_override = gap_to_perception <= 0.75
+            debug["reason"] = "strict_restore_perception" if should_override else "strict_gap_too_large"
+        else:
+            should_override = support_sources <= 1 and gap_to_perception <= 0.35
+            debug["reason"] = "conservative_restore_perception" if should_override else "conservative_support_retained"
+
+        if not should_override:
+            return ranked_candidates, debug
+
+        adjusted: List[Tuple[str, float]] = []
+        promoted_score = max(float(top_score) + 0.01, float(perception_score) + 0.2)
+        inserted = False
+        for label, score in ranked_candidates:
+            norm_label = self._norm_label(label)
+            if norm_label == perception_top1:
+                adjusted.append((norm_label, promoted_score))
+                inserted = True
+            else:
+                adjusted.append((norm_label, float(score)))
+        if not inserted:
+            adjusted.append((perception_top1, promoted_score))
+        adjusted.sort(key=lambda item: item[1], reverse=True)
+        debug["applied"] = True
+        debug["top_label_after"] = adjusted[0][0] if adjusted else ""
+        return adjusted, debug
 
     def _estimate_malignant_support_score(
         self,

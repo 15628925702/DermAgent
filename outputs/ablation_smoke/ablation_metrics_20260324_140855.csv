@@ -1,0 +1,10 @@
+stage,top1_accuracy,top3_accuracy,malignant_recall,error_rate,direct_correct_variant_wrong,direct_wrong_variant_correct,perception_correct_variant_wrong,changed_from_perception_top1,no_harm_applied
+Direct Qwen,0.0000,0.0000,0.0000,1.0000,,,,,
+Agent perception only,1.0000,1.0000,1.0000,0.0000,0,1,0,0,0
++ compare,1.0000,1.0000,1.0000,0.0000,0,1,0,0,0
++ metadata,1.0000,1.0000,1.0000,0.0000,0,1,0,0,0
++ malignancy,1.0000,1.0000,1.0000,0.0000,0,1,0,0,0
++ specialists,1.0000,1.0000,1.0000,0.0000,0,1,0,0,0
++ controller/scorers,1.0000,1.0000,1.0000,0.0000,0,1,0,0,0
+Full agent (+ retrieval),1.0000,1.0000,1.0000,0.0000,0,1,0,0,0
+"Full agent (+ retrieval, no-harm)",1.0000,1.0000,1.0000,0.0000,0,1,0,0,0

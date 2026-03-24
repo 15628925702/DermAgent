@@ -51,6 +51,7 @@ def run_agent(
     update_rule_scorer: bool | None = None,
     perception_model: str | None = None,
     report_model: str | None = None,
+    no_harm_mode: str = "off",
 ) -> Dict[str, Any]:
     if bank is None:
         bank = ExperienceBank()
@@ -91,6 +92,7 @@ def run_agent(
         "enable_rule_compression": enable_rule_compression,
         "perception_model": perception_model or "",
         "report_model": report_model or "",
+        "no_harm_mode": str(no_harm_mode or "off"),
     }
     state.trace("config", "success", "Runtime flags initialized", payload=runtime_flags)
 
@@ -172,6 +174,7 @@ def run_agent(
         aggregator = DecisionAggregator(
             final_scorer=final_scorer if use_controller and use_final_scorer else None,
             evidence_calibrator=evidence_calibrator,
+            no_harm_mode=no_harm_mode,
         )
         aggregator.aggregate(state)
     except Exception as e:
@@ -224,8 +227,12 @@ def run_agent(
             if retrieval_scorer:
                 # 从检索结果中提取有用性反馈
                 retrieved_cases = state.retrieval.get("raw_case_hits", []) or []
-                was_helpful = _evaluate_retrieval_helpfulness(state)
-                retrieval_scorer.update_from_feedback(retrieved_cases, was_helpful)
+                retrieval_feedback = _evaluate_retrieval_helpfulness(state)
+                state.retrieval["learning_feedback"] = retrieval_feedback
+                retrieval_scorer.update_from_feedback(
+                    retrieved_cases,
+                    retrieval_feedback.get("signal", 0.0),
+                )
                 state.trace("retriever_update", "success", "Retriever parameters updated from feedback")
         except Exception as e:
             state.trace("retriever_update", "failed", f"Retriever update failed: {e}")
@@ -379,9 +386,89 @@ def _strip_rule_memory_from_state(state: Any) -> None:
     state.retrieval = retrieval
 
 
-def _evaluate_retrieval_helpfulness(state: Any) -> bool:
+def _evaluate_retrieval_helpfulness(state: Any) -> Dict[str, Any]:
     """评估检索结果是否有帮助"""
     retrieval_summary = state.retrieval.get("retrieval_summary", {}) or {}
+    support_labels = {
+        str(x).strip().upper()
+        for x in retrieval_summary.get("support_labels", []) or []
+        if str(x).strip()
+    }
+    recommended_skills_v2 = {
+        str(x).strip()
+        for x in retrieval_summary.get("recommended_skills", []) or []
+        if str(x).strip()
+    }
+    selected_skills_v2 = {
+        str(x).strip()
+        for x in state.selected_skills or []
+        if str(x).strip()
+    }
+    memory_consensus = str(retrieval_summary.get("memory_consensus_label", "")).strip().upper()
+    retrieval_confidence_v2 = str(retrieval_summary.get("retrieval_confidence", "low")).strip().lower()
+    final_decision_v2 = state.final_decision or {}
+    true_label_v2 = str((state.case_info or {}).get("true_label", "")).strip().upper()
+    final_label_v2 = str(final_decision_v2.get("final_label") or final_decision_v2.get("diagnosis") or "").strip().upper()
+    top3_v2 = {
+        str(item.get("name", "")).strip().upper()
+        for item in final_decision_v2.get("top_k", [])[:3]
+        if isinstance(item, dict) and str(item.get("name", "")).strip()
+    }
+    support_strength_v2 = retrieval_summary.get("support_strength", {}) or {}
+    skill_overlap_v2 = len(recommended_skills_v2 & selected_skills_v2)
+
+    score_v2 = 0.0
+    if true_label_v2 and true_label_v2 in support_labels:
+        score_v2 += 1.2
+    elif final_label_v2 and final_label_v2 in support_labels:
+        score_v2 += 0.45
+
+    if true_label_v2 and memory_consensus and true_label_v2 == memory_consensus:
+        score_v2 += 0.9
+    elif final_label_v2 and memory_consensus and final_label_v2 == memory_consensus:
+        score_v2 += 0.35
+
+    if true_label_v2 and true_label_v2 in top3_v2 and (true_label_v2 in support_labels or true_label_v2 == memory_consensus):
+        score_v2 += 0.45
+
+    if skill_overlap_v2 > 0:
+        score_v2 += min(0.9, 0.45 * skill_overlap_v2)
+
+    if bool(retrieval_summary.get("has_confusion_support", False)) and skill_overlap_v2 > 0:
+        score_v2 += 0.25
+    if bool(retrieval_summary.get("supports_top1", False)) and final_label_v2 and final_label_v2 == true_label_v2:
+        score_v2 += 0.4
+
+    raw_case_support_v2 = float(support_strength_v2.get("raw_case", 0.0) or 0.0)
+    prototype_support_v2 = float(support_strength_v2.get("prototype", 0.0) or 0.0)
+    if true_label_v2 and true_label_v2 in support_labels:
+        score_v2 += min(0.4, 0.08 * (raw_case_support_v2 + prototype_support_v2))
+
+    if retrieval_confidence_v2 == "high":
+        score_v2 += 0.25
+    elif retrieval_confidence_v2 == "low" and not support_labels and skill_overlap_v2 == 0:
+        score_v2 -= 0.35
+
+    if (
+        true_label_v2
+        and final_label_v2
+        and final_label_v2 != true_label_v2
+        and true_label_v2 not in support_labels
+        and true_label_v2 != memory_consensus
+    ):
+        score_v2 -= 0.45
+
+    signal_v2 = max(-1.0, min(1.0, score_v2 / 2.0))
+    return {
+        "score": round(score_v2, 4),
+        "signal": round(signal_v2, 4),
+        "helpful": signal_v2 > 0.0,
+        "skill_overlap": skill_overlap_v2,
+        "supports_true_label": bool(true_label_v2 and true_label_v2 in support_labels),
+        "supports_final_label": bool(final_label_v2 and final_label_v2 in support_labels),
+        "matches_memory_consensus": bool(true_label_v2 and memory_consensus and true_label_v2 == memory_consensus),
+        "retrieval_confidence": retrieval_confidence_v2,
+    }
 
     # 如果检索提供了技能推荐，且这些技能被使用了，认为是helpful
     recommended_skills = set(retrieval_summary.get("recommended_skills", []))

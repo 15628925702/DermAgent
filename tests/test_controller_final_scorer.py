@@ -148,3 +148,39 @@ def test_controller_targets_follow_skill_evidence_not_just_rule_presence():
     assert targets["metadata_consistency_skill"] > 0.8
     assert targets["malignancy_risk_skill"] > 0.9
     assert targets["bcc_scc_specialist_skill"] < 0.2
+
+
+def test_controller_does_not_penalize_unselected_skills_as_false_negatives():
+    controller = LearnableSkillController(build_default_skill_index())
+    state = create_case_state(
+        {
+            "file": "no_false_negative.png",
+            "metadata": {"site": "face", "age": 70},
+            "text": "",
+            "true_label": "BCC",
+        }
+    )
+    state.perception = {
+        "ddx_candidates": [
+            {"name": "BCC", "score": 0.58},
+            {"name": "SCC", "score": 0.54},
+        ],
+        "uncertainty": {"level": "high"},
+    }
+    state.retrieval = {"retrieval_summary": {"retrieval_confidence": "low", "supports_top1": False}}
+    state.planner = {"case_features": {"top_gap_small": True, "has_malignant_candidate": True}}
+    state.selected_skills = ["compare_skill"]
+    state.final_decision = {"final_label": "BCC", "confidence": "medium"}
+    state.skill_outputs = {
+        "compare_skill": {
+            "supports": "BCC",
+            "confidence": 0.8,
+            "local_decision": {"supports": "BCC", "confidence": 0.8, "applicable": 1.0},
+        }
+    }
+
+    untouched_before = controller.target_learner.base_targets["mel_nev_specialist_skill"]
+    controller.update_from_case(state)
+    untouched_after = controller.target_learner.base_targets["mel_nev_specialist_skill"]
+
+    assert untouched_after == untouched_before

@@ -1,0 +1,1004 @@
+{
+  "timestamp": "2026-03-24T14:08:55.909781",
+  "dataset_type": "pad_ufes_20",
+  "dataset_root": "data/pad_ufes_20",
+  "split_json": "outputs\\splits\\pad_ufes_20_seed42.json",
+  "split_name": "test",
+  "seed": 42,
+  "test_count": 1,
+  "perception_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+  "report_model": "Qwen/Qwen2.5-VL-7B-Instruct",
+  "controller_checkpoint": "outputs/checkpoints/learned_controller_best.json",
+  "bank_state_in": "outputs/checkpoints/learned_bank_best.json",
+  "results": [
+    {
+      "name": "direct_qwen",
+      "title": "Direct Qwen",
+      "metrics": {
+        "accuracy_top1": 0.0,
+        "accuracy_top3": 0.0,
+        "malignant_recall": 0.0,
+        "error_rate": 1.0
+      },
+      "per_case": [
+        {
+          "case_id": "PAT_46_881_939.png",
+          "true_label": "BCC",
+          "predicted_label": "UNKNOWN",
+          "top3": [
+            "UNKNOWN"
+          ],
+          "confidence": 0.0,
+          "is_top1_correct": false,
+          "is_top3_correct": false,
+          "is_malignant_case": true,
+          "malignant_recalled": false,
+          "error": "openai package is not installed"
+        }
+      ],
+      "total_cases": 1,
+      "errors": 1,
+      "model": "Qwen/Qwen2.5-VL-7B-Instruct"
+    },
+    {
+      "name": "agent_perception_only",
+      "title": "Agent perception only",
+      "config": {
+        "name": "agent_perception_only",
+        "title": "Agent perception only",
+        "use_retrieval": false,
+        "use_compare": false,
+        "use_malignancy": false,
+        "use_metadata_consistency": false,
+        "use_specialist": false,
+        "use_controller": false,
+        "no_harm_mode": "off"
+      },
+      "metrics": {
+        "accuracy_top1": 1.0,
+        "accuracy_top3": 1.0,
+        "malignant_recall": 1.0,
+        "error_rate": 0.0
+      },
+      "per_case": [
+        {
+          "case_id": "PAT_46_881_939.png",
+          "true_label": "BCC",
+          "predicted_label": "BCC",
+          "top3": [
+            "BCC",
+            "SCC",
+            "NEV"
+          ],
+          "confidence": 0.33,
+          "confidence_text": "low",
+          "is_top1_correct": true,
+          "is_top3_correct": true,
+          "is_malignant_case": true,
+          "malignant_recalled": true,
+          "error": null,
+          "selected_skills": [
+            "uncertainty_assessment_skill"
+          ],
+          "planner_mode": "rules_only",
+          "stop_probability": null,
+          "retrieval_confidence": "low",
+          "used_sources": [
+            "perception"
+          ],
+          "perception_top1": "BCC",
+          "perception_correct": true,
+          "changed_from_perception_top1": false,
+          "no_harm_applied": false,
+          "no_harm_reason": "disabled",
+          "safety_override_applied": false,
+          "aggregator_top_scores": {
+            "BCC": 0.43,
+            "SCC": 0.29,
+            "NEV": 0.18
+          }
+        }
+      ],
+      "total_cases": 1,
+      "errors": 0,
+      "route_stats": {
+        "selected_skill_counts": {
+          "uncertainty_assessment_skill": 1
+        },
+        "used_source_counts": {
+          "perception": 1
+        },
+        "predicted_label_counts": {
+          "BCC": 1
+        }
+      },
+      "harm_analysis_vs_direct": {
+        "changed_from_direct_count": 1,
+        "direct_correct_variant_wrong_count": 0,
+        "direct_wrong_variant_correct_count": 1,
+        "perception_correct_variant_wrong_count": 0,
+        "changed_from_perception_top1_count": 0,
+        "no_harm_applied_count": 0,
+        "harmful_skill_counts": {},
+        "harmful_source_counts": {},
+        "helped_skill_counts": {
+          "uncertainty_assessment_skill": 1
+        },
+        "sample_harmed_cases": [],
+        "sample_helped_cases": [
+          {
+            "case_id": "PAT_46_881_939.png",
+            "true_label": "BCC",
+            "direct_pred": "UNKNOWN",
+            "variant_pred": "BCC",
+            "perception_top1": "BCC",
+            "selected_skills": [
+              "uncertainty_assessment_skill"
+            ],
+            "used_sources": [
+              "perception"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "agent_plus_compare",
+      "title": "+ compare",
+      "config": {
+        "name": "agent_plus_compare",
+        "title": "+ compare",
+        "use_retrieval": false,
+        "use_compare": true,
+        "use_malignancy": false,
+        "use_metadata_consistency": false,
+        "use_specialist": false,
+        "use_controller": false,
+        "no_harm_mode": "off"
+      },
+      "metrics": {
+        "accuracy_top1": 1.0,
+        "accuracy_top3": 1.0,
+        "malignant_recall": 1.0,
+        "error_rate": 0.0
+      },
+      "per_case": [
+        {
+          "case_id": "PAT_46_881_939.png",
+          "true_label": "BCC",
+          "predicted_label": "BCC",
+          "top3": [
+            "BCC",
+            "SCC",
+            "NEV"
+          ],
+          "confidence": 0.33,
+          "confidence_text": "low",
+          "is_top1_correct": true,
+          "is_top3_correct": true,
+          "is_malignant_case": true,
+          "malignant_recalled": true,
+          "error": null,
+          "selected_skills": [
+            "uncertainty_assessment_skill",
+            "compare_skill"
+          ],
+          "planner_mode": "rules_only",
+          "stop_probability": null,
+          "retrieval_confidence": "low",
+          "used_sources": [
+            "perception",
+            "compare_skill"
+          ],
+          "perception_top1": "BCC",
+          "perception_correct": true,
+          "changed_from_perception_top1": false,
+          "no_harm_applied": false,
+          "no_harm_reason": "disabled",
+          "safety_override_applied": false,
+          "aggregator_top_scores": {
+            "BCC": 0.518,
+            "SCC": 0.29,
+            "NEV": 0.18
+          }
+        }
+      ],
+      "total_cases": 1,
+      "errors": 0,
+      "route_stats": {
+        "selected_skill_counts": {
+          "uncertainty_assessment_skill": 1,
+          "compare_skill": 1
+        },
+        "used_source_counts": {
+          "perception": 1,
+          "compare_skill": 1
+        },
+        "predicted_label_counts": {
+          "BCC": 1
+        }
+      },
+      "harm_analysis_vs_direct": {
+        "changed_from_direct_count": 1,
+        "direct_correct_variant_wrong_count": 0,
+        "direct_wrong_variant_correct_count": 1,
+        "perception_correct_variant_wrong_count": 0,
+        "changed_from_perception_top1_count": 0,
+        "no_harm_applied_count": 0,
+        "harmful_skill_counts": {},
+        "harmful_source_counts": {},
+        "helped_skill_counts": {
+          "uncertainty_assessment_skill": 1,
+          "compare_skill": 1
+        },
+        "sample_harmed_cases": [],
+        "sample_helped_cases": [
+          {
+            "case_id": "PAT_46_881_939.png",
+            "true_label": "BCC",
+            "direct_pred": "UNKNOWN",
+            "variant_pred": "BCC",
+            "perception_top1": "BCC",
+            "selected_skills": [
+              "uncertainty_assessment_skill",
+              "compare_skill"
+            ],
+            "used_sources": [
+              "perception",
+              "compare_skill"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "agent_plus_metadata",
+      "title": "+ metadata",
+      "config": {
+        "name": "agent_plus_metadata",
+        "title": "+ metadata",
+        "use_retrieval": false,
+        "use_compare": true,
+        "use_malignancy": false,
+        "use_metadata_consistency": true,
+        "use_specialist": false,
+        "use_controller": false,
+        "no_harm_mode": "off"
+      },
+      "metrics": {
+        "accuracy_top1": 1.0,
+        "accuracy_top3": 1.0,
+        "malignant_recall": 1.0,
+        "error_rate": 0.0
+      },
+      "per_case": [
+        {
+          "case_id": "PAT_46_881_939.png",
+          "true_label": "BCC",
+          "predicted_label": "BCC",
+          "top3": [
+            "BCC",
+            "SCC",
+            "NEV"
+          ],
+          "confidence": 0.66,
+          "confidence_text": "medium",
+          "is_top1_correct": true,
+          "is_top3_correct": true,
+          "is_malignant_case": true,
+          "malignant_recalled": true,
+          "error": null,
+          "selected_skills": [
+            "uncertainty_assessment_skill",
+            "compare_skill",
+            "metadata_consistency_skill"
+          ],
+          "planner_mode": "rules_only",
+          "stop_probability": null,
+          "retrieval_confidence": "low",
+          "used_sources": [
+            "perception",
+            "compare_skill",
+            "metadata_consistency_skill"
+          ],
+          "perception_top1": "BCC",
+          "perception_correct": true,
+          "changed_from_perception_top1": false,
+          "no_harm_applied": false,
+          "no_harm_reason": "disabled",
+          "safety_override_applied": false,
+          "aggregator_top_scores": {
+            "BCC": 0.7337,
+            "SCC": 0.3057,
+            "NEV": 0.17,
+            "ACK": -0.005
+          }
+        }
+      ],
+      "total_cases": 1,
+      "errors": 0,
+      "route_stats": {
+        "selected_skill_counts": {
+          "uncertainty_assessment_skill": 1,
+          "compare_skill": 1,
+          "metadata_consistency_skill": 1
+        },
+        "used_source_counts": {
+          "perception": 1,
+          "compare_skill": 1,
+          "metadata_consistency_skill": 1
+        },
+        "predicted_label_counts": {
+          "BCC": 1
+        }
+      },
+      "harm_analysis_vs_direct": {
+        "changed_from_direct_count": 1,
+        "direct_correct_variant_wrong_count": 0,
+        "direct_wrong_variant_correct_count": 1,
+        "perception_correct_variant_wrong_count": 0,
+        "changed_from_perception_top1_count": 0,
+        "no_harm_applied_count": 0,
+        "harmful_skill_counts": {},
+        "harmful_source_counts": {},
+        "helped_skill_counts": {
+          "uncertainty_assessment_skill": 1,
+          "compare_skill": 1,
+          "metadata_consistency_skill": 1
+        },
+        "sample_harmed_cases": [],
+        "sample_helped_cases": [
+          {
+            "case_id": "PAT_46_881_939.png",
+            "true_label": "BCC",
+            "direct_pred": "UNKNOWN",
+            "variant_pred": "BCC",
+            "perception_top1": "BCC",
+            "selected_skills": [
+              "uncertainty_assessment_skill",
+              "compare_skill",
+              "metadata_consistency_skill"
+            ],
+            "used_sources": [
+              "perception",
+              "compare_skill",
+              "metadata_consistency_skill"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "agent_plus_malignancy",
+      "title": "+ malignancy",
+      "config": {
+        "name": "agent_plus_malignancy",
+        "title": "+ malignancy",
+        "use_retrieval": false,
+        "use_compare": true,
+        "use_malignancy": true,
+        "use_metadata_consistency": true,
+        "use_specialist": false,
+        "use_controller": false,
+        "no_harm_mode": "off"
+      },
+      "metrics": {
+        "accuracy_top1": 1.0,
+        "accuracy_top3": 1.0,
+        "malignant_recall": 1.0,
+        "error_rate": 0.0
+      },
+      "per_case": [
+        {
+          "case_id": "PAT_46_881_939.png",
+          "true_label": "BCC",
+          "predicted_label": "BCC",
+          "top3": [
+            "BCC",
+            "SCC",
+            "NEV"
+          ],
+          "confidence": 0.66,
+          "confidence_text": "medium",
+          "is_top1_correct": true,
+          "is_top3_correct": true,
+          "is_malignant_case": true,
+          "malignant_recalled": true,
+          "error": null,
+          "selected_skills": [
+            "uncertainty_assessment_skill",
+            "compare_skill",
+            "malignancy_risk_skill",
+            "metadata_consistency_skill"
+          ],
+          "planner_mode": "rules_only",
+          "stop_probability": null,
+          "retrieval_confidence": "low",
+          "used_sources": [
+            "perception",
+            "compare_skill",
+            "metadata_consistency_skill",
+            "malignancy_risk_skill"
+          ],
+          "perception_top1": "BCC",
+          "perception_correct": true,
+          "changed_from_perception_top1": false,
+          "no_harm_applied": false,
+          "no_harm_reason": "disabled",
+          "safety_override_applied": false,
+          "aggregator_top_scores": {
+            "BCC": 0.8104,
+            "SCC": 0.3057,
+            "NEV": 0.17,
+            "ACK": -0.005
+          }
+        }
+      ],
+      "total_cases": 1,
+      "errors": 0,
+      "route_stats": {
+        "selected_skill_counts": {
+          "uncertainty_assessment_skill": 1,
+          "compare_skill": 1,
+          "malignancy_risk_skill": 1,
+          "metadata_consistency_skill": 1
+        },
+        "used_source_counts": {
+          "perception": 1,
+          "compare_skill": 1,
+          "metadata_consistency_skill": 1,
+          "malignancy_risk_skill": 1
+        },
+        "predicted_label_counts": {
+          "BCC": 1
+        }
+      },
+      "harm_analysis_vs_direct": {
+        "changed_from_direct_count": 1,
+        "direct_correct_variant_wrong_count": 0,
+        "direct_wrong_variant_correct_count": 1,
+        "perception_correct_variant_wrong_count": 0,
+        "changed_from_perception_top1_count": 0,
+        "no_harm_applied_count": 0,
+        "harmful_skill_counts": {},
+        "harmful_source_counts": {},
+        "helped_skill_counts": {
+          "uncertainty_assessment_skill": 1,
+          "compare_skill": 1,
+          "malignancy_risk_skill": 1,
+          "metadata_consistency_skill": 1
+        },
+        "sample_harmed_cases": [],
+        "sample_helped_cases": [
+          {
+            "case_id": "PAT_46_881_939.png",
+            "true_label": "BCC",
+            "direct_pred": "UNKNOWN",
+            "variant_pred": "BCC",
+            "perception_top1": "BCC",
+            "selected_skills": [
+              "uncertainty_assessment_skill",
+              "compare_skill",
+              "malignancy_risk_skill",
+              "metadata_consistency_skill"
+            ],
+            "used_sources": [
+              "perception",
+              "compare_skill",
+              "metadata_consistency_skill",
+              "malignancy_risk_skill"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "agent_plus_specialists",
+      "title": "+ specialists",
+      "config": {
+        "name": "agent_plus_specialists",
+        "title": "+ specialists",
+        "use_retrieval": false,
+        "use_compare": true,
+        "use_malignancy": true,
+        "use_metadata_consistency": true,
+        "use_specialist": true,
+        "use_controller": false,
+        "no_harm_mode": "off"
+      },
+      "metrics": {
+        "accuracy_top1": 1.0,
+        "accuracy_top3": 1.0,
+        "malignant_recall": 1.0,
+        "error_rate": 0.0
+      },
+      "per_case": [
+        {
+          "case_id": "PAT_46_881_939.png",
+          "true_label": "BCC",
+          "predicted_label": "BCC",
+          "top3": [
+            "BCC",
+            "SCC",
+            "NEV"
+          ],
+          "confidence": 0.66,
+          "confidence_text": "medium",
+          "is_top1_correct": true,
+          "is_top3_correct": true,
+          "is_malignant_case": true,
+          "malignant_recalled": true,
+          "error": null,
+          "selected_skills": [
+            "uncertainty_assessment_skill",
+            "compare_skill",
+            "malignancy_risk_skill",
+            "metadata_consistency_skill",
+            "bcc_scc_specialist_skill"
+          ],
+          "planner_mode": "rules_only",
+          "stop_probability": null,
+          "retrieval_confidence": "low",
+          "used_sources": [
+            "perception",
+            "compare_skill",
+            "bcc_scc_specialist_skill",
+            "metadata_consistency_skill",
+            "malignancy_risk_skill"
+          ],
+          "perception_top1": "BCC",
+          "perception_correct": true,
+          "changed_from_perception_top1": false,
+          "no_harm_applied": false,
+          "no_harm_reason": "disabled",
+          "safety_override_applied": false,
+          "aggregator_top_scores": {
+            "BCC": 0.8104,
+            "SCC": 0.3057,
+            "NEV": 0.17,
+            "ACK": -0.005
+          }
+        }
+      ],
+      "total_cases": 1,
+      "errors": 0,
+      "route_stats": {
+        "selected_skill_counts": {
+          "uncertainty_assessment_skill": 1,
+          "compare_skill": 1,
+          "malignancy_risk_skill": 1,
+          "metadata_consistency_skill": 1,
+          "bcc_scc_specialist_skill": 1
+        },
+        "used_source_counts": {
+          "perception": 1,
+          "compare_skill": 1,
+          "bcc_scc_specialist_skill": 1,
+          "metadata_consistency_skill": 1,
+          "malignancy_risk_skill": 1
+        },
+        "predicted_label_counts": {
+          "BCC": 1
+        }
+      },
+      "harm_analysis_vs_direct": {
+        "changed_from_direct_count": 1,
+        "direct_correct_variant_wrong_count": 0,
+        "direct_wrong_variant_correct_count": 1,
+        "perception_correct_variant_wrong_count": 0,
+        "changed_from_perception_top1_count": 0,
+        "no_harm_applied_count": 0,
+        "harmful_skill_counts": {},
+        "harmful_source_counts": {},
+        "helped_skill_counts": {
+          "uncertainty_assessment_skill": 1,
+          "compare_skill": 1,
+          "malignancy_risk_skill": 1,
+          "metadata_consistency_skill": 1,
+          "bcc_scc_specialist_skill": 1
+        },
+        "sample_harmed_cases": [],
+        "sample_helped_cases": [
+          {
+            "case_id": "PAT_46_881_939.png",
+            "true_label": "BCC",
+            "direct_pred": "UNKNOWN",
+            "variant_pred": "BCC",
+            "perception_top1": "BCC",
+            "selected_skills": [
+              "uncertainty_assessment_skill",
+              "compare_skill",
+              "malignancy_risk_skill",
+              "metadata_consistency_skill",
+              "bcc_scc_specialist_skill"
+            ],
+            "used_sources": [
+              "perception",
+              "compare_skill",
+              "bcc_scc_specialist_skill",
+              "metadata_consistency_skill",
+              "malignancy_risk_skill"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "agent_plus_controller",
+      "title": "+ controller/scorers",
+      "config": {
+        "name": "agent_plus_controller",
+        "title": "+ controller/scorers",
+        "use_retrieval": false,
+        "use_compare": true,
+        "use_malignancy": true,
+        "use_metadata_consistency": true,
+        "use_specialist": true,
+        "use_controller": true,
+        "no_harm_mode": "off"
+      },
+      "metrics": {
+        "accuracy_top1": 1.0,
+        "accuracy_top3": 1.0,
+        "malignant_recall": 1.0,
+        "error_rate": 0.0
+      },
+      "per_case": [
+        {
+          "case_id": "PAT_46_881_939.png",
+          "true_label": "BCC",
+          "predicted_label": "BCC",
+          "top3": [
+            "BCC",
+            "SCC",
+            "NEV"
+          ],
+          "confidence": 0.33,
+          "confidence_text": "low",
+          "is_top1_correct": true,
+          "is_top3_correct": true,
+          "is_malignant_case": true,
+          "malignant_recalled": true,
+          "error": null,
+          "selected_skills": [
+            "uncertainty_assessment_skill",
+            "metadata_consistency_skill",
+            "malignancy_risk_skill"
+          ],
+          "planner_mode": "learnable_hybrid",
+          "stop_probability": 0.0594,
+          "retrieval_confidence": "low",
+          "used_sources": [
+            "perception",
+            "metadata_consistency_skill",
+            "malignancy_risk_skill"
+          ],
+          "perception_top1": "BCC",
+          "perception_correct": true,
+          "changed_from_perception_top1": false,
+          "no_harm_applied": false,
+          "no_harm_reason": "disabled",
+          "safety_override_applied": false,
+          "aggregator_top_scores": {
+            "BCC": 0.1587,
+            "ACK": 0.0665,
+            "SCC": 0.048,
+            "NEV": 0.0118
+          }
+        }
+      ],
+      "total_cases": 1,
+      "errors": 0,
+      "route_stats": {
+        "selected_skill_counts": {
+          "uncertainty_assessment_skill": 1,
+          "metadata_consistency_skill": 1,
+          "malignancy_risk_skill": 1
+        },
+        "used_source_counts": {
+          "perception": 1,
+          "metadata_consistency_skill": 1,
+          "malignancy_risk_skill": 1
+        },
+        "predicted_label_counts": {
+          "BCC": 1
+        }
+      },
+      "harm_analysis_vs_direct": {
+        "changed_from_direct_count": 1,
+        "direct_correct_variant_wrong_count": 0,
+        "direct_wrong_variant_correct_count": 1,
+        "perception_correct_variant_wrong_count": 0,
+        "changed_from_perception_top1_count": 0,
+        "no_harm_applied_count": 0,
+        "harmful_skill_counts": {},
+        "harmful_source_counts": {},
+        "helped_skill_counts": {
+          "uncertainty_assessment_skill": 1,
+          "metadata_consistency_skill": 1,
+          "malignancy_risk_skill": 1
+        },
+        "sample_harmed_cases": [],
+        "sample_helped_cases": [
+          {
+            "case_id": "PAT_46_881_939.png",
+            "true_label": "BCC",
+            "direct_pred": "UNKNOWN",
+            "variant_pred": "BCC",
+            "perception_top1": "BCC",
+            "selected_skills": [
+              "uncertainty_assessment_skill",
+              "metadata_consistency_skill",
+              "malignancy_risk_skill"
+            ],
+            "used_sources": [
+              "perception",
+              "metadata_consistency_skill",
+              "malignancy_risk_skill"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "agent_full",
+      "title": "Full agent (+ retrieval)",
+      "config": {
+        "name": "agent_full",
+        "title": "Full agent (+ retrieval)",
+        "use_retrieval": true,
+        "use_compare": true,
+        "use_malignancy": true,
+        "use_metadata_consistency": true,
+        "use_specialist": true,
+        "use_controller": true,
+        "no_harm_mode": "off"
+      },
+      "metrics": {
+        "accuracy_top1": 1.0,
+        "accuracy_top3": 1.0,
+        "malignant_recall": 1.0,
+        "error_rate": 0.0
+      },
+      "per_case": [
+        {
+          "case_id": "PAT_46_881_939.png",
+          "true_label": "BCC",
+          "predicted_label": "BCC",
+          "top3": [
+            "BCC",
+            "SCC",
+            "NEV"
+          ],
+          "confidence": 0.66,
+          "confidence_text": "medium",
+          "is_top1_correct": true,
+          "is_top3_correct": true,
+          "is_malignant_case": true,
+          "malignant_recalled": true,
+          "error": null,
+          "selected_skills": [
+            "uncertainty_assessment_skill",
+            "metadata_consistency_skill",
+            "malignancy_risk_skill"
+          ],
+          "planner_mode": "learnable_hybrid",
+          "stop_probability": 0.0409,
+          "retrieval_confidence": "high",
+          "used_sources": [
+            "perception",
+            "retrieval",
+            "prototype_memory",
+            "confusion_memory",
+            "metadata_consistency_skill",
+            "malignancy_risk_skill",
+            "memory_consensus"
+          ],
+          "perception_top1": "BCC",
+          "perception_correct": true,
+          "changed_from_perception_top1": false,
+          "no_harm_applied": false,
+          "no_harm_reason": "disabled",
+          "safety_override_applied": false,
+          "aggregator_top_scores": {
+            "BCC": 0.1245,
+            "ACK": 0.0649,
+            "SCC": 0.0522,
+            "MEL": 0.016,
+            "NEV": 0.0118
+          }
+        }
+      ],
+      "total_cases": 1,
+      "errors": 0,
+      "route_stats": {
+        "selected_skill_counts": {
+          "uncertainty_assessment_skill": 1,
+          "metadata_consistency_skill": 1,
+          "malignancy_risk_skill": 1
+        },
+        "used_source_counts": {
+          "perception": 1,
+          "retrieval": 1,
+          "prototype_memory": 1,
+          "confusion_memory": 1,
+          "metadata_consistency_skill": 1,
+          "malignancy_risk_skill": 1,
+          "memory_consensus": 1
+        },
+        "predicted_label_counts": {
+          "BCC": 1
+        }
+      },
+      "harm_analysis_vs_direct": {
+        "changed_from_direct_count": 1,
+        "direct_correct_variant_wrong_count": 0,
+        "direct_wrong_variant_correct_count": 1,
+        "perception_correct_variant_wrong_count": 0,
+        "changed_from_perception_top1_count": 0,
+        "no_harm_applied_count": 0,
+        "harmful_skill_counts": {},
+        "harmful_source_counts": {},
+        "helped_skill_counts": {
+          "uncertainty_assessment_skill": 1,
+          "metadata_consistency_skill": 1,
+          "malignancy_risk_skill": 1
+        },
+        "sample_harmed_cases": [],
+        "sample_helped_cases": [
+          {
+            "case_id": "PAT_46_881_939.png",
+            "true_label": "BCC",
+            "direct_pred": "UNKNOWN",
+            "variant_pred": "BCC",
+            "perception_top1": "BCC",
+            "selected_skills": [
+              "uncertainty_assessment_skill",
+              "metadata_consistency_skill",
+              "malignancy_risk_skill"
+            ],
+            "used_sources": [
+              "perception",
+              "retrieval",
+              "prototype_memory",
+              "confusion_memory",
+              "metadata_consistency_skill",
+              "malignancy_risk_skill",
+              "memory_consensus"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "agent_full_no_harm",
+      "title": "Full agent (+ retrieval, no-harm)",
+      "config": {
+        "name": "agent_full_no_harm",
+        "title": "Full agent (+ retrieval, no-harm)",
+        "use_retrieval": true,
+        "use_compare": true,
+        "use_malignancy": true,
+        "use_metadata_consistency": true,
+        "use_specialist": true,
+        "use_controller": true,
+        "no_harm_mode": "conservative"
+      },
+      "metrics": {
+        "accuracy_top1": 1.0,
+        "accuracy_top3": 1.0,
+        "malignant_recall": 1.0,
+        "error_rate": 0.0
+      },
+      "per_case": [
+        {
+          "case_id": "PAT_46_881_939.png",
+          "true_label": "BCC",
+          "predicted_label": "BCC",
+          "top3": [
+            "BCC",
+            "SCC",
+            "NEV"
+          ],
+          "confidence": 0.66,
+          "confidence_text": "medium",
+          "is_top1_correct": true,
+          "is_top3_correct": true,
+          "is_malignant_case": true,
+          "malignant_recalled": true,
+          "error": null,
+          "selected_skills": [
+            "uncertainty_assessment_skill",
+            "metadata_consistency_skill",
+            "malignancy_risk_skill"
+          ],
+          "planner_mode": "learnable_hybrid",
+          "stop_probability": 0.0409,
+          "retrieval_confidence": "high",
+          "used_sources": [
+            "perception",
+            "retrieval",
+            "prototype_memory",
+            "confusion_memory",
+            "metadata_consistency_skill",
+            "malignancy_risk_skill",
+            "memory_consensus"
+          ],
+          "perception_top1": "BCC",
+          "perception_correct": true,
+          "changed_from_perception_top1": false,
+          "no_harm_applied": false,
+          "no_harm_reason": "already_matches_perception",
+          "safety_override_applied": false,
+          "aggregator_top_scores": {
+            "BCC": 0.1245,
+            "ACK": 0.0649,
+            "SCC": 0.0522,
+            "MEL": 0.016,
+            "NEV": 0.0118
+          }
+        }
+      ],
+      "total_cases": 1,
+      "errors": 0,
+      "route_stats": {
+        "selected_skill_counts": {
+          "uncertainty_assessment_skill": 1,
+          "metadata_consistency_skill": 1,
+          "malignancy_risk_skill": 1
+        },
+        "used_source_counts": {
+          "perception": 1,
+          "retrieval": 1,
+          "prototype_memory": 1,
+          "confusion_memory": 1,
+          "metadata_consistency_skill": 1,
+          "malignancy_risk_skill": 1,
+          "memory_consensus": 1
+        },
+        "predicted_label_counts": {
+          "BCC": 1
+        }
+      },
+      "harm_analysis_vs_direct": {
+        "changed_from_direct_count": 1,
+        "direct_correct_variant_wrong_count": 0,
+        "direct_wrong_variant_correct_count": 1,
+        "perception_correct_variant_wrong_count": 0,
+        "changed_from_perception_top1_count": 0,
+        "no_harm_applied_count": 0,
+        "harmful_skill_counts": {},
+        "harmful_source_counts": {},
+        "helped_skill_counts": {
+          "uncertainty_assessment_skill": 1,
+          "metadata_consistency_skill": 1,
+          "malignancy_risk_skill": 1
+        },
+        "sample_harmed_cases": [],
+        "sample_helped_cases": [
+          {
+            "case_id": "PAT_46_881_939.png",
+            "true_label": "BCC",
+            "direct_pred": "UNKNOWN",
+            "variant_pred": "BCC",
+            "perception_top1": "BCC",
+            "selected_skills": [
+              "uncertainty_assessment_skill",
+              "metadata_consistency_skill",
+              "malignancy_risk_skill"
+            ],
+            "used_sources": [
+              "perception",
+              "retrieval",
+              "prototype_memory",
+              "confusion_memory",
+              "metadata_consistency_skill",
+              "malignancy_risk_skill",
+              "memory_consensus"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
